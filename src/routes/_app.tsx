@@ -19,7 +19,7 @@ export const Route = createFileRoute('/_app')({
 })
 
 function AppLayout() {
-  const { profile } = Route.useRouteContext()
+  const { user, profile } = Route.useRouteContext()
   const { setTheme } = useThemeContext()
 
   // The profile's saved theme is the source of truth once authenticated —
@@ -30,7 +30,7 @@ function AppLayout() {
 
   return (
     <div className="flex min-h-screen">
-      <SidebarNav profile={profile} />
+      <SidebarNav profile={profile} avatarUrl={user.avatarUrl} />
       <div className="relative min-h-screen flex-1 overflow-x-hidden">
         <DecorativeShapes />
         <Outlet />

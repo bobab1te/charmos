@@ -30,7 +30,7 @@ function CloudLayer({ depth, mx, my, className, style }: { depth: number; mx: Mo
   )
 }
 
-export function ParallaxHero() {
+export function ParallaxHero({ displayName }: { displayName: string }) {
   const hour = useHour()
   const isDay = getIsDaytime(hour)
 
@@ -159,7 +159,7 @@ export function ParallaxHero() {
             'font-display-bold text-3xl font-semibold sm:text-4xl ' + (isDay ? 'text-[#3a2e42]' : 'text-white')
           }
         >
-          {greeting}, creator.
+          {greeting}, {displayName}.
         </h1>
         <p className={'mt-1 text-sm sm:text-base ' + (isDay ? 'text-[#6b5b73]' : 'text-white/70')}>
           Here's how your brand partnerships are looking today.

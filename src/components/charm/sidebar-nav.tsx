@@ -26,7 +26,7 @@ const LINKS = [
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ] as const
 
-export function SidebarNav({ profile }: { profile: Profile | null }) {
+export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; avatarUrl?: string | null }) {
   const { collapsed, toggle } = useSidebarCollapsed()
   const navigate = useNavigate()
 
@@ -112,9 +112,13 @@ export function SidebarNav({ profile }: { profile: Profile | null }) {
       </nav>
 
       <div className="mt-auto flex items-center gap-2.5 border-t border-white/40 px-1 pt-3">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--charm-pink),var(--charm-lavender-deep))] text-xs font-semibold text-white">
-          {initial}
-        </span>
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={displayName} className="size-8 shrink-0 rounded-full object-cover" />
+        ) : (
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--charm-pink),var(--charm-lavender-deep))] text-xs font-semibold text-white">
+            {initial}
+          </span>
+        )}
         {!collapsed && (
           <>
             <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--charm-ink)]">{displayName}</span>

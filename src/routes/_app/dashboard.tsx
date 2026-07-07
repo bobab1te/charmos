@@ -13,11 +13,13 @@ import { WIDGET_IDS } from '#/lib/widget-ids'
 export const Route = createFileRoute('/_app/dashboard')({ component: Dashboard })
 
 function Dashboard() {
+  const { profile } = Route.useRouteContext()
   const { isHidden, hide, hidden } = useWidgetVisibility()
+  const displayName = profile.display_name?.trim() || 'creator'
 
   return (
     <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
-      <ParallaxHero />
+      <ParallaxHero displayName={displayName} />
 
       <div className="flex items-center justify-end">
         <Link

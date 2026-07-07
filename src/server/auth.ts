@@ -7,6 +7,8 @@ export interface AuthUser {
   email: string | null
   /** Best-effort prefill for the onboarding wizard's display name step — Google OAuth populates this, email/password sign-up won't. */
   suggestedDisplayName: string | null
+  /** Google OAuth populates this; email/password sign-up won't. */
+  avatarUrl: string | null
 }
 
 export type AuthState =
@@ -33,10 +35,14 @@ export const getCurrentUserAndProfile = createServerFn({ method: 'GET' }).handle
       (typeof metadata?.full_name === 'string' && metadata.full_name) ||
       (typeof metadata?.name === 'string' && metadata.name) ||
       null
+    const avatarUrl =
+      (typeof metadata?.avatar_url === 'string' && metadata.avatar_url) ||
+      (typeof metadata?.picture === 'string' && metadata.picture) ||
+      null
 
     return {
       configured: true,
-      user: { id: user.id, email: user.email ?? null, suggestedDisplayName },
+      user: { id: user.id, email: user.email ?? null, suggestedDisplayName, avatarUrl },
       profile: profile ?? null,
     }
   },
