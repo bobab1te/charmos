@@ -3,6 +3,7 @@ import { AnimatePresence } from 'motion/react'
 import { Eye, SlidersHorizontal } from 'lucide-react'
 import { ParallaxHero } from '#/components/charm/parallax-hero'
 import { DecorativeShapes } from '#/components/charm/decorative-shapes'
+import { SiteNav } from '#/components/charm/site-nav'
 import { MetricsGrid, METRIC_WIDGET_IDS } from '#/components/dashboard/metrics-grid'
 import { DealPipeline } from '#/components/dashboard/deal-pipeline'
 import { UpcomingDeadlines } from '#/components/dashboard/upcoming-deadlines'
@@ -45,7 +46,8 @@ function Dashboard() {
       <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
         <ParallaxHero />
 
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-between">
+          <SiteNav />
           <Popover>
             <PopoverTrigger asChild>
               <button

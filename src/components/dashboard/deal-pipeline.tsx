@@ -11,8 +11,10 @@ import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useDraggable } from '@dnd-kit/core'
 import { format } from 'date-fns'
-import { Briefcase } from 'lucide-react'
+import { Briefcase, Plus } from 'lucide-react'
 import { WidgetCard } from '#/components/charm/widget-card'
+import { Button } from '#/components/ui/button'
+import { DealModal } from '#/components/deals/deal-modal'
 import { useCharmStore } from '#/lib/charm-store'
 import { nextDeliverable, urgencyForDate } from '#/lib/derived'
 import { cn } from '#/lib/utils'
@@ -31,10 +33,21 @@ const urgencyDot: Record<string, string> = {
   green: 'bg-[var(--urgency-green)]',
 }
 
-function DealCardInner({ deal, brandName }: { deal: BrandDeal; brandName: string }) {
+function DealCardInner({
+  deal,
+  brandName,
+  onOpen,
+}: {
+  deal: BrandDeal
+  brandName: string
+  onOpen?: (dealId: string) => void
+}) {
   const next = nextDeliverable(deal)
   return (
-    <div className="charm-glass cursor-grab rounded-xl p-3 active:cursor-grabbing">
+    <div
+      onClick={onOpen ? () => onOpen(deal.id) : undefined}
+      className="charm-glass cursor-grab rounded-xl p-3 active:cursor-grabbing"
+    >
       <p className="text-sm font-semibold text-[var(--charm-ink)]">{brandName}</p>
       {next ? (
         <div className="mt-1.5 flex items-center gap-1.5 text-xs text-[var(--charm-ink-soft)]">
@@ -53,7 +66,15 @@ function DealCardInner({ deal, brandName }: { deal: BrandDeal; brandName: string
   )
 }
 
-function DraggableDealCard({ deal, brandName }: { deal: BrandDeal; brandName: string }) {
+function DraggableDealCard({
+  deal,
+  brandName,
+  onOpen,
+}: {
+  deal: BrandDeal
+  brandName: string
+  onOpen: (dealId: string) => void
+}) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: deal.id,
     data: { stage: deal.stage },
@@ -69,7 +90,7 @@ function DraggableDealCard({ deal, brandName }: { deal: BrandDeal; brandName: st
         opacity: isDragging ? 0.35 : 1,
       }}
     >
-      <DealCardInner deal={deal} brandName={brandName} />
+      <DealCardInner deal={deal} brandName={brandName} onOpen={onOpen} />
     </div>
   )
 }
@@ -79,11 +100,13 @@ function DroppableColumn({
   label,
   deals,
   brandName,
+  onOpen,
 }: {
   id: DealStage
   label: string
   deals: Array<BrandDeal>
   brandName: (id: string) => string
+  onOpen: (dealId: string) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id })
 
@@ -102,13 +125,23 @@ function DroppableColumn({
         </span>
       </div>
       {deals.map((deal) => (
-        <DraggableDealCard key={deal.id} deal={deal} brandName={brandName(deal.brandId)} />
+        <DraggableDealCard key={deal.id} deal={deal} brandName={brandName(deal.brandId)} onOpen={onOpen} />
       ))}
     </div>
   )
 }
 
-function StaticColumn({ label, deals, brandName }: { label: string; deals: Array<BrandDeal>; brandName: (id: string) => string }) {
+function StaticColumn({
+  label,
+  deals,
+  brandName,
+  onOpen,
+}: {
+  label: string
+  deals: Array<BrandDeal>
+  brandName: (id: string) => string
+  onOpen: (dealId: string) => void
+}) {
   return (
     <div className="flex min-h-[220px] flex-col gap-2 rounded-2xl border border-dashed border-white/40 p-2.5">
       <div className="flex items-center justify-between px-1">
@@ -118,7 +151,7 @@ function StaticColumn({ label, deals, brandName }: { label: string; deals: Array
         </span>
       </div>
       {deals.map((deal) => (
-        <DealCardInner key={deal.id} deal={deal} brandName={brandName(deal.brandId)} />
+        <DealCardInner key={deal.id} deal={deal} brandName={brandName(deal.brandId)} onOpen={onOpen} />
       ))}
     </div>
   )
@@ -128,7 +161,19 @@ export function DealPipeline({ onHide }: { onHide: () => void }) {
   const { deals, brandById, moveDeal } = useCharmStore()
   const [activeDeal, setActiveDeal] = useState<BrandDeal | null>(null)
   const [interactive, setInteractive] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingDealId, setEditingDealId] = useState<string | undefined>(undefined)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
+
+  function openNewDeal() {
+    setEditingDealId(undefined)
+    setModalOpen(true)
+  }
+
+  function openDeal(dealId: string) {
+    setEditingDealId(dealId)
+    setModalOpen(true)
+  }
 
   // dnd-kit generates internal ids that can drift between the SSR pass and
   // the first client render; mounting it only after hydration avoids that
@@ -168,12 +213,33 @@ export function DealPipeline({ onHide }: { onHide: () => void }) {
   const brandName = (id: string) => brandById(id)?.name ?? 'Unknown brand'
 
   return (
-    <WidgetCard title="Deal Pipeline" icon={<Briefcase className="size-4" />} onHide={onHide}>
+    <WidgetCard
+      title="Deal Pipeline"
+      icon={<Briefcase className="size-4" />}
+      onHide={onHide}
+      headerAction={
+        <Button
+          type="button"
+          size="sm"
+          onClick={openNewDeal}
+          className="gap-1 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+        >
+          <Plus className="size-3.5" /> New Deal
+        </Button>
+      }
+    >
       {interactive ? (
         <DndContext id="deal-pipeline" sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {COLUMNS.map((col) => (
-              <DroppableColumn key={col.id} id={col.id} label={col.label} deals={dealsByStage[col.id]} brandName={brandName} />
+              <DroppableColumn
+                key={col.id}
+                id={col.id}
+                label={col.label}
+                deals={dealsByStage[col.id]}
+                brandName={brandName}
+                onOpen={openDeal}
+              />
             ))}
           </div>
           <DragOverlay>
@@ -183,10 +249,17 @@ export function DealPipeline({ onHide }: { onHide: () => void }) {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {COLUMNS.map((col) => (
-            <StaticColumn key={col.id} label={col.label} deals={dealsByStage[col.id]} brandName={brandName} />
+            <StaticColumn
+              key={col.id}
+              label={col.label}
+              deals={dealsByStage[col.id]}
+              brandName={brandName}
+              onOpen={openDeal}
+            />
           ))}
         </div>
       )}
+      <DealModal open={modalOpen} onOpenChange={setModalOpen} dealId={editingDealId} />
     </WidgetCard>
   )
 }

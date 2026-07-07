@@ -76,3 +76,28 @@ export interface LedgerEntry {
   dealId?: string
   brandId?: string
 }
+
+export interface DealFormDeliverable {
+  type: string
+  description: string
+  dueDate: string
+}
+
+export interface DealFormValues {
+  brandName: string
+  brandContactName: string
+  brandContactEmail: string
+  stage: DealStage
+  deliverables: Array<DealFormDeliverable>
+  compensationAmount: string
+  compensationCurrency: string
+  usageRights: string
+  shipmentCarrier: string
+  shipmentTrackingNumber: string
+  shipmentShippedDate: string
+  shipmentEstimatedDelivery: string
+  hashtags: string
+  accountsToTag: string
+  clipsToUse: string
+  contentNotes: string
+}
