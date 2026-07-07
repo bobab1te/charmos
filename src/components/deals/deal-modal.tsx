@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Loader2, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -8,9 +8,10 @@ import {
   DialogDescription,
 } from '#/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
-import { Textarea } from '#/components/ui/textarea'
 import { Button } from '#/components/ui/button'
 import { DealForm } from './deal-form'
+import { DealParseInput } from './deal-parse-input'
+import type { DealParsePayload, StagedAsset } from './deal-parse-input'
 import { useCharmStore } from '#/lib/charm-store'
 import { dealToFormValues, emptyDealForm, formValuesMissingFields, parsedDealToFormValues } from '#/lib/deal-form-utils'
 import { parseDealText } from '#/server/parse-deal'
@@ -28,6 +29,7 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
   const isEditing = Boolean(dealId)
 
   const [rawText, setRawText] = useState('')
+  const [stagedAssets, setStagedAssets] = useState<Array<StagedAsset>>([])
   const [parsing, setParsing] = useState(false)
   const [parseError, setParseError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(isEditing)
@@ -56,17 +58,20 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
       setValues(emptyDealForm())
       setShowForm(false)
       setRawText('')
+      setStagedAssets([])
       setParseError(null)
       setMissingFields([])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, dealId])
 
-  async function handleParse() {
+  async function handleParse(payload: DealParsePayload) {
     setParsing(true)
     setParseError(null)
+    // eslint-disable-next-line no-console -- placeholder until file/OCR parsing lands server-side
+    console.log(`Sending ${payload.files.length} files and ${payload.text.length} chars of text to parser.`)
     try {
-      const result = await parseDealText({ data: { text: rawText } })
+      const result = await parseDealText({ data: { text: payload.text } })
       if (result.ok) {
         const formValues = parsedDealToFormValues(result.deal)
         setValues(formValues)
@@ -129,32 +134,17 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
               </TabsTrigger>
               <TabsTrigger value="manual">Manual entry</TabsTrigger>
             </TabsList>
-            <TabsContent value="parse" className="flex flex-col gap-3">
-              <Textarea
-                value={rawText}
-                onChange={(e) => setRawText(e.target.value)}
-                placeholder="Paste the brand's email, DM, or brief here..."
-                rows={10}
+            <TabsContent value="parse">
+              <DealParseInput
+                rawText={rawText}
+                onRawTextChange={setRawText}
+                assets={stagedAssets}
+                onAssetsChange={setStagedAssets}
+                parsing={parsing}
+                parseError={parseError}
+                onParse={handleParse}
+                onSkipToManual={() => setShowForm(true)}
               />
-              {parseError && (
-                <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--urgency-red)]">
-                  {parseError}
-                </p>
-              )}
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setShowForm(true)}>
-                  Skip to manual entry
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleParse}
-                  disabled={parsing || !rawText.trim()}
-                  className="gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
-                >
-                  {parsing ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-                  {parsing ? 'Parsing...' : 'Parse with AI'}
-                </Button>
-              </div>
             </TabsContent>
             <TabsContent value="manual">
               <div className="flex justify-end">
