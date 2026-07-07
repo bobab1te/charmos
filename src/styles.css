@@ -1,0 +1,234 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* CharmOS palette — soft pinks, lavender, buttery yellow, sky blue */
+  --charm-pink: #ffd9e6;
+  --charm-pink-deep: #f6a8c4;
+  --charm-lavender: #d9c8f5;
+  --charm-lavender-deep: #b79cea;
+  --charm-blue: #c3ddf5;
+  --charm-blue-deep: #9cc2ea;
+  --charm-yellow: #fff2c2;
+  --charm-beige: #f8f1ea;
+  --charm-ink: #3a2e42;
+  --charm-ink-soft: #6b5b73;
+
+  --accent: #e8608f;
+  --accent-soft: #f6a8c4;
+  --accent-foreground: #fff8fb;
+
+  --surface: rgba(255, 255, 255, 0.55);
+  --surface-strong: rgba(255, 255, 255, 0.72);
+  --surface-border: rgba(255, 255, 255, 0.6);
+  --surface-shadow: rgba(120, 80, 130, 0.14);
+
+  --bg-base: #fbf3f6;
+
+  --background: oklch(1 0 0);
+  --foreground: #3a2e42;
+  --card: rgba(255, 255, 255, 0.6);
+  --card-foreground: #3a2e42;
+  --popover: oklch(1 0 0);
+  --popover-foreground: #3a2e42;
+  --primary: #e8608f;
+  --primary-foreground: #fff8fb;
+  --secondary: #f3e8f7;
+  --secondary-foreground: #3a2e42;
+  --muted: #f1e9ee;
+  --muted-foreground: #8a7a8f;
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: #fff8fb;
+  --border: rgba(58, 46, 66, 0.1);
+  --input: rgba(58, 46, 66, 0.14);
+  --ring: #e8608f;
+  --chart-1: #e8608f;
+  --chart-2: #b79cea;
+  --chart-3: #9cc2ea;
+  --chart-4: #f6c945;
+  --chart-5: #f6a8c4;
+  --radius: 1.1rem;
+
+  --urgency-red: #e05a5a;
+  --urgency-orange: #e2953f;
+  --urgency-green: #4caf7d;
+}
+
+.dark {
+  --charm-ink: #f3e9f7;
+  --charm-ink-soft: #d3c2da;
+
+  --accent: #f284ab;
+  --accent-soft: #b95c82;
+  --accent-foreground: #2a1220;
+
+  --surface: rgba(36, 24, 44, 0.55);
+  --surface-strong: rgba(36, 24, 44, 0.74);
+  --surface-border: rgba(255, 255, 255, 0.08);
+  --surface-shadow: rgba(0, 0, 0, 0.35);
+
+  --bg-base: #1a1220;
+
+  --background: #1a1220;
+  --foreground: #f3e9f7;
+  --card: rgba(36, 24, 44, 0.6);
+  --card-foreground: #f3e9f7;
+  --popover: #241a2c;
+  --popover-foreground: #f3e9f7;
+  --primary: #f284ab;
+  --primary-foreground: #2a1220;
+  --secondary: #322a3c;
+  --secondary-foreground: #f3e9f7;
+  --muted: #2c2434;
+  --muted-foreground: #b3a2bb;
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: #f3e9f7;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #f284ab;
+  --chart-1: #f284ab;
+  --chart-2: #c3aef2;
+  --chart-3: #a9cdf2;
+  --chart-4: #f6d668;
+  --chart-5: #d98cae;
+}
+
+@theme inline {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--charm-ink);
+  font-family: var(--font-sans);
+  background-color: var(--bg-base);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------- Mesh gradient backdrop ---------- */
+
+.charm-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(38% 32% at 8% 12%, color-mix(in oklab, var(--charm-pink) 85%, transparent), transparent),
+    radial-gradient(42% 38% at 88% 8%, color-mix(in oklab, var(--charm-lavender) 80%, transparent), transparent),
+    radial-gradient(36% 34% at 92% 62%, color-mix(in oklab, var(--charm-blue) 78%, transparent), transparent),
+    radial-gradient(44% 40% at 12% 88%, color-mix(in oklab, var(--charm-yellow) 70%, transparent), transparent),
+    radial-gradient(50% 45% at 50% 50%, color-mix(in oklab, var(--charm-pink-deep) 30%, transparent), transparent);
+  filter: saturate(1.05);
+}
+
+.dark .charm-mesh {
+  background-image:
+    radial-gradient(38% 32% at 8% 12%, color-mix(in oklab, var(--charm-lavender-deep) 32%, transparent), transparent),
+    radial-gradient(42% 38% at 88% 8%, color-mix(in oklab, var(--charm-pink-deep) 26%, transparent), transparent),
+    radial-gradient(36% 34% at 92% 62%, color-mix(in oklab, var(--charm-blue-deep) 24%, transparent), transparent),
+    radial-gradient(44% 40% at 12% 88%, color-mix(in oklab, var(--charm-yellow) 14%, transparent), transparent),
+    radial-gradient(50% 45% at 50% 50%, color-mix(in oklab, var(--charm-pink-deep) 12%, transparent), transparent);
+}
+
+/* subtle grain/noise texture, overlaid above the mesh */
+.charm-grain {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+.dark .charm-grain {
+  opacity: 0.35;
+  mix-blend-mode: soft-light;
+}
+
+/* ---------- Glassmorphism surfaces ---------- */
+
+.charm-glass {
+  background: linear-gradient(165deg, var(--surface-strong), var(--surface));
+  border: 1px solid var(--surface-border);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 20px 44px var(--surface-shadow),
+    0 4px 14px rgba(58, 46, 66, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.dark .charm-glass {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 20px 44px var(--surface-shadow),
+    0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.display-title {
+  font-family: var(--font-display);
+}
+
+/* ---------- Decorative blurred shapes ---------- */
+
+.charm-blob {
+  position: absolute;
+  pointer-events: none;
+  filter: blur(2px);
+  opacity: 0.55;
+  z-index: 0;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}
