@@ -14,6 +14,7 @@ import '@fontsource/plus-jakarta-sans/700.css'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import { TooltipProvider } from '../components/ui/tooltip'
 import { CharmStoreProvider } from '../lib/charm-store'
+import { ThemeProvider } from '../lib/theme-context'
 
 import appCss from '../styles.css?url'
 
@@ -56,9 +57,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <div className="charm-mesh" aria-hidden="true" />
         <div className="charm-grain" aria-hidden="true" />
-        <TooltipProvider delayDuration={200}>
-          <CharmStoreProvider>{children}</CharmStoreProvider>
-        </TooltipProvider>
+        <ThemeProvider>
+          <TooltipProvider delayDuration={200}>
+            <CharmStoreProvider>{children}</CharmStoreProvider>
+          </TooltipProvider>
+        </ThemeProvider>
         <TanStackDevtools
           config={{
             position: 'bottom-right',

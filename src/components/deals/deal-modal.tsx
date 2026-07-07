@@ -32,6 +32,9 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
   const [parseError, setParseError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(isEditing)
   const [missingFields, setMissingFields] = useState<Array<string>>([])
+  const [submitting, setSubmitting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [values, setValues] = useState<DealFormValues>(() => {
     if (dealId) {
       const deal = deals.find((d) => d.id === dealId)
@@ -43,6 +46,7 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
 
   useEffect(() => {
     if (!open) return
+    setSaveError(null)
     if (dealId) {
       const deal = deals.find((d) => d.id === dealId)
       const brand = deal ? brandById(deal.brandId) : undefined
@@ -78,14 +82,31 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
     }
   }
 
-  function handleSubmit() {
-    saveDeal(values, dealId)
-    onOpenChange(false)
+  async function handleSubmit() {
+    setSubmitting(true)
+    setSaveError(null)
+    try {
+      await saveDeal(values, dealId)
+      onOpenChange(false)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Something went wrong saving that deal.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  function handleDelete() {
-    if (dealId) deleteDeal(dealId)
-    onOpenChange(false)
+  async function handleDelete() {
+    if (!dealId) return
+    setDeleting(true)
+    setSaveError(null)
+    try {
+      await deleteDeal(dealId)
+      onOpenChange(false)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Something went wrong deleting that deal.')
+    } finally {
+      setDeleting(false)
+    }
   }
 
   return (
@@ -150,12 +171,19 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
                 Couldn't find: {missingFields.join(', ')}. Fill these in manually below.
               </p>
             )}
+            {saveError && (
+              <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--urgency-red)]">
+                {saveError}
+              </p>
+            )}
             <DealForm
               values={values}
               onChange={setValues}
               onSubmit={handleSubmit}
               submitLabel={isEditing ? 'Save changes' : 'Save deal'}
               onDelete={isEditing ? handleDelete : undefined}
+              submitting={submitting}
+              deleting={deleting}
             />
           </>
         )}

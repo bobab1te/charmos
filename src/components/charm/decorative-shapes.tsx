@@ -48,7 +48,7 @@ function SwirlShape({ size, color }: { size: number; color: string }) {
   )
 }
 
-function CloudShape({ size, color }: { size: number; color: string }) {
+export function CloudShape({ size, color }: { size: number; color: string }) {
   return (
     <svg width={size} height={size * 0.6} viewBox="0 0 160 96" fill="none">
       <path

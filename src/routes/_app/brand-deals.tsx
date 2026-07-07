@@ -34,8 +34,8 @@ function BrandCard({ brand, dealCount }: { brand: Brand; dealCount: number }) {
     setEditing(false)
   }
 
-  function handleDelete() {
-    const deleted = deleteBrand(brand.id)
+  async function handleDelete() {
+    const deleted = await deleteBrand(brand.id)
     if (!deleted) {
       setBlockedMessage(`Can't delete — ${dealCount} deal${dealCount === 1 ? '' : 's'} still reference this brand.`)
     }

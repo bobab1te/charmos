@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Loader2, Plus, Trash2 } from 'lucide-react'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { Textarea } from '#/components/ui/textarea'
@@ -38,9 +38,11 @@ interface DealFormProps {
   onSubmit: () => void
   submitLabel: string
   onDelete?: () => void
+  submitting?: boolean
+  deleting?: boolean
 }
 
-export function DealForm({ values, onChange, onSubmit, submitLabel, onDelete }: DealFormProps) {
+export function DealForm({ values, onChange, onSubmit, submitLabel, onDelete, submitting, deleting }: DealFormProps) {
   const { brands } = useCharmStore()
   const [brandListId] = useState(() => `brand-suggestions-${Math.random().toString(36).slice(2)}`)
 
@@ -293,13 +295,25 @@ export function DealForm({ values, onChange, onSubmit, submitLabel, onDelete }: 
 
       <div className="flex items-center justify-between gap-2 pt-1">
         {onDelete ? (
-          <Button type="button" variant="ghost" onClick={onDelete} className="text-destructive hover:text-destructive">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onDelete}
+            disabled={submitting || deleting}
+            className="gap-1.5 text-destructive hover:text-destructive"
+          >
+            {deleting && <Loader2 className="size-4 animate-spin" />}
             Delete deal
           </Button>
         ) : (
           <span />
         )}
-        <Button type="submit" className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90">
+        <Button
+          type="submit"
+          disabled={submitting || deleting}
+          className="gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+        >
+          {submitting && <Loader2 className="size-4 animate-spin" />}
           {submitLabel}
         </Button>
       </div>

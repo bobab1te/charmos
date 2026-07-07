@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import {
   BarChart3,
   ChevronsLeft,
@@ -13,7 +13,9 @@ import {
 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import { useSidebarCollapsed } from '#/lib/use-sidebar'
+import { getSupabaseBrowserClient } from '#/lib/supabase/browser-client'
 import { cn } from '#/lib/utils'
+import type { Profile } from '#/server/profile'
 
 const LINKS = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -24,8 +26,20 @@ const LINKS = [
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ] as const
 
-export function SidebarNav() {
+export function SidebarNav({ profile }: { profile: Profile | null }) {
   const { collapsed, toggle } = useSidebarCollapsed()
+  const navigate = useNavigate()
+
+  const displayName = profile?.display_name?.trim() || 'Creator'
+  const initial = displayName.charAt(0).toUpperCase()
+
+  async function handleSignOut() {
+    try {
+      await getSupabaseBrowserClient().auth.signOut()
+    } finally {
+      navigate({ to: '/login' })
+    }
+  }
 
   return (
     <aside
@@ -99,13 +113,14 @@ export function SidebarNav() {
 
       <div className="mt-auto flex items-center gap-2.5 border-t border-white/40 px-1 pt-3">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--charm-pink),var(--charm-lavender-deep))] text-xs font-semibold text-white">
-          A
+          {initial}
         </span>
         {!collapsed && (
           <>
-            <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--charm-ink)]">Amanda</span>
+            <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--charm-ink)]">{displayName}</span>
             <button
               type="button"
+              onClick={handleSignOut}
               aria-label="Log out"
               className="shrink-0 rounded-full p-1.5 text-[var(--charm-ink-soft)] transition hover:bg-white/50 hover:text-[var(--charm-ink)]"
             >
