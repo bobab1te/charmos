@@ -156,7 +156,7 @@ export function ParallaxHero() {
         </span>
         <h1
           className={
-            'font-display text-3xl font-semibold sm:text-4xl ' + (isDay ? 'text-[#3a2e42]' : 'text-white')
+            'font-display-bold text-3xl font-semibold sm:text-4xl ' + (isDay ? 'text-[#3a2e42]' : 'text-white')
           }
         >
           {greeting}, creator.

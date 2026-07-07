@@ -11,7 +11,7 @@ function SettingsPage() {
   return (
     <div className="relative z-10 mx-auto flex max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold text-[var(--charm-ink)]">Settings</h1>
+        <h1 className="font-display-bold text-2xl font-semibold text-[var(--charm-ink)]">Settings</h1>
         <p className="text-sm text-[var(--charm-ink-soft)]">Control what shows up on your Dashboard.</p>
       </div>
 
