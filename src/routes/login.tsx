@@ -1,6 +1,7 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { z } from 'zod'
 import { Loader2, Sparkles } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { Input } from '#/components/ui/input'
@@ -11,6 +12,7 @@ import { getSupabaseBrowserClient } from '#/lib/supabase/browser-client'
 import { getCurrentUserAndProfile } from '#/server/auth'
 
 export const Route = createFileRoute('/login')({
+  validateSearch: (search: Record<string, unknown>) => z.object({ error: z.string().optional() }).parse(search),
   beforeLoad: async () => {
     const result = await getCurrentUserAndProfile()
     if (!result.configured) throw redirect({ to: '/setup-required' })
@@ -44,11 +46,12 @@ function GoogleIcon() {
 
 function LoginPage() {
   const navigate = useNavigate()
+  const { error: callbackError } = Route.useSearch()
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(callbackError ?? null)
   const [signUpNotice, setSignUpNotice] = useState<string | null>(null)
 
   async function handleEmailSubmit(e: FormEvent) {

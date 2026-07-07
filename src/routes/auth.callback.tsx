@@ -1,6 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getSupabaseServerClient } from '#/lib/supabase/server-client'
 
+/** Response.redirect() returns a Response with immutable headers, which crashes when the framework
+ * later tries to merge in Set-Cookie headers from exchangeCodeForSession. Build the redirect by hand
+ * so its headers stay mutable. */
+function redirectTo(url: string) {
+  return new Response(null, { status: 307, headers: { Location: url } })
+}
+
 export const Route = createFileRoute('/auth/callback')({
   server: {
     handlers: {
@@ -10,14 +17,14 @@ export const Route = createFileRoute('/auth/callback')({
         const origin = url.origin
 
         if (!code) {
-          return Response.redirect(`${origin}/login?error=missing_code`, 307)
+          return redirectTo(`${origin}/login?error=missing_code`)
         }
 
         try {
           const supabase = getSupabaseServerClient()
           const { error } = await supabase.auth.exchangeCodeForSession(code)
           if (error) {
-            return Response.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`, 307)
+            return redirectTo(`${origin}/login?error=${encodeURIComponent(error.message)}`)
           }
 
           const {
@@ -31,14 +38,14 @@ export const Route = createFileRoute('/auth/callback')({
               .eq('id', user.id)
               .single()
             if (!profile?.onboarding_completed_at) {
-              return Response.redirect(`${origin}/onboarding`, 307)
+              return redirectTo(`${origin}/onboarding`)
             }
           }
 
-          return Response.redirect(`${origin}/dashboard`, 307)
+          return redirectTo(`${origin}/dashboard`)
         } catch (err) {
           const message = err instanceof Error ? err.message : 'auth_failed'
-          return Response.redirect(`${origin}/login?error=${encodeURIComponent(message)}`, 307)
+          return redirectTo(`${origin}/login?error=${encodeURIComponent(message)}`)
         }
       },
     },
