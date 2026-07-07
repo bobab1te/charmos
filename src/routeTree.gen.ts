@@ -9,12 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as BrandsRouteImport } from './routes/brands'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppScrapbookRouteImport } from './routes/_app/scrapbook'
+import { Route as AppFinancesRouteImport } from './routes/_app/finances'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppBrandDealsRouteImport } from './routes/_app/brand-deals'
+import { Route as AppAnalyticsRouteImport } from './routes/_app/analytics'
 
-const BrandsRoute = BrandsRouteImport.update({
-  id: '/brands',
-  path: '/brands',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -22,40 +27,109 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppScrapbookRoute = AppScrapbookRouteImport.update({
+  id: '/scrapbook',
+  path: '/scrapbook',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFinancesRoute = AppFinancesRouteImport.update({
+  id: '/finances',
+  path: '/finances',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBrandDealsRoute = AppBrandDealsRouteImport.update({
+  id: '/brand-deals',
+  path: '/brand-deals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/brands': typeof BrandsRoute
+  '/analytics': typeof AppAnalyticsRoute
+  '/brand-deals': typeof AppBrandDealsRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/finances': typeof AppFinancesRoute
+  '/scrapbook': typeof AppScrapbookRoute
+  '/settings': typeof AppSettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/brands': typeof BrandsRoute
+  '/analytics': typeof AppAnalyticsRoute
+  '/brand-deals': typeof AppBrandDealsRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/finances': typeof AppFinancesRoute
+  '/scrapbook': typeof AppScrapbookRoute
+  '/settings': typeof AppSettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/brands': typeof BrandsRoute
+  '/_app': typeof AppRouteWithChildren
+  '/_app/analytics': typeof AppAnalyticsRoute
+  '/_app/brand-deals': typeof AppBrandDealsRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/finances': typeof AppFinancesRoute
+  '/_app/scrapbook': typeof AppScrapbookRoute
+  '/_app/settings': typeof AppSettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/brands'
+  fullPaths:
+    | '/'
+    | '/analytics'
+    | '/brand-deals'
+    | '/dashboard'
+    | '/finances'
+    | '/scrapbook'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/brands'
-  id: '__root__' | '/' | '/brands'
+  to:
+    | '/'
+    | '/analytics'
+    | '/brand-deals'
+    | '/dashboard'
+    | '/finances'
+    | '/scrapbook'
+    | '/settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/_app/analytics'
+    | '/_app/brand-deals'
+    | '/_app/dashboard'
+    | '/_app/finances'
+    | '/_app/scrapbook'
+    | '/_app/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BrandsRoute: typeof BrandsRoute
+  AppRoute: typeof AppRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/brands': {
-      id: '/brands'
-      path: '/brands'
-      fullPath: '/brands'
-      preLoaderRoute: typeof BrandsRouteImport
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -65,12 +139,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/scrapbook': {
+      id: '/_app/scrapbook'
+      path: '/scrapbook'
+      fullPath: '/scrapbook'
+      preLoaderRoute: typeof AppScrapbookRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/finances': {
+      id: '/_app/finances'
+      path: '/finances'
+      fullPath: '/finances'
+      preLoaderRoute: typeof AppFinancesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/brand-deals': {
+      id: '/_app/brand-deals'
+      path: '/brand-deals'
+      fullPath: '/brand-deals'
+      preLoaderRoute: typeof AppBrandDealsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/analytics': {
+      id: '/_app/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AppAnalyticsRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppBrandDealsRoute: typeof AppBrandDealsRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppFinancesRoute: typeof AppFinancesRoute
+  AppScrapbookRoute: typeof AppScrapbookRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAnalyticsRoute: AppAnalyticsRoute,
+  AppBrandDealsRoute: AppBrandDealsRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppFinancesRoute: AppFinancesRoute,
+  AppScrapbookRoute: AppScrapbookRoute,
+  AppSettingsRoute: AppSettingsRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BrandsRoute: BrandsRoute,
+  AppRoute: AppRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -4,7 +4,7 @@ import { WidgetCard } from '#/components/charm/widget-card'
 import { useCharmStore } from '#/lib/charm-store'
 import { monthlyRevenue } from '#/lib/derived'
 
-export function EarningsChart({ onHide }: { onHide: () => void }) {
+export function EarningsChart({ onHide }: { onHide?: () => void } = {}) {
   const { ledger } = useCharmStore()
   const months = monthlyRevenue(ledger, 6)
   const max = Math.max(...months.map((m) => m.total), 1)

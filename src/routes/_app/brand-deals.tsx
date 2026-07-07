@@ -1,14 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Pencil, Trash2, X, Check } from 'lucide-react'
-import { DecorativeShapes } from '#/components/charm/decorative-shapes'
-import { SiteNav } from '#/components/charm/site-nav'
 import { Input } from '#/components/ui/input'
 import { Button } from '#/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
+import { DealPipeline } from '#/components/dashboard/deal-pipeline'
 import { useCharmStore } from '#/lib/charm-store'
 import type { Brand } from '#/lib/types'
 
-export const Route = createFileRoute('/brands')({ component: BrandsPage })
+export const Route = createFileRoute('/_app/brand-deals')({ component: BrandDealsPage })
 
 function BrandCard({ brand, dealCount }: { brand: Brand; dealCount: number }) {
   const { updateBrand, deleteBrand } = useCharmStore()
@@ -99,31 +99,46 @@ function BrandCard({ brand, dealCount }: { brand: Brand; dealCount: number }) {
   )
 }
 
-function BrandsPage() {
+function BrandsGrid() {
   const { brands, deals } = useCharmStore()
   const dealCountByBrand = (brandId: string) => deals.filter((d) => d.brandId === brandId).length
 
+  if (brands.length === 0) {
+    return <p className="text-sm text-[var(--charm-ink-soft)]">No brands yet. Add a deal to create your first one.</p>
+  }
+
   return (
-    <div className="relative min-h-screen">
-      <DecorativeShapes />
-      <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
-        <SiteNav />
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-[var(--charm-ink)]">Brands</h1>
-          <p className="text-sm text-[var(--charm-ink-soft)]">
-            Brands are created automatically when you save a deal — edit contact info or clean up unused ones here.
-          </p>
-        </div>
-        {brands.length === 0 ? (
-          <p className="text-sm text-[var(--charm-ink-soft)]">No brands yet. Add a deal to create your first one.</p>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {brands.map((brand) => (
-              <BrandCard key={brand.id} brand={brand} dealCount={dealCountByBrand(brand.id)} />
-            ))}
-          </div>
-        )}
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {brands.map((brand) => (
+        <BrandCard key={brand.id} brand={brand} dealCount={dealCountByBrand(brand.id)} />
+      ))}
+    </div>
+  )
+}
+
+function BrandDealsPage() {
+  return (
+    <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
+      <div>
+        <h1 className="font-display text-2xl font-semibold text-[var(--charm-ink)]">Brand Deals</h1>
+        <p className="text-sm text-[var(--charm-ink-soft)]">
+          Paste a brand email or DM to auto-fill a deal, or add one manually. Brands are created automatically when
+          you save a deal.
+        </p>
       </div>
+
+      <Tabs defaultValue="pipeline">
+        <TabsList>
+          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+          <TabsTrigger value="brands">Brands</TabsTrigger>
+        </TabsList>
+        <TabsContent value="pipeline" className="mt-4">
+          <DealPipeline />
+        </TabsContent>
+        <TabsContent value="brands" className="mt-4">
+          <BrandsGrid />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

@@ -12,7 +12,7 @@ import { cn } from '#/lib/utils'
 interface WidgetCardProps {
   title: string
   icon?: ReactNode
-  onHide: () => void
+  onHide?: () => void
   className?: string
   children: ReactNode
   headerAction?: ReactNode
@@ -45,20 +45,22 @@ export function WidgetCard({
         </h2>
         <div className="flex items-center gap-1">
           {headerAction}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                aria-label={`${title} widget settings`}
-                className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition hover:bg-white/50 hover:text-[var(--charm-ink)]"
-              >
-                <Settings className="size-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="charm-glass border-0">
-              <DropdownMenuItem onSelect={onHide}>Hide widget</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {onHide && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={`${title} widget settings`}
+                  className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition hover:bg-white/50 hover:text-[var(--charm-ink)]"
+                >
+                  <Settings className="size-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="charm-glass border-0">
+                <DropdownMenuItem onSelect={onHide}>Hide widget</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </header>
       <div className="flex-1">{children}</div>

@@ -157,7 +157,7 @@ function StaticColumn({
   )
 }
 
-export function DealPipeline({ onHide }: { onHide: () => void }) {
+export function DealPipeline({ onHide }: { onHide?: () => void } = {}) {
   const { deals, brandById, moveDeal } = useCharmStore()
   const [activeDeal, setActiveDeal] = useState<BrandDeal | null>(null)
   const [interactive, setInteractive] = useState(false)
