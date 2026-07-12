@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
+import { z } from 'zod'
 import { Pencil, Trash2, X, Check } from 'lucide-react'
 import { Input } from '#/components/ui/input'
 import { Button } from '#/components/ui/button'
@@ -8,7 +9,10 @@ import { DealPipeline } from '#/components/dashboard/deal-pipeline'
 import { useCharmStore } from '#/lib/charm-store'
 import type { Brand } from '#/lib/types'
 
-export const Route = createFileRoute('/_app/brand-deals')({ component: BrandDealsPage })
+export const Route = createFileRoute('/_app/brand-deals')({
+  validateSearch: (search: Record<string, unknown>) => z.object({ filter: z.literal('unpaid').optional() }).parse(search),
+  component: BrandDealsPage,
+})
 
 function BrandCard({ brand, dealCount }: { brand: Brand; dealCount: number }) {
   const { updateBrand, deleteBrand } = useCharmStore()
@@ -117,6 +121,8 @@ function BrandsGrid() {
 }
 
 function BrandDealsPage() {
+  const { filter } = Route.useSearch()
+
   return (
     <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
       <div>
@@ -133,7 +139,7 @@ function BrandDealsPage() {
           <TabsTrigger value="brands">Brands</TabsTrigger>
         </TabsList>
         <TabsContent value="pipeline" className="mt-4">
-          <DealPipeline />
+          <DealPipeline onlyUnpaid={filter === 'unpaid'} />
         </TabsContent>
         <TabsContent value="brands" className="mt-4">
           <BrandsGrid />

@@ -17,6 +17,21 @@ export function urgencyForDate(dueDate: string, now = new Date()): Urgency {
   return 'green'
 }
 
+/**
+ * Whether to show the "Unpaid" alert on a deal's kanban card: only for cash
+ * ("paid") deals not yet marked paid in full, once the content is live or
+ * the deal is completed — AND, if an expected payout date was set, only once
+ * that date has actually arrived or passed. Without an expected date, falls
+ * back to alerting as soon as the deal is live/completed, so the reminder
+ * isn't silently lost for deals with no date entered.
+ */
+export function isDealUnpaidAlert(deal: BrandDeal, now = new Date()): boolean {
+  if (deal.compensationType !== 'paid' || deal.paid) return false
+  if (deal.stage !== 'live' && deal.stage !== 'completed') return false
+  if (deal.expectedPayoutDate) return new Date(deal.expectedPayoutDate) <= now
+  return true
+}
+
 export interface UpcomingDeadline {
   dealId: string
   brandName: string
@@ -48,11 +63,37 @@ export function getUpcomingDeadlines(
     }))
 }
 
+/**
+ * The date a deal's compensation counts toward, accrual-style: once a deal is
+ * no longer just being negotiated, its value counts toward whichever month it
+ * most recently entered its current stage — even before it's actually been
+ * paid out. `paidDate` wins when a deal is explicitly marked paid, so any
+ * future "mark as paid" UI plugs into this automatically. Still-negotiating
+ * deals (nothing committed yet) and deals with no compensation amount are
+ * excluded entirely.
+ */
+export function dealEarnedDate(deal: BrandDeal): Date | undefined {
+  if (!deal.compensationAmount) return undefined
+  if (deal.paid && deal.paidDate) return new Date(deal.paidDate)
+  if (deal.stage === 'negotiating') return undefined
+  return new Date(deal.stageUpdatedAt)
+}
+
+function dealEarningsInMonth(deals: Array<BrandDeal>, now: Date): number {
+  return deals.reduce((sum, deal) => {
+    const earnedDate = dealEarnedDate(deal)
+    if (!earnedDate || !isSameMonth(earnedDate, now)) return sum
+    return sum + deal.compensationAmount
+  }, 0)
+}
+
 export interface DashboardMetrics {
   earningsThisMonth: number
   activeDeals: number
   dueThisWeek: number
+  /** Stale negotiations (7+ days quiet) plus unpaid deals — see unpaidCount for the unpaid-only subset. */
   needsFollowUp: number
+  unpaidCount: number
 }
 
 export function computeMetrics(
@@ -60,9 +101,10 @@ export function computeMetrics(
   ledger: Array<LedgerEntry>,
   now = new Date(),
 ): DashboardMetrics {
-  const earningsThisMonth = ledger
+  const ledgerEarningsThisMonth = ledger
     .filter((entry) => entry.type === 'income' && isSameMonth(new Date(entry.date), now))
     .reduce((sum, entry) => sum + entry.amount, 0)
+  const earningsThisMonth = ledgerEarningsThisMonth + dealEarningsInMonth(deals, now)
 
   const activeDeals = deals.filter((d) => d.stage === 'confirmed' || d.stage === 'live').length
 
@@ -76,27 +118,32 @@ export function computeMetrics(
     return isWithinInterval(due, { start: now, end: weekFromNow })
   }).length
 
-  const needsFollowUp = deals.filter(
+  const staleNegotiations = deals.filter(
     (d) => d.stage === 'negotiating' && differenceInCalendarDays(now, new Date(d.stageUpdatedAt)) > 7,
   ).length
+  const unpaidCount = deals.filter((d) => isDealUnpaidAlert(d, now)).length
+  const needsFollowUp = staleNegotiations + unpaidCount
 
-  return { earningsThisMonth, activeDeals, dueThisWeek, needsFollowUp }
+  return { earningsThisMonth, activeDeals, dueThisWeek, needsFollowUp, unpaidCount }
 }
 
-export function monthlyRevenue(ledger: Array<LedgerEntry>, months = 6, now = new Date()) {
+export function monthlyRevenue(ledger: Array<LedgerEntry>, deals: Array<BrandDeal>, months = 6, now = new Date()) {
   const buckets: Array<{ label: string; total: number; key: string }> = []
   for (let i = months - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
     buckets.push({ label: d.toLocaleDateString('en-US', { month: 'short' }), total: 0, key: `${d.getFullYear()}-${d.getMonth()}` })
   }
   const byKey = new Map(buckets.map((b) => [b.key, b]))
-  ledger
-    .filter((e) => e.type === 'income')
-    .forEach((entry) => {
-      const d = new Date(entry.date)
-      const key = `${d.getFullYear()}-${d.getMonth()}`
-      const bucket = byKey.get(key)
-      if (bucket) bucket.total += entry.amount
-    })
+  const addToBucket = (date: Date, amount: number) => {
+    const bucket = byKey.get(`${date.getFullYear()}-${date.getMonth()}`)
+    if (bucket) bucket.total += amount
+  }
+
+  ledger.filter((e) => e.type === 'income').forEach((entry) => addToBucket(new Date(entry.date), entry.amount))
+  deals.forEach((deal) => {
+    const earnedDate = dealEarnedDate(deal)
+    if (earnedDate) addToBucket(earnedDate, deal.compensationAmount)
+  })
+
   return buckets
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import {
   DndContext,
   DragOverlay,
@@ -11,13 +12,16 @@ import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useDraggable } from '@dnd-kit/core'
 import { format } from 'date-fns'
-import { Briefcase, Plus } from 'lucide-react'
+import { AlertTriangle, Briefcase, Plus } from 'lucide-react'
 import { WidgetCard } from '#/components/charm/widget-card'
 import { Button } from '#/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '#/components/ui/popover'
+import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import { DealModal } from '#/components/deals/deal-modal'
 import { useCharmStore } from '#/lib/charm-store'
-import { nextDeliverable, urgencyForDate } from '#/lib/derived'
+import { isDealUnpaidAlert, nextDeliverable, urgencyForDate } from '#/lib/derived'
 import { cn } from '#/lib/utils'
+import { DEAL_CARD_PALETTE, defaultCardColor, readableTextColor } from '#/lib/deal-card-colors'
 import type { BrandDeal, DealStage } from '#/lib/types'
 
 const COLUMNS: Array<{ id: DealStage; label: string }> = [
@@ -33,31 +37,115 @@ const urgencyDot: Record<string, string> = {
   green: 'bg-[var(--urgency-green)]',
 }
 
+function DealColorPicker({ color, onChange }: { color: string; onChange: (color: string | null) => void }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          aria-label="Change card color"
+          className="size-4 shrink-0 rounded-full border border-black/15 shadow-sm transition hover:scale-110"
+          style={{ background: color }}
+        />
+      </PopoverTrigger>
+      <PopoverContent
+        onPointerDown={(e) => e.stopPropagation()}
+        align="end"
+        className="w-auto p-3"
+      >
+        <div className="flex flex-wrap gap-2">
+          {DEAL_CARD_PALETTE.map((swatch) => (
+            <button
+              key={swatch.id}
+              type="button"
+              aria-label={swatch.label}
+              onClick={() => onChange(swatch.value)}
+              className="size-6 rounded-full border border-black/15 transition hover:scale-110"
+              style={{ background: swatch.value }}
+            />
+          ))}
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <label className="flex items-center gap-2 text-xs text-[var(--charm-ink-soft)]">
+            Custom
+            <input
+              type="color"
+              value={color}
+              onChange={(e) => onChange(e.target.value)}
+              className="size-6 cursor-pointer rounded border border-black/15 bg-transparent p-0"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="text-xs font-medium text-[var(--charm-ink-soft)] underline underline-offset-2 hover:text-[var(--charm-ink)]"
+          >
+            Reset
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 function DealCardInner({
   deal,
   brandName,
   onOpen,
+  onColorChange,
 }: {
   deal: BrandDeal
   brandName: string
   onOpen?: (dealId: string) => void
+  onColorChange?: (color: string | null) => void
 }) {
   const next = nextDeliverable(deal)
+  const color = deal.color ?? defaultCardColor(deal.id)
+  const textColor = readableTextColor(color)
+  const softTextColor = textColor === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(26,18,32,0.65)'
+  const isUnpaid = isDealUnpaidAlert(deal)
+
   return (
     <div
       onClick={onOpen ? () => onOpen(deal.id) : undefined}
       className="charm-glass cursor-grab rounded-xl p-3 active:cursor-grabbing"
+      style={{ background: `color-mix(in oklab, ${color} 82%, var(--surface-strong))`, color: textColor }}
     >
-      <p className="text-sm font-semibold text-[var(--charm-ink)]">{brandName}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-semibold">{brandName}</p>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {isUnpaid && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex items-center gap-0.5 rounded-full bg-[var(--urgency-red)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--urgency-red)]">
+                  <AlertTriangle className="size-3" /> Unpaid
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {deal.expectedPayoutDate
+                  ? `Expected payout of ${format(new Date(deal.expectedPayoutDate), 'MMM d')} has passed and this isn't marked paid in full yet — follow up with the brand?`
+                  : `${deal.stage === 'completed' ? 'Completed' : 'Live'} but not yet marked paid in full — follow up with the brand?`}
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {onColorChange && <DealColorPicker color={color} onChange={onColorChange} />}
+        </div>
+      </div>
       {next ? (
-        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-[var(--charm-ink-soft)]">
-          <span className={cn('size-1.5 rounded-full', urgencyDot[urgencyForDate(next.dueDate)])} />
+        <div className="mt-1.5 flex items-center gap-1.5 text-xs" style={{ color: softTextColor }}>
+          <span
+            className={cn('size-1.5 rounded-full ring-1 ring-black/10', urgencyDot[urgencyForDate(next.dueDate)])}
+          />
           {format(new Date(next.dueDate), 'MMM d')} · {next.type}
         </div>
       ) : (
-        <p className="mt-1.5 text-xs text-[var(--charm-ink-soft)]">No pending deliverables</p>
+        <p className="mt-1.5 text-xs" style={{ color: softTextColor }}>
+          No pending deliverables
+        </p>
       )}
-      <p className="mt-1.5 text-xs font-medium text-[var(--accent)]">
+      <p className="mt-1.5 text-xs font-semibold" style={{ color: textColor }}>
         {new Intl.NumberFormat('en-US', { style: 'currency', currency: deal.compensationCurrency, maximumFractionDigits: 0 }).format(
           deal.compensationAmount,
         )}
@@ -70,10 +158,12 @@ function DraggableDealCard({
   deal,
   brandName,
   onOpen,
+  onColorChange,
 }: {
   deal: BrandDeal
   brandName: string
   onOpen: (dealId: string) => void
+  onColorChange: (dealId: string, color: string | null) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: deal.id,
@@ -90,7 +180,12 @@ function DraggableDealCard({
         opacity: isDragging ? 0.35 : 1,
       }}
     >
-      <DealCardInner deal={deal} brandName={brandName} onOpen={onOpen} />
+      <DealCardInner
+        deal={deal}
+        brandName={brandName}
+        onOpen={onOpen}
+        onColorChange={(color) => onColorChange(deal.id, color)}
+      />
     </div>
   )
 }
@@ -101,12 +196,14 @@ function DroppableColumn({
   deals,
   brandName,
   onOpen,
+  onColorChange,
 }: {
   id: DealStage
   label: string
   deals: Array<BrandDeal>
   brandName: (id: string) => string
   onOpen: (dealId: string) => void
+  onColorChange: (dealId: string, color: string | null) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id })
 
@@ -125,7 +222,13 @@ function DroppableColumn({
         </span>
       </div>
       {deals.map((deal) => (
-        <DraggableDealCard key={deal.id} deal={deal} brandName={brandName(deal.brandId)} onOpen={onOpen} />
+        <DraggableDealCard
+          key={deal.id}
+          deal={deal}
+          brandName={brandName(deal.brandId)}
+          onOpen={onOpen}
+          onColorChange={onColorChange}
+        />
       ))}
     </div>
   )
@@ -157,8 +260,8 @@ function StaticColumn({
   )
 }
 
-export function DealPipeline({ onHide }: { onHide?: () => void } = {}) {
-  const { deals, brandById, moveDeal } = useCharmStore()
+export function DealPipeline({ onHide, onlyUnpaid }: { onHide?: () => void; onlyUnpaid?: boolean } = {}) {
+  const { deals, brandById, moveDeal, updateDealColor } = useCharmStore()
   const [activeDeal, setActiveDeal] = useState<BrandDeal | null>(null)
   const [interactive, setInteractive] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
@@ -187,9 +290,10 @@ export function DealPipeline({ onHide }: { onHide?: () => void } = {}) {
       live: [],
       completed: [],
     }
-    deals.forEach((d) => grouped[d.stage].push(d))
+    const visible = onlyUnpaid ? deals.filter((d) => isDealUnpaidAlert(d)) : deals
+    visible.forEach((d) => grouped[d.stage].push(d))
     return grouped
-  }, [deals])
+  }, [deals, onlyUnpaid])
 
   function handleDragStart(event: DragStartEvent) {
     const deal = deals.find((d) => d.id === event.active.id)
@@ -228,6 +332,14 @@ export function DealPipeline({ onHide }: { onHide?: () => void } = {}) {
         </Button>
       }
     >
+      {onlyUnpaid && (
+        <div className="mb-3 flex items-center justify-between gap-2 rounded-xl bg-[var(--urgency-red)]/10 px-3 py-2 text-xs font-medium text-[var(--urgency-red)]">
+          Showing unpaid deals only
+          <Link to="/brand-deals" className="underline underline-offset-2 hover:opacity-80">
+            Clear filter
+          </Link>
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {COLUMNS.map((col) =>
           interactive ? (
@@ -238,6 +350,7 @@ export function DealPipeline({ onHide }: { onHide?: () => void } = {}) {
               deals={dealsByStage[col.id]}
               brandName={brandName}
               onOpen={openDeal}
+              onColorChange={updateDealColor}
             />
           ) : (
             <StaticColumn

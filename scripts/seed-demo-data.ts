@@ -68,6 +68,8 @@ async function main() {
           null) as unknown as Database['public']['Tables']['deals']['Insert']['content_requirements'],
         paid: deal.paid,
         paid_date: deal.paidDate,
+        compensation_type: deal.compensationType,
+        expected_payout_date: deal.expectedPayoutDate,
         created_at: deal.createdAt,
         stage_updated_at: deal.stageUpdatedAt,
       })

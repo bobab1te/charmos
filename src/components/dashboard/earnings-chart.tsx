@@ -5,8 +5,8 @@ import { useCharmStore } from '#/lib/charm-store'
 import { monthlyRevenue } from '#/lib/derived'
 
 export function EarningsChart({ onHide }: { onHide?: () => void } = {}) {
-  const { ledger } = useCharmStore()
-  const months = monthlyRevenue(ledger, 6)
+  const { ledger, deals } = useCharmStore()
+  const months = monthlyRevenue(ledger, deals, 6)
   const max = Math.max(...months.map((m) => m.total), 1)
   const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 

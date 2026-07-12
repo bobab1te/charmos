@@ -1,5 +1,5 @@
 import type { Database } from './database.types'
-import type { Brand, BrandDeal, ContentRequirements, DealStage, Deliverable, IdeaPost, LedgerEntry, Platform, PostStatus, ShipmentInfo } from '../types'
+import type { Brand, BrandDeal, CompensationType, ContentRequirements, DealStage, Deliverable, IdeaPost, LedgerEntry, Platform, PostStatus, ShipmentInfo } from '../types'
 
 type BrandRow = Database['public']['Tables']['brands']['Row']
 type DealRow = Database['public']['Tables']['deals']['Row']
@@ -31,6 +31,9 @@ export function dealFromRow(row: DealRow): BrandDeal {
     paidDate: row.paid_date ?? undefined,
     createdAt: row.created_at,
     stageUpdatedAt: row.stage_updated_at,
+    color: row.color ?? undefined,
+    compensationType: row.compensation_type as CompensationType,
+    expectedPayoutDate: row.expected_payout_date ?? undefined,
   }
 }
 

@@ -4,6 +4,7 @@ import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { Textarea } from '#/components/ui/textarea'
 import { Button } from '#/components/ui/button'
+import { Switch } from '#/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -12,7 +13,7 @@ import {
   SelectValue,
 } from '#/components/ui/select'
 import { useCharmStore } from '#/lib/charm-store'
-import type { DealFormValues, DealStage } from '#/lib/types'
+import type { CompensationType, DealFormValues, DealStage } from '#/lib/types'
 
 const STAGES: Array<{ value: DealStage; label: string }> = [
   { value: 'negotiating', label: 'Negotiating' },
@@ -22,6 +23,12 @@ const STAGES: Array<{ value: DealStage; label: string }> = [
 ]
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD']
+
+const COMPENSATION_TYPES: Array<{ value: CompensationType; label: string }> = [
+  { value: 'paid', label: 'Paid' },
+  { value: 'gifted', label: 'Gifted' },
+  { value: 'commission', label: 'Commission' },
+]
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -198,6 +205,47 @@ export function DealForm({ values, onChange, onSubmit, submitLabel, onDelete, su
               </SelectContent>
             </Select>
           </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="compensationType">Compensation type</Label>
+            <Select
+              value={values.compensationType}
+              onValueChange={(v) => set('compensationType', v as CompensationType)}
+            >
+              <SelectTrigger id="compensationType">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COMPENSATION_TYPES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {values.compensationType === 'paid' && (
+            <div className="flex flex-col gap-3 rounded-xl bg-white/50 p-3 sm:col-span-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="expectedPayoutDate">Expected payout date</Label>
+                <Input
+                  id="expectedPayoutDate"
+                  type="date"
+                  value={values.expectedPayoutDate}
+                  onChange={(e) => set('expectedPayoutDate', e.target.value)}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="paidInFull">Paid in full</Label>
+                <Switch
+                  id="paidInFull"
+                  checked={values.paidInFull}
+                  onCheckedChange={(checked) => set('paidInFull', checked)}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col gap-1.5 sm:col-span-3">
             <Label htmlFor="usageRights">Usage rights</Label>
             <Input

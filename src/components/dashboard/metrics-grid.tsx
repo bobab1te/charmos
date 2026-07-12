@@ -1,4 +1,5 @@
-import { AlertCircle, CalendarClock, HeartHandshake, Wallet } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { AlertCircle, ArrowRight, CalendarClock, HeartHandshake, Wallet } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import { useCharmStore } from '#/lib/charm-store'
 import { computeMetrics } from '#/lib/derived'
@@ -53,7 +54,17 @@ export function MetricsGrid({ isHidden, hide }: MetricsGridProps) {
       value: String(metrics.needsFollowUp),
       icon: <AlertCircle className="size-4.5" />,
       accentClass: 'bg-[var(--urgency-orange)]',
-      hint: 'Negotiating, quiet for 7+ days',
+      hint: 'Stale negotiations & unpaid deals',
+      action:
+        metrics.unpaidCount > 0 ? (
+          <Link
+            to="/brand-deals"
+            search={{ filter: 'unpaid' }}
+            className="flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
+          >
+            {metrics.unpaidCount} unpaid — view on board <ArrowRight className="size-3" />
+          </Link>
+        ) : undefined,
     },
   ]
 
@@ -72,6 +83,7 @@ export function MetricsGrid({ isHidden, hide }: MetricsGridProps) {
             hint={card.hint}
             accentClass={card.accentClass}
             onHide={() => hide(card.id)}
+            action={card.action}
           />
         ))}
       </AnimatePresence>

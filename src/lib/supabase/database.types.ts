@@ -73,6 +73,9 @@ export interface Database {
           paid_date: string | null
           created_at: string
           stage_updated_at: string
+          color: string | null
+          compensation_type: 'paid' | 'gifted' | 'commission'
+          expected_payout_date: string | null
         }
         Insert: {
           id?: string
@@ -89,6 +92,9 @@ export interface Database {
           paid_date?: string | null
           created_at?: string
           stage_updated_at?: string
+          color?: string | null
+          compensation_type?: 'paid' | 'gifted' | 'commission'
+          expected_payout_date?: string | null
         }
         Update: Partial<Database['public']['Tables']['deals']['Insert']>
         Relationships: []

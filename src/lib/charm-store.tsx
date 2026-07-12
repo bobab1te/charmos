@@ -18,6 +18,8 @@ interface CharmStoreValue {
   ideas: Array<IdeaPost>
   ledger: Array<LedgerEntry>
   moveDeal: (dealId: string, stage: DealStage) => void
+  /** Pass null to clear the override and fall back to the deterministic default color. */
+  updateDealColor: (dealId: string, color: string | null) => void
   assignIdeaDate: (ideaId: string, date: string) => void
   addIdea: (idea: Pick<IdeaPost, 'title'> & Partial<IdeaPost>) => void
   addLedgerEntry: (entry: Omit<LedgerEntry, 'id'>) => void
@@ -146,6 +148,15 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         .update({ stage, stage_updated_at: stageUpdatedAt })
         .eq('id', dealId)
         .then(() => {})
+    },
+    [userId],
+  )
+
+  const updateDealColor = useCallback(
+    (dealId: string, color: string | null) => {
+      setDeals((prev) => prev.map((deal) => (deal.id === dealId ? { ...deal, color: color ?? undefined } : deal)))
+      if (!userId) return
+      getSupabaseBrowserClient().from('deals').update({ color }).eq('id', dealId).then(() => {})
     },
     [userId],
   )
@@ -324,6 +335,10 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         deliverables: (deliverables.length > 0 ? deliverables : (existingDeal?.deliverables ?? [])) as unknown as Json,
         compensation_amount: Number(form.compensationAmount) || 0,
         compensation_currency: form.compensationCurrency.trim() || 'USD',
+        compensation_type: form.compensationType,
+        expected_payout_date: form.expectedPayoutDate ? new Date(form.expectedPayoutDate).toISOString() : null,
+        paid: form.paidInFull,
+        paid_date: form.paidInFull ? (existingDeal?.paid && existingDeal.paidDate ? existingDeal.paidDate : now) : null,
         usage_rights: form.usageRights.trim() || undefined,
         shipment: shipment as unknown as Json,
         content_requirements: contentRequirements as unknown as Json,
@@ -393,6 +408,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       ideas,
       ledger,
       moveDeal,
+      updateDealColor,
       assignIdeaDate,
       addIdea,
       addLedgerEntry,
@@ -409,6 +425,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       ideas,
       ledger,
       moveDeal,
+      updateDealColor,
       assignIdeaDate,
       addIdea,
       addLedgerEntry,

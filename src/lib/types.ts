@@ -35,6 +35,8 @@ export interface ContentRequirements {
   notes?: string
 }
 
+export type CompensationType = 'paid' | 'gifted' | 'commission'
+
 export interface BrandDeal {
   id: string
   brandId: string
@@ -50,6 +52,11 @@ export interface BrandDeal {
   createdAt: string
   /** last time the deal's stage/state changed — drives the ghosted detector */
   stageUpdatedAt: string
+  /** User-chosen kanban card color override; undefined means "use the deterministic default". */
+  color?: string
+  compensationType: CompensationType
+  /** Free-text, user-typed estimate (e.g. "N/A", "net 30", or an actual date) — not parsed as a real date. */
+  expectedPayoutDate?: string
 }
 
 export interface IdeaPost {
@@ -91,6 +98,9 @@ export interface DealFormValues {
   deliverables: Array<DealFormDeliverable>
   compensationAmount: string
   compensationCurrency: string
+  compensationType: CompensationType
+  expectedPayoutDate: string
+  paidInFull: boolean
   usageRights: string
   shipmentCarrier: string
   shipmentTrackingNumber: string
