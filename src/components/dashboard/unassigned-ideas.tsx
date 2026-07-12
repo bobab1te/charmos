@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Lightbulb, Plus } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { ArrowUpRight, Lightbulb, Plus } from 'lucide-react'
 import { WidgetCard } from '#/components/charm/widget-card'
 import { useCharmStore } from '#/lib/charm-store'
 import { cn } from '#/lib/utils'
@@ -14,10 +15,11 @@ export function UnassignedIdeas({ onHide }: { onHide: () => void }) {
   const [adding, setAdding] = useState(false)
   const [draft, setDraft] = useState('')
 
-  const unassigned = ideas
+  const allUnassigned = ideas
     .filter((i) => i.status === 'idea' && !i.scheduledDate)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 3)
+  const unassigned = allUnassigned.slice(0, 3)
+  const remaining = allUnassigned.length - unassigned.length
 
   function commitDraft() {
     const title = draft.trim()
@@ -89,6 +91,17 @@ export function UnassignedIdeas({ onHide }: { onHide: () => void }) {
             ))}
           </AnimatePresence>
         )}
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/40 pt-3">
+        <span className="text-xs text-[var(--charm-ink-soft)]">
+          {remaining > 0 ? `+${remaining} more in the scrapbook` : 'Full scrapbook: calendar, references, series & more'}
+        </span>
+        <Link
+          to="/scrapbook"
+          className="flex shrink-0 items-center gap-1 rounded-full bg-white/50 px-2.5 py-1 text-xs font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:text-[var(--charm-ink)] hover:shadow-sm active:scale-95"
+        >
+          Open scrapbook <ArrowUpRight className="size-3.5" />
+        </Link>
       </div>
     </WidgetCard>
   )

@@ -48,6 +48,7 @@ export function ideaFromRow(row: IdeaRow): IdeaPost {
     scheduledDate: row.scheduled_date,
     referenceLinks: row.reference_links,
     createdAt: row.created_at,
+    series: row.series ?? undefined,
   }
 }
 

@@ -65,12 +65,15 @@ export interface IdeaPost {
   id: string
   title: string
   hook?: string
+  /** Freeform notes for the idea, shown as "Notes" in the detail view. */
   description?: string
   platforms: Array<Platform>
   status: PostStatus
   scheduledDate: string | null
   referenceLinks: Array<string>
   createdAt: string
+  /** Shared tag grouping this idea with others in the same content series; undefined means "not part of a series". */
+  series?: string
 }
 
 export type LedgerEntryType = 'income' | 'expense'

@@ -4,7 +4,7 @@ import { getSupabaseBrowserClient, isSupabaseConfigured } from './supabase/brows
 import { brandFromRow, dealFromRow, ideaFromRow, ledgerFromRow } from './supabase/mappers'
 import { splitList } from './deal-form-utils'
 import type { Brand, BrandDeal, DealFormValues, DealStage, IdeaPost, LedgerEntry } from './types'
-import type { Json } from './supabase/database.types'
+import type { Database, Json } from './supabase/database.types'
 
 /**
  * Supabase-backed data layer: an initial per-table fetch scoped to the signed
@@ -21,7 +21,14 @@ interface CharmStoreValue {
   /** Pass null to clear the override and fall back to the deterministic default color. */
   updateDealColor: (dealId: string, color: string | null) => void
   assignIdeaDate: (ideaId: string, date: string) => void
+  /** Clears scheduledDate and reverts status back to 'idea' if it hadn't progressed past 'scheduled'. */
+  unassignIdeaDate: (ideaId: string) => void
   addIdea: (idea: Pick<IdeaPost, 'title'> & Partial<IdeaPost>) => void
+  updateIdea: (
+    ideaId: string,
+    updates: Partial<Pick<IdeaPost, 'title' | 'hook' | 'description' | 'referenceLinks' | 'series' | 'platforms'>>,
+  ) => void
+  deleteIdea: (ideaId: string) => void
   addLedgerEntry: (entry: Omit<LedgerEntry, 'id'>) => void
   brandById: (id: string) => Brand | undefined
   dealById: (id: string) => BrandDeal | undefined
@@ -194,6 +201,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         scheduledDate: idea.scheduledDate ?? null,
         referenceLinks: idea.referenceLinks ?? [],
         createdAt: new Date().toISOString(),
+        series: idea.series,
       }
       setIdeas((prev) => [newIdea, ...prev])
 
@@ -209,6 +217,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
           status: newIdea.status,
           scheduled_date: newIdea.scheduledDate,
           reference_links: newIdea.referenceLinks,
+          series: newIdea.series,
         })
         .select('*')
         .single()
@@ -217,6 +226,54 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
           const real = ideaFromRow(data)
           setIdeas((prev) => prev.map((i) => (i.id === tempId ? real : i)))
         })
+    },
+    [userId],
+  )
+
+  const unassignIdeaDate = useCallback(
+    (ideaId: string) => {
+      let nextStatus: IdeaPost['status'] | undefined
+      setIdeas((prev) =>
+        prev.map((idea) => {
+          if (idea.id !== ideaId) return idea
+          nextStatus = idea.status === 'scheduled' ? 'idea' : idea.status
+          return { ...idea, scheduledDate: null, status: nextStatus }
+        }),
+      )
+      if (!userId) return
+      getSupabaseBrowserClient()
+        .from('ideas')
+        .update({ scheduled_date: null, status: nextStatus })
+        .eq('id', ideaId)
+        .then(() => {})
+    },
+    [userId],
+  )
+
+  const updateIdea = useCallback(
+    (
+      ideaId: string,
+      updates: Partial<Pick<IdeaPost, 'title' | 'hook' | 'description' | 'referenceLinks' | 'series' | 'platforms'>>,
+    ) => {
+      setIdeas((prev) => prev.map((idea) => (idea.id === ideaId ? { ...idea, ...updates } : idea)))
+      if (!userId) return
+      const dbUpdates: Database['public']['Tables']['ideas']['Update'] = {}
+      if (updates.title !== undefined) dbUpdates.title = updates.title
+      if (updates.hook !== undefined) dbUpdates.hook = updates.hook ?? null
+      if (updates.description !== undefined) dbUpdates.description = updates.description ?? null
+      if (updates.referenceLinks !== undefined) dbUpdates.reference_links = updates.referenceLinks
+      if (updates.series !== undefined) dbUpdates.series = updates.series ?? null
+      if (updates.platforms !== undefined) dbUpdates.platforms = updates.platforms
+      getSupabaseBrowserClient().from('ideas').update(dbUpdates).eq('id', ideaId).then(() => {})
+    },
+    [userId],
+  )
+
+  const deleteIdea = useCallback(
+    (ideaId: string) => {
+      setIdeas((prev) => prev.filter((idea) => idea.id !== ideaId))
+      if (!userId) return
+      getSupabaseBrowserClient().from('ideas').delete().eq('id', ideaId).then(() => {})
     },
     [userId],
   )
@@ -411,7 +468,10 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       moveDeal,
       updateDealColor,
       assignIdeaDate,
+      unassignIdeaDate,
       addIdea,
+      updateIdea,
+      deleteIdea,
       addLedgerEntry,
       brandById,
       dealById,
@@ -428,7 +488,10 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       moveDeal,
       updateDealColor,
       assignIdeaDate,
+      unassignIdeaDate,
       addIdea,
+      updateIdea,
+      deleteIdea,
       addLedgerEntry,
       brandById,
       dealById,

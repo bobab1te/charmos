@@ -111,6 +111,7 @@ export interface Database {
           scheduled_date: string | null
           reference_links: string[]
           created_at: string
+          series: string | null
         }
         Insert: {
           id?: string
@@ -123,6 +124,7 @@ export interface Database {
           scheduled_date?: string | null
           reference_links?: Array<string>
           created_at?: string
+          series?: string | null
         }
         Update: Partial<Database['public']['Tables']['ideas']['Insert']>
         Relationships: []
