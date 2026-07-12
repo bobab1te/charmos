@@ -24,7 +24,7 @@ function Dashboard() {
       <div className="flex items-center justify-end">
         <Link
           to="/settings"
-          className="charm-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-[var(--charm-ink-soft)] transition hover:text-[var(--charm-ink)]"
+          className="charm-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:text-[var(--charm-ink)] hover:shadow-md active:scale-95"
         >
           <SlidersHorizontal className="size-3.5" />
           Customize

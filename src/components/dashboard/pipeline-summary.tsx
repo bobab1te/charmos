@@ -24,7 +24,7 @@ export function PipelineSummary({ onHide }: { onHide: () => void }) {
       headerAction={
         <Link
           to="/brand-deals"
-          className="flex items-center gap-1 rounded-full bg-white/50 px-2.5 py-1 text-xs font-medium text-[var(--charm-ink-soft)] transition hover:text-[var(--charm-ink)]"
+          className="flex items-center gap-1 rounded-full bg-white/50 px-2.5 py-1 text-xs font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:text-[var(--charm-ink)] hover:shadow-sm active:scale-95"
         >
           Full board <ArrowUpRight className="size-3.5" />
         </Link>

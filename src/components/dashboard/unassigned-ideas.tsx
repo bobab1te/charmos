@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { KeyboardEvent } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import { Lightbulb, Plus } from 'lucide-react'
 import { WidgetCard } from '#/components/charm/widget-card'
 import { useCharmStore } from '#/lib/charm-store'
@@ -42,7 +43,7 @@ export function UnassignedIdeas({ onHide }: { onHide: () => void }) {
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-xs font-semibold text-[var(--accent-foreground)] transition hover:opacity-90"
+          className="flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-xs font-semibold text-[var(--accent-foreground)] transition duration-150 ease-out hover:opacity-90 hover:shadow-md active:scale-95"
         >
           <Plus className="size-3.5" /> Add idea
         </button>
@@ -67,19 +68,26 @@ export function UnassignedIdeas({ onHide }: { onHide: () => void }) {
             No raw concepts waiting. Add one before it slips away.
           </p>
         ) : (
-          unassigned.map((idea, i) => (
-            <div
-              key={idea.id}
-              className={cn(
-                'w-full max-w-[220px] rounded-xl p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md',
-                NOTE_TILTS[i % NOTE_TILTS.length],
-                NOTE_COLORS[i % NOTE_COLORS.length],
-              )}
-            >
-              <p className="text-sm font-medium text-[var(--charm-ink)]">{idea.title}</p>
-              {idea.hook && <p className="mt-1 line-clamp-2 text-xs text-[var(--charm-ink)]/70">{idea.hook}</p>}
-            </div>
-          ))
+          <AnimatePresence initial={false}>
+            {unassigned.map((idea, i) => (
+              <motion.div
+                key={idea.id}
+                layout
+                initial={{ opacity: 0, scale: 0.85, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                className={cn(
+                  'w-full max-w-[220px] rounded-xl p-3 shadow-sm transition-shadow duration-150 ease-out hover:shadow-md',
+                  NOTE_TILTS[i % NOTE_TILTS.length],
+                  NOTE_COLORS[i % NOTE_COLORS.length],
+                )}
+              >
+                <p className="text-sm font-medium text-[var(--charm-ink)]">{idea.title}</p>
+                {idea.hook && <p className="mt-1 line-clamp-2 text-xs text-[var(--charm-ink)]/70">{idea.hook}</p>}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         )}
       </div>
     </WidgetCard>

@@ -150,7 +150,7 @@ function OnboardingPage() {
                   type="button"
                   onClick={() => togglePlatform(p.value)}
                   className={cn(
-                    'rounded-full border px-4 py-2 text-sm font-medium transition',
+                    'rounded-full border px-4 py-2 text-sm font-medium transition duration-150 ease-out active:scale-95',
                     platforms.includes(p.value)
                       ? 'border-transparent bg-[var(--accent)] text-[var(--accent-foreground)]'
                       : 'border-[var(--charm-ink-soft)]/30 text-[var(--charm-ink-soft)] hover:bg-white/50',
@@ -176,7 +176,7 @@ function OnboardingPage() {
                   type="button"
                   onClick={() => setAudienceTier(tier.value)}
                   className={cn(
-                    'rounded-xl border px-3 py-2.5 text-left transition',
+                    'rounded-xl border px-3 py-2.5 text-left transition duration-150 ease-out active:scale-[0.97]',
                     audienceTier === tier.value
                       ? 'border-transparent bg-[var(--accent)] text-[var(--accent-foreground)]'
                       : 'border-[var(--charm-ink-soft)]/30 hover:bg-white/50',

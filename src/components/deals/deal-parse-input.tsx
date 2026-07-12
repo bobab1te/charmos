@@ -95,7 +95,7 @@ export function DealParseInput({
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
         className={cn(
-          'flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-input bg-transparent px-4 py-6 text-center transition-colors dark:bg-input/30',
+          'flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-input bg-transparent px-4 py-6 text-center transition-colors duration-150 ease-out hover:border-ring/60 hover:bg-accent/5 dark:bg-input/30',
           isDragOver && 'border-ring bg-accent/10',
         )}
       >
@@ -134,7 +134,7 @@ export function DealParseInput({
                   type="button"
                   onClick={() => removeAsset(asset.id)}
                   aria-label={`Remove ${asset.file.name}`}
-                  className="ml-0.5 flex size-4 items-center justify-center rounded-full text-[var(--urgency-red)] hover:bg-[var(--urgency-red)]/10"
+                  className="ml-0.5 flex size-4 items-center justify-center rounded-full text-[var(--urgency-red)] transition duration-150 ease-out hover:bg-[var(--urgency-red)]/10 active:scale-90"
                 >
                   <X className="size-3.5" />
                 </button>

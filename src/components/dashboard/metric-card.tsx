@@ -27,7 +27,7 @@ export function MetricCard({ label, value, icon, hint, accentClass, onHide, acti
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8, scale: 0.98 }}
       transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-      className="charm-glass relative flex flex-col gap-3 rounded-2xl p-5"
+      className="charm-glass relative flex flex-col gap-3 rounded-2xl p-5 transition-shadow duration-150 ease-out hover:shadow-lg"
     >
       <div className="flex items-start justify-between">
         <div
@@ -43,7 +43,7 @@ export function MetricCard({ label, value, icon, hint, accentClass, onHide, acti
             <button
               type="button"
               aria-label={`${label} widget settings`}
-              className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition hover:bg-white/50 hover:text-[var(--charm-ink)]"
+              className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
             >
               <Settings className="size-4" />
             </button>

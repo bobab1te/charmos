@@ -34,7 +34,7 @@ export function WidgetCard({
       exit={{ opacity: 0, y: -8, scale: 0.98 }}
       transition={{ type: 'spring', stiffness: 260, damping: 26 }}
       className={cn(
-        'charm-glass relative flex flex-col rounded-2xl p-5',
+        'charm-glass relative flex flex-col rounded-2xl p-5 transition-shadow duration-150 ease-out hover:shadow-lg',
         className,
       )}
     >
@@ -51,7 +51,7 @@ export function WidgetCard({
                 <button
                   type="button"
                   aria-label={`${title} widget settings`}
-                  className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition hover:bg-white/50 hover:text-[var(--charm-ink)]"
+                  className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
                 >
                   <Settings className="size-4" />
                 </button>

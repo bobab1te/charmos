@@ -62,7 +62,7 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
             type="button"
             onClick={toggle}
             aria-label="Collapse sidebar"
-            className="shrink-0 rounded-full p-1.5 text-[var(--charm-ink-soft)] transition hover:bg-white/50 hover:text-[var(--charm-ink)]"
+            className="shrink-0 rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
           >
             <ChevronsLeft className="size-4" />
           </button>
@@ -74,7 +74,7 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
           type="button"
           onClick={toggle}
           aria-label="Expand sidebar"
-          className="mb-3 flex items-center justify-center self-center rounded-full p-1.5 text-[var(--charm-ink-soft)] transition hover:bg-white/50 hover:text-[var(--charm-ink)]"
+          className="mb-3 flex items-center justify-center self-center rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
         >
           <ChevronsRight className="size-4" />
         </button>
@@ -88,7 +88,7 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
               to={link.to}
               activeOptions={{ exact: true }}
               className={cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--charm-ink-soft)] transition hover:bg-white/50 hover:text-[var(--charm-ink)]',
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-[0.98]',
                 'data-[status=active]:bg-[var(--accent)] data-[status=active]:text-[var(--accent-foreground)]',
                 collapsed && 'justify-center px-0',
               )}
@@ -126,7 +126,7 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
               type="button"
               onClick={handleSignOut}
               aria-label="Log out"
-              className="shrink-0 rounded-full p-1.5 text-[var(--charm-ink-soft)] transition hover:bg-white/50 hover:text-[var(--charm-ink)]"
+              className="shrink-0 rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
             >
               <LogOut className="size-4" />
             </button>

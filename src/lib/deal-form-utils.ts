@@ -22,6 +22,7 @@ export function emptyDealForm(): DealFormValues {
     accountsToTag: '',
     clipsToUse: '',
     contentNotes: '',
+    referenceLinks: [''],
   }
 }
 
@@ -53,6 +54,10 @@ export function dealToFormValues(deal: BrandDeal, brand: Brand): DealFormValues 
     accountsToTag: (deal.contentRequirements?.accountsToTag ?? []).join(', '),
     clipsToUse: (deal.contentRequirements?.clipsToUse ?? []).join(', '),
     contentNotes: deal.contentRequirements?.notes ?? '',
+    referenceLinks:
+      deal.contentRequirements?.referenceLinks && deal.contentRequirements.referenceLinks.length > 0
+        ? deal.contentRequirements.referenceLinks
+        : [''],
   }
 }
 

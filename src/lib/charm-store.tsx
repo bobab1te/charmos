@@ -324,6 +324,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         accountsToTag: splitList(form.accountsToTag),
         clipsToUse: splitList(form.clipsToUse),
         notes: form.contentNotes.trim() || undefined,
+        referenceLinks: form.referenceLinks.map((link) => link.trim()).filter(Boolean),
       }
 
       const existingDeal = existingDealId ? deals.find((d) => d.id === existingDealId) : undefined

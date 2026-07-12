@@ -24,7 +24,7 @@ export function UpcomingDeadlines({ onHide }: { onHide: () => void }) {
           {deadlines.map((d) => (
             <li
               key={d.dealId}
-              className="flex items-center justify-between gap-3 rounded-xl px-2 py-2.5 transition hover:bg-white/40"
+              className="flex items-center justify-between gap-3 rounded-xl px-2 py-2.5 transition-colors duration-150 ease-out hover:bg-white/40"
             >
               <div className="flex min-w-0 items-center gap-2.5">
                 <span className={cn('size-2 shrink-0 rounded-full', urgencyDot[d.urgency])} aria-hidden="true" />

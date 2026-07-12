@@ -46,7 +46,7 @@ function DealColorPicker({ color, onChange }: { color: string; onChange: (color:
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           aria-label="Change card color"
-          className="size-4 shrink-0 rounded-full border border-black/15 shadow-sm transition hover:scale-110"
+          className="size-4 shrink-0 rounded-full border border-black/15 shadow-sm transition duration-150 ease-out hover:scale-110 active:scale-95"
           style={{ background: color }}
         />
       </PopoverTrigger>
@@ -62,7 +62,7 @@ function DealColorPicker({ color, onChange }: { color: string; onChange: (color:
               type="button"
               aria-label={swatch.label}
               onClick={() => onChange(swatch.value)}
-              className="size-6 rounded-full border border-black/15 transition hover:scale-110"
+              className="size-6 rounded-full border border-black/15 transition duration-150 ease-out hover:scale-110 active:scale-95"
               style={{ background: swatch.value }}
             />
           ))}
@@ -110,7 +110,7 @@ function DealCardInner({
   return (
     <div
       onClick={onOpen ? () => onOpen(deal.id) : undefined}
-      className="charm-glass cursor-grab rounded-xl p-3 active:cursor-grabbing"
+      className="charm-glass cursor-grab rounded-xl p-3 transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] active:cursor-grabbing"
       style={{ background: `color-mix(in oklab, ${color} 82%, var(--surface-strong))`, color: textColor }}
     >
       <div className="flex items-start justify-between gap-2">

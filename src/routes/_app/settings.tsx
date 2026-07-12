@@ -100,7 +100,7 @@ function SettingsPage() {
                 type="button"
                 onClick={() => togglePlatform(p.value)}
                 className={cn(
-                  'rounded-full border px-3.5 py-1.5 text-sm font-medium transition',
+                  'rounded-full border px-3.5 py-1.5 text-sm font-medium transition duration-150 ease-out active:scale-95',
                   platforms.includes(p.value)
                     ? 'border-transparent bg-[var(--accent)] text-[var(--accent-foreground)]'
                     : 'border-[var(--charm-ink-soft)]/30 text-[var(--charm-ink-soft)] hover:bg-white/50',
@@ -209,7 +209,7 @@ function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => show(id)}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm text-[var(--charm-ink)] transition hover:bg-white/50"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm text-[var(--charm-ink)] transition duration-150 ease-out hover:bg-white/50 active:scale-[0.99]"
                 >
                   {WIDGET_LABELS[id] ?? id}
                   <span className="flex items-center gap-1 text-xs text-[var(--charm-ink-soft)]">

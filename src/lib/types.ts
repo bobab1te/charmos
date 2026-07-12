@@ -33,6 +33,8 @@ export interface ContentRequirements {
   accountsToTag: Array<string>
   clipsToUse: Array<string>
   notes?: string
+  /** Links to reference videos (e.g. past brand content, style examples) the brand shared. */
+  referenceLinks?: Array<string>
 }
 
 export type CompensationType = 'paid' | 'gifted' | 'commission'
@@ -110,4 +112,5 @@ export interface DealFormValues {
   accountsToTag: string
   clipsToUse: string
   contentNotes: string
+  referenceLinks: Array<string>
 }

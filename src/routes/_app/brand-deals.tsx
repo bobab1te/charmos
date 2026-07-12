@@ -69,7 +69,7 @@ function BrandCard({ brand, dealCount }: { brand: Brand; dealCount: number }) {
   }
 
   return (
-    <div className="charm-glass flex flex-col gap-2 rounded-2xl p-4">
+    <div className="charm-glass flex flex-col gap-2 rounded-2xl p-4 transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="font-display text-base font-semibold text-[var(--charm-ink)]">{brand.name}</p>
