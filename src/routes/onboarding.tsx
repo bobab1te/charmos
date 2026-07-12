@@ -9,6 +9,7 @@ import { ThemeToggle } from '#/components/charm/theme-toggle'
 import { getCurrentUserAndProfile } from '#/server/auth'
 import { updateMyProfile } from '#/server/profile'
 import { cn } from '#/lib/utils'
+import { SUPPORTED_CURRENCIES } from '#/lib/currencies'
 
 export const Route = createFileRoute('/onboarding')({
   beforeLoad: async () => {
@@ -38,8 +39,6 @@ const AUDIENCE_TIERS: Array<{ value: AudienceTier; label: string; hint: string }
 ]
 
 const NICHES = ['Beauty', 'Fashion', 'Tech', 'Fitness', 'Food', 'Lifestyle', 'Travel', 'Gaming', 'Finance', 'Parenting']
-
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD']
 
 const STEPS = ['name', 'theme', 'platforms', 'audience', 'money'] as const
 
@@ -229,7 +228,7 @@ function OnboardingPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CURRENCIES.map((c) => (
+                  {SUPPORTED_CURRENCIES.map((c) => (
                     <SelectItem key={c} value={c}>
                       {c}
                     </SelectItem>

@@ -10,6 +10,7 @@ import { useWidgetVisibility } from '#/lib/use-widget-visibility'
 import { WIDGET_LABELS } from '#/lib/widget-ids'
 import { updateMyProfile } from '#/server/profile'
 import { cn } from '#/lib/utils'
+import { SUPPORTED_CURRENCIES } from '#/lib/currencies'
 
 export const Route = createFileRoute('/_app/settings')({ component: SettingsPage })
 
@@ -30,7 +31,6 @@ const AUDIENCE_TIERS: Array<{ value: AudienceTier; label: string }> = [
 ]
 
 const NICHES = ['Beauty', 'Fashion', 'Tech', 'Fitness', 'Food', 'Lifestyle', 'Travel', 'Gaming', 'Finance', 'Parenting']
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD']
 
 function SettingsPage() {
   const { profile } = Route.useRouteContext()
@@ -157,7 +157,7 @@ function SettingsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {CURRENCIES.map((c) => (
+                {SUPPORTED_CURRENCIES.map((c) => (
                   <SelectItem key={c} value={c}>
                     {c}
                   </SelectItem>

@@ -4,6 +4,7 @@ import { DecorativeShapes } from '#/components/charm/decorative-shapes'
 import { SidebarNav } from '#/components/charm/sidebar-nav'
 import { getCurrentUserAndProfile } from '#/server/auth'
 import { useThemeContext } from '#/lib/theme-context'
+import { CurrencyProvider } from '#/lib/currency-context'
 
 export const Route = createFileRoute('/_app')({
   beforeLoad: async () => {
@@ -29,12 +30,14 @@ function AppLayout() {
   }, [profile.theme, setTheme])
 
   return (
-    <div className="flex min-h-screen">
-      <SidebarNav profile={profile} avatarUrl={user.avatarUrl} />
-      <div className="relative min-h-screen flex-1 overflow-x-hidden">
-        <DecorativeShapes />
-        <Outlet />
+    <CurrencyProvider displayCurrency={profile.currency ?? 'USD'}>
+      <div className="flex min-h-screen">
+        <SidebarNav profile={profile} avatarUrl={user.avatarUrl} />
+        <div className="relative min-h-screen flex-1 overflow-x-hidden">
+          <DecorativeShapes />
+          <Outlet />
+        </div>
       </div>
-    </div>
+    </CurrencyProvider>
   )
 }

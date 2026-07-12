@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { AlertCircle, ArrowRight, CalendarClock, HeartHandshake, Wallet } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import { useCharmStore } from '#/lib/charm-store'
+import { useCurrency } from '#/lib/currency-context'
 import { computeMetrics } from '#/lib/derived'
 import { MetricCard } from './metric-card'
 
@@ -19,9 +20,14 @@ interface MetricsGridProps {
 
 export function MetricsGrid({ isHidden, hide }: MetricsGridProps) {
   const { deals, ledger } = useCharmStore()
-  const metrics = computeMetrics(deals, ledger)
+  const { displayCurrency, convert } = useCurrency()
+  const metrics = computeMetrics(deals, ledger, convert)
 
-  const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+  const currency = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: displayCurrency,
+    maximumFractionDigits: 0,
+  })
 
   const cards = [
     {

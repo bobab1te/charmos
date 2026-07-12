@@ -2,12 +2,19 @@ import { createFileRoute } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { EarningsChart } from '#/components/dashboard/earnings-chart'
 import { useCharmStore } from '#/lib/charm-store'
+import { useCurrency } from '#/lib/currency-context'
 
 export const Route = createFileRoute('/_app/finances')({ component: FinancesPage })
 
+function formatMoney(amount: number, currencyCode: string) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: currencyCode, maximumFractionDigits: 0 }).format(
+    amount,
+  )
+}
+
 function FinancesPage() {
   const { ledger, brandById } = useCharmStore()
-  const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+  const { displayCurrency, convert } = useCurrency()
   const sorted = [...ledger].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   return (
@@ -34,15 +41,22 @@ function FinancesPage() {
                     {entry.brandId && ` · ${brandById(entry.brandId)?.name ?? 'Unknown brand'}`}
                   </p>
                 </div>
-                <span
-                  className={
-                    'shrink-0 text-sm font-semibold ' +
-                    (entry.type === 'income' ? 'text-[var(--urgency-green)]' : 'text-[var(--urgency-red)]')
-                  }
-                >
-                  {entry.type === 'income' ? '+' : '-'}
-                  {currency.format(Math.abs(entry.amount))}
-                </span>
+                <div className="shrink-0 text-right">
+                  <span
+                    className={
+                      'text-sm font-semibold ' +
+                      (entry.type === 'income' ? 'text-[var(--urgency-green)]' : 'text-[var(--urgency-red)]')
+                    }
+                  >
+                    {entry.type === 'income' ? '+' : '-'}
+                    {formatMoney(Math.abs(entry.amount), entry.currency)}
+                  </span>
+                  {entry.currency !== displayCurrency && (
+                    <p className="text-xs text-[var(--charm-ink-soft)]">
+                      ≈ {formatMoney(Math.abs(convert(entry.amount, entry.currency)), displayCurrency)}
+                    </p>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

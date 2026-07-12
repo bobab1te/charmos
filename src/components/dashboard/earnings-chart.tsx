@@ -2,13 +2,19 @@ import { motion } from 'motion/react'
 import { BarChart3 } from 'lucide-react'
 import { WidgetCard } from '#/components/charm/widget-card'
 import { useCharmStore } from '#/lib/charm-store'
+import { useCurrency } from '#/lib/currency-context'
 import { monthlyRevenue } from '#/lib/derived'
 
 export function EarningsChart({ onHide }: { onHide?: () => void } = {}) {
   const { ledger, deals } = useCharmStore()
-  const months = monthlyRevenue(ledger, deals, 6)
+  const { displayCurrency, convert } = useCurrency()
+  const months = monthlyRevenue(ledger, deals, convert, 6)
   const max = Math.max(...months.map((m) => m.total), 1)
-  const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+  const currency = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: displayCurrency,
+    maximumFractionDigits: 0,
+  })
 
   return (
     <WidgetCard title="Monthly Earnings" icon={<BarChart3 className="size-4" />} onHide={onHide}>

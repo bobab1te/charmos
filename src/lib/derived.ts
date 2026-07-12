@@ -1,6 +1,9 @@
 import { differenceInCalendarDays, isSameMonth, isWithinInterval } from 'date-fns'
 import type { Brand, BrandDeal, LedgerEntry } from './types'
 
+/** Converts an amount from its own currency into the creator's display currency — see CurrencyProvider. */
+export type ConvertFn = (amount: number, fromCurrency: string) => number
+
 export function nextDeliverable(deal: BrandDeal) {
   const pending = deal.deliverables
     .filter((d) => !d.done)
@@ -104,11 +107,11 @@ export function dealEarnedDate(deal: BrandDeal): Date | undefined {
   return new Date(deal.stageUpdatedAt)
 }
 
-function dealEarningsInMonth(deals: Array<BrandDeal>, now: Date): number {
+function dealEarningsInMonth(deals: Array<BrandDeal>, convert: ConvertFn, now: Date): number {
   return deals.reduce((sum, deal) => {
     const earnedDate = dealEarnedDate(deal)
     if (!earnedDate || !isSameMonth(earnedDate, now)) return sum
-    return sum + deal.compensationAmount
+    return sum + convert(deal.compensationAmount, deal.compensationCurrency)
   }, 0)
 }
 
@@ -124,12 +127,13 @@ export interface DashboardMetrics {
 export function computeMetrics(
   deals: Array<BrandDeal>,
   ledger: Array<LedgerEntry>,
+  convert: ConvertFn,
   now = new Date(),
 ): DashboardMetrics {
   const ledgerEarningsThisMonth = ledger
     .filter((entry) => entry.type === 'income' && isSameMonth(new Date(entry.date), now))
-    .reduce((sum, entry) => sum + entry.amount, 0)
-  const earningsThisMonth = ledgerEarningsThisMonth + dealEarningsInMonth(deals, now)
+    .reduce((sum, entry) => sum + convert(entry.amount, entry.currency), 0)
+  const earningsThisMonth = ledgerEarningsThisMonth + dealEarningsInMonth(deals, convert, now)
 
   const activeDeals = deals.filter((d) => !d.archived && (d.stage === 'confirmed' || d.stage === 'live')).length
 
@@ -151,7 +155,13 @@ export function computeMetrics(
   return { earningsThisMonth, activeDeals, dueThisWeek, needsFollowUp, unpaidCount }
 }
 
-export function monthlyRevenue(ledger: Array<LedgerEntry>, deals: Array<BrandDeal>, months = 6, now = new Date()) {
+export function monthlyRevenue(
+  ledger: Array<LedgerEntry>,
+  deals: Array<BrandDeal>,
+  convert: ConvertFn,
+  months = 6,
+  now = new Date(),
+) {
   const buckets: Array<{ label: string; total: number; key: string }> = []
   for (let i = months - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
@@ -163,10 +173,12 @@ export function monthlyRevenue(ledger: Array<LedgerEntry>, deals: Array<BrandDea
     if (bucket) bucket.total += amount
   }
 
-  ledger.filter((e) => e.type === 'income').forEach((entry) => addToBucket(new Date(entry.date), entry.amount))
+  ledger
+    .filter((e) => e.type === 'income')
+    .forEach((entry) => addToBucket(new Date(entry.date), convert(entry.amount, entry.currency)))
   deals.forEach((deal) => {
     const earnedDate = dealEarnedDate(deal)
-    if (earnedDate) addToBucket(earnedDate, deal.compensationAmount)
+    if (earnedDate) addToBucket(earnedDate, convert(deal.compensationAmount, deal.compensationCurrency))
   })
 
   return buckets

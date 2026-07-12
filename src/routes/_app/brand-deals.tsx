@@ -7,6 +7,7 @@ import { Button } from '#/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { DealPipeline } from '#/components/dashboard/deal-pipeline'
 import { useCharmStore } from '#/lib/charm-store'
+import { useCurrency } from '#/lib/currency-context'
 import type { Brand, BrandDeal } from '#/lib/types'
 
 export const Route = createFileRoute('/_app/brand-deals')({
@@ -122,12 +123,14 @@ function BrandsGrid() {
 
 function ArchivedDealCard({ deal, brandName }: { deal: BrandDeal; brandName: string }) {
   const { unarchiveDeal, deleteDeal } = useCharmStore()
+  const { displayCurrency, convert } = useCurrency()
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const currency = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: deal.compensationCurrency,
     maximumFractionDigits: 0,
   })
+  const showsConverted = deal.compensationCurrency !== displayCurrency
 
   if (confirmingDelete) {
     return (
@@ -160,6 +163,8 @@ function ArchivedDealCard({ deal, brandName }: { deal: BrandDeal; brandName: str
         </div>
         <span className="shrink-0 rounded-full bg-white/50 px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
           {currency.format(deal.compensationAmount)}
+          {showsConverted &&
+            ` (≈ ${new Intl.NumberFormat('en-US', { style: 'currency', currency: displayCurrency, maximumFractionDigits: 0 }).format(convert(deal.compensationAmount, deal.compensationCurrency))})`}
         </span>
       </div>
       <div className="flex justify-end gap-1 pt-1">

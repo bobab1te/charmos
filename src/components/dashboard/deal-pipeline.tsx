@@ -19,6 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '#/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import { DealModal } from '#/components/deals/deal-modal'
 import { useCharmStore } from '#/lib/charm-store'
+import { useCurrency } from '#/lib/currency-context'
 import { isDealUnpaidAlert, nextDeliverable, urgencyForDate } from '#/lib/derived'
 import { cn } from '#/lib/utils'
 import { DEAL_CARD_PALETTE, defaultCardColor, readableTextColor } from '#/lib/deal-card-colors'
@@ -106,6 +107,8 @@ function DealCardInner({
   const textColor = readableTextColor(color)
   const softTextColor = textColor === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(26,18,32,0.65)'
   const isUnpaid = isDealUnpaidAlert(deal)
+  const { displayCurrency, convert } = useCurrency()
+  const showsConverted = deal.compensationCurrency !== displayCurrency
 
   return (
     <div
@@ -146,8 +149,21 @@ function DealCardInner({
         </p>
       )}
       <p className="mt-1.5 text-xs font-semibold" style={{ color: textColor }}>
-        {new Intl.NumberFormat('en-US', { style: 'currency', currency: deal.compensationCurrency, maximumFractionDigits: 0 }).format(
-          deal.compensationAmount,
+        {new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: deal.compensationCurrency,
+          maximumFractionDigits: 0,
+        }).format(deal.compensationAmount)}
+        {showsConverted && (
+          <span className="ml-1 font-medium" style={{ color: softTextColor }}>
+            (≈{' '}
+            {new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: displayCurrency,
+              maximumFractionDigits: 0,
+            }).format(convert(deal.compensationAmount, deal.compensationCurrency))}
+            )
+          </span>
         )}
       </p>
     </div>

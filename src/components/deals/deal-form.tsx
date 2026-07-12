@@ -15,6 +15,8 @@ import {
   SelectValue,
 } from '#/components/ui/select'
 import { useCharmStore } from '#/lib/charm-store'
+import { useCurrency } from '#/lib/currency-context'
+import { SUPPORTED_CURRENCIES } from '#/lib/currencies'
 import type { CompensationType, DealFormValues, DealStage } from '#/lib/types'
 
 const STAGES: Array<{ value: DealStage; label: string }> = [
@@ -23,8 +25,6 @@ const STAGES: Array<{ value: DealStage; label: string }> = [
   { value: 'live', label: 'Live' },
   { value: 'completed', label: 'Completed' },
 ]
-
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD']
 
 const COMPENSATION_TYPES: Array<{ value: CompensationType; label: string }> = [
   { value: 'paid', label: 'Paid' },
@@ -66,6 +66,7 @@ export function DealForm({
   deleting,
 }: DealFormProps) {
   const { brands } = useCharmStore()
+  const { displayCurrency, convert } = useCurrency()
   const [brandListId] = useState(() => `brand-suggestions-${Math.random().toString(36).slice(2)}`)
 
   function set<K extends keyof DealFormValues>(key: K, value: DealFormValues[K]) {
@@ -243,13 +244,25 @@ export function DealForm({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CURRENCIES.map((c) => (
+                    {SUPPORTED_CURRENCIES.map((c) => (
                       <SelectItem key={c} value={c}>
                         {c}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {values.compensationCurrency !== displayCurrency &&
+                  Number(values.compensationAmount) > 0 && (
+                    <p className="text-xs text-[var(--charm-ink-soft)]">
+                      ≈{' '}
+                      {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: displayCurrency,
+                        maximumFractionDigits: 0,
+                      }).format(convert(Number(values.compensationAmount), values.compensationCurrency))}{' '}
+                      {displayCurrency}
+                    </p>
+                  )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="compensationType">Compensation type</Label>
