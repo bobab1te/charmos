@@ -212,7 +212,7 @@ export function DealPipeline({ onHide }: { onHide?: () => void } = {}) {
 
   const brandName = (id: string) => brandById(id)?.name ?? 'Unknown brand'
 
-  return (
+  const pipelineCard = (
     <WidgetCard
       title="Deal Pipeline"
       icon={<Briefcase className="size-4" />}
@@ -228,27 +228,18 @@ export function DealPipeline({ onHide }: { onHide?: () => void } = {}) {
         </Button>
       }
     >
-      {interactive ? (
-        <DndContext id="deal-pipeline" sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {COLUMNS.map((col) => (
-              <DroppableColumn
-                key={col.id}
-                id={col.id}
-                label={col.label}
-                deals={dealsByStage[col.id]}
-                brandName={brandName}
-                onOpen={openDeal}
-              />
-            ))}
-          </div>
-          <DragOverlay>
-            {activeDeal ? <DealCardInner deal={activeDeal} brandName={brandName(activeDeal.brandId)} /> : null}
-          </DragOverlay>
-        </DndContext>
-      ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {COLUMNS.map((col) => (
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {COLUMNS.map((col) =>
+          interactive ? (
+            <DroppableColumn
+              key={col.id}
+              id={col.id}
+              label={col.label}
+              deals={dealsByStage[col.id]}
+              brandName={brandName}
+              onOpen={openDeal}
+            />
+          ) : (
             <StaticColumn
               key={col.id}
               label={col.label}
@@ -256,10 +247,24 @@ export function DealPipeline({ onHide }: { onHide?: () => void } = {}) {
               brandName={brandName}
               onOpen={openDeal}
             />
-          ))}
-        </div>
-      )}
+          ),
+        )}
+      </div>
       <DealModal open={modalOpen} onOpenChange={setModalOpen} dealId={editingDealId} />
     </WidgetCard>
+  )
+
+  // DndContext/DragOverlay are kept as siblings of WidgetCard rather than nested inside it: WidgetCard is a
+  // motion.section with `layout`, and Framer Motion's layout animations apply a CSS transform to it, which would
+  // create a new containing block for DragOverlay's `position: fixed` and throw off its cursor tracking.
+  if (!interactive) return pipelineCard
+
+  return (
+    <DndContext id="deal-pipeline" sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      {pipelineCard}
+      <DragOverlay>
+        {activeDeal ? <DealCardInner deal={activeDeal} brandName={brandName(activeDeal.brandId)} /> : null}
+      </DragOverlay>
+    </DndContext>
   )
 }
