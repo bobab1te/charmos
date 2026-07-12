@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Loader2, Plus, Trash2 } from 'lucide-react'
+import { format } from 'date-fns'
+import { Archive, Loader2, Plus, Trash2 } from 'lucide-react'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { Textarea } from '#/components/ui/textarea'
@@ -46,11 +47,24 @@ interface DealFormProps {
   onSubmit: () => void
   submitLabel: string
   onDelete?: () => void
+  onArchive?: () => void
+  /** ISO timestamp the deal's stage last changed to 'completed' — only passed when the current stage is 'completed'. */
+  completedAt?: string
   submitting?: boolean
   deleting?: boolean
 }
 
-export function DealForm({ values, onChange, onSubmit, submitLabel, onDelete, submitting, deleting }: DealFormProps) {
+export function DealForm({
+  values,
+  onChange,
+  onSubmit,
+  submitLabel,
+  onDelete,
+  onArchive,
+  completedAt,
+  submitting,
+  deleting,
+}: DealFormProps) {
   const { brands } = useCharmStore()
   const [brandListId] = useState(() => `brand-suggestions-${Math.random().toString(36).slice(2)}`)
 
@@ -156,6 +170,11 @@ export function DealForm({ values, onChange, onSubmit, submitLabel, onDelete, su
                     ))}
                   </SelectContent>
                 </Select>
+                {completedAt && (
+                  <p className="text-xs text-[var(--charm-ink-soft)]">
+                    Marked completed on {format(new Date(completedAt), 'MMM d, yyyy')}
+                  </p>
+                )}
               </div>
             </div>
           </Section>
@@ -401,17 +420,27 @@ export function DealForm({ values, onChange, onSubmit, submitLabel, onDelete, su
       </Tabs>
 
       <div className="flex items-center justify-between gap-2 pt-1">
-        {onDelete ? (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onDelete}
-            disabled={submitting || deleting}
-            className="gap-1.5 text-destructive hover:text-destructive"
-          >
-            {deleting && <Loader2 className="size-4 animate-spin" />}
-            Delete deal
-          </Button>
+        {onDelete || onArchive ? (
+          <div className="flex items-center gap-1">
+            {onArchive && (
+              <Button type="button" variant="ghost" onClick={onArchive} disabled={submitting || deleting} className="gap-1.5">
+                <Archive className="size-4" />
+                Archive
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={onDelete}
+                disabled={submitting || deleting}
+                className="gap-1.5 text-destructive hover:text-destructive"
+              >
+                {deleting && <Loader2 className="size-4 animate-spin" />}
+                Delete deal
+              </Button>
+            )}
+          </div>
         ) : (
           <span />
         )}

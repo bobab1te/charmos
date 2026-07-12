@@ -1,13 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { z } from 'zod'
-import { Pencil, Trash2, X, Check } from 'lucide-react'
+import { ArchiveRestore, Pencil, Trash2, X, Check } from 'lucide-react'
 import { Input } from '#/components/ui/input'
 import { Button } from '#/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { DealPipeline } from '#/components/dashboard/deal-pipeline'
 import { useCharmStore } from '#/lib/charm-store'
-import type { Brand } from '#/lib/types'
+import type { Brand, BrandDeal } from '#/lib/types'
 
 export const Route = createFileRoute('/_app/brand-deals')({
   validateSearch: (search: Record<string, unknown>) => z.object({ filter: z.literal('unpaid').optional() }).parse(search),
@@ -120,8 +120,92 @@ function BrandsGrid() {
   )
 }
 
+function ArchivedDealCard({ deal, brandName }: { deal: BrandDeal; brandName: string }) {
+  const { unarchiveDeal, deleteDeal } = useCharmStore()
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const currency = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: deal.compensationCurrency,
+    maximumFractionDigits: 0,
+  })
+
+  if (confirmingDelete) {
+    return (
+      <div className="charm-glass flex flex-col gap-2.5 rounded-2xl p-4">
+        <p className="text-sm font-medium text-[var(--charm-ink)]">Delete this deal permanently?</p>
+        <p className="text-xs text-[var(--charm-ink-soft)]">This can't be undone.</p>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => deleteDeal(deal.id)}
+            className="bg-destructive text-white hover:bg-destructive/90"
+          >
+            Confirm delete
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="charm-glass flex flex-col gap-2 rounded-2xl p-4 opacity-80 transition duration-150 ease-out hover:opacity-100">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="font-display text-base font-semibold text-[var(--charm-ink)]">{brandName}</p>
+          <p className="text-xs text-[var(--charm-ink-soft)] capitalize">Archived from: {deal.stage}</p>
+        </div>
+        <span className="shrink-0 rounded-full bg-white/50 px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
+          {currency.format(deal.compensationAmount)}
+        </span>
+      </div>
+      <div className="flex justify-end gap-1 pt-1">
+        <Button type="button" variant="ghost" size="sm" onClick={() => unarchiveDeal(deal.id)} className="gap-1">
+          <ArchiveRestore className="size-3.5" /> Restore
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setConfirmingDelete(true)}
+          className="gap-1 text-destructive hover:text-destructive"
+        >
+          <Trash2 className="size-3.5" /> Delete
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function ArchivedDealsGrid() {
+  const { deals, brandById } = useCharmStore()
+  const archived = deals.filter((d) => d.archived)
+
+  if (archived.length === 0) {
+    return (
+      <p className="text-sm text-[var(--charm-ink-soft)]">
+        No archived deals. Deals you archive (e.g. from a "possible ghosting" alert) show up here instead of being
+        deleted.
+      </p>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {archived.map((deal) => (
+        <ArchivedDealCard key={deal.id} deal={deal} brandName={brandById(deal.brandId)?.name ?? 'Unknown brand'} />
+      ))}
+    </div>
+  )
+}
+
 function BrandDealsPage() {
   const { filter } = Route.useSearch()
+  const { deals } = useCharmStore()
+  const archivedCount = deals.filter((d) => d.archived).length
 
   return (
     <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
@@ -137,12 +221,18 @@ function BrandDealsPage() {
         <TabsList>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="brands">Brands</TabsTrigger>
+          <TabsTrigger value="archived">
+            Archived{archivedCount > 0 && ` (${archivedCount})`}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="pipeline" className="mt-4">
           <DealPipeline onlyUnpaid={filter === 'unpaid'} />
         </TabsContent>
         <TabsContent value="brands" className="mt-4">
           <BrandsGrid />
+        </TabsContent>
+        <TabsContent value="archived" className="mt-4">
+          <ArchivedDealsGrid />
         </TabsContent>
       </Tabs>
     </div>

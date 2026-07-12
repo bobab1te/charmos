@@ -290,7 +290,7 @@ export function DealPipeline({ onHide, onlyUnpaid }: { onHide?: () => void; only
       live: [],
       completed: [],
     }
-    const visible = onlyUnpaid ? deals.filter((d) => isDealUnpaidAlert(d)) : deals
+    const visible = deals.filter((d) => !d.archived && (!onlyUnpaid || isDealUnpaidAlert(d)))
     visible.forEach((d) => grouped[d.stage].push(d))
     return grouped
   }, [deals, onlyUnpaid])

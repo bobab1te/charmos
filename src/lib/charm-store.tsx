@@ -35,6 +35,8 @@ interface CharmStoreValue {
   /** Finds-or-creates the brand by (case-insensitive) name, then creates or updates the deal. Returns the deal id. */
   saveDeal: (form: DealFormValues, existingDealId?: string) => Promise<string>
   deleteDeal: (dealId: string) => Promise<void>
+  archiveDeal: (dealId: string) => void
+  unarchiveDeal: (dealId: string) => void
   updateBrand: (brandId: string, updates: Partial<Pick<Brand, 'name' | 'contactName' | 'contactEmail'>>) => void
   /** Returns false without deleting if the brand still has deals attached. */
   deleteBrand: (brandId: string) => Promise<boolean>
@@ -434,6 +436,24 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
     [userId],
   )
 
+  const archiveDeal = useCallback(
+    (dealId: string) => {
+      setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, archived: true } : d)))
+      if (!userId) return
+      getSupabaseBrowserClient().from('deals').update({ archived: true }).eq('id', dealId).then(() => {})
+    },
+    [userId],
+  )
+
+  const unarchiveDeal = useCallback(
+    (dealId: string) => {
+      setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, archived: false } : d)))
+      if (!userId) return
+      getSupabaseBrowserClient().from('deals').update({ archived: false }).eq('id', dealId).then(() => {})
+    },
+    [userId],
+  )
+
   const updateBrand = useCallback(
     (brandId: string, updates: Partial<Pick<Brand, 'name' | 'contactName' | 'contactEmail'>>) => {
       setBrands((prev) => prev.map((b) => (b.id === brandId ? { ...b, ...updates } : b)))
@@ -477,6 +497,8 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       dealById,
       saveDeal,
       deleteDeal,
+      archiveDeal,
+      unarchiveDeal,
       updateBrand,
       deleteBrand,
     }),
@@ -497,6 +519,8 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       dealById,
       saveDeal,
       deleteDeal,
+      archiveDeal,
+      unarchiveDeal,
       updateBrand,
       deleteBrand,
     ],

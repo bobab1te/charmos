@@ -59,6 +59,8 @@ export interface BrandDeal {
   compensationType: CompensationType
   /** Free-text, user-typed estimate (e.g. "N/A", "net 30", or an actual date) — not parsed as a real date. */
   expectedPayoutDate?: string
+  /** Archived deals are hidden from the kanban board and excluded from dashboard metrics, but remain viewable in the Archived tab. */
+  archived: boolean
 }
 
 export interface IdeaPost {

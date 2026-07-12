@@ -29,6 +29,7 @@ export const mockDeals: Array<BrandDeal> = [
     paid: false,
     createdAt: iso(subDays(now, 14)),
     stageUpdatedAt: iso(subDays(now, 9)),
+    archived: false,
   },
   {
     id: 'deal-2',
@@ -44,6 +45,7 @@ export const mockDeals: Array<BrandDeal> = [
     paid: false,
     createdAt: iso(subDays(now, 11)),
     stageUpdatedAt: iso(subDays(now, 2)),
+    archived: false,
   },
   {
     id: 'deal-3',
@@ -62,6 +64,7 @@ export const mockDeals: Array<BrandDeal> = [
     paid: false,
     createdAt: iso(subDays(now, 20)),
     stageUpdatedAt: iso(subDays(now, 3)),
+    archived: false,
   },
   {
     id: 'deal-4',
@@ -78,6 +81,7 @@ export const mockDeals: Array<BrandDeal> = [
     paid: false,
     createdAt: iso(subDays(now, 8)),
     stageUpdatedAt: iso(subDays(now, 1)),
+    archived: false,
   },
   {
     id: 'deal-5',
@@ -93,6 +97,7 @@ export const mockDeals: Array<BrandDeal> = [
     paid: false,
     createdAt: iso(subDays(now, 25)),
     stageUpdatedAt: iso(subDays(now, 1)),
+    archived: false,
   },
   {
     id: 'deal-6',
@@ -108,6 +113,7 @@ export const mockDeals: Array<BrandDeal> = [
     paid: false,
     createdAt: iso(subDays(now, 15)),
     stageUpdatedAt: iso(subDays(now, 4)),
+    archived: false,
   },
   {
     id: 'deal-7',
@@ -123,6 +129,7 @@ export const mockDeals: Array<BrandDeal> = [
     paidDate: iso(subDays(now, 5)),
     createdAt: iso(subDays(now, 40)),
     stageUpdatedAt: iso(subDays(now, 5)),
+    archived: false,
   },
   {
     id: 'deal-8',
@@ -138,6 +145,7 @@ export const mockDeals: Array<BrandDeal> = [
     paidDate: iso(subDays(now, 26)),
     createdAt: iso(subDays(now, 50)),
     stageUpdatedAt: iso(subDays(now, 26)),
+    archived: false,
   },
 ]
 

@@ -34,6 +34,7 @@ export function dealFromRow(row: DealRow): BrandDeal {
     color: row.color ?? undefined,
     compensationType: row.compensation_type as CompensationType,
     expectedPayoutDate: row.expected_payout_date ?? undefined,
+    archived: row.archived,
   }
 }
 

@@ -25,7 +25,7 @@ interface DealModalProps {
 }
 
 export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
-  const { deals, brandById, saveDeal, deleteDeal } = useCharmStore()
+  const { deals, brandById, saveDeal, deleteDeal, archiveDeal } = useCharmStore()
   const isEditing = Boolean(dealId)
 
   const [rawText, setRawText] = useState('')
@@ -114,6 +114,15 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
     }
   }
 
+  function handleArchive() {
+    if (!dealId) return
+    archiveDeal(dealId)
+    onOpenChange(false)
+  }
+
+  const currentDeal = dealId ? deals.find((d) => d.id === dealId) : undefined
+  const completedAt = currentDeal?.stage === 'completed' ? currentDeal.stageUpdatedAt : undefined
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="charm-glass max-h-[85vh] overflow-y-auto border-0 sm:max-w-2xl">
@@ -172,6 +181,8 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
               onSubmit={handleSubmit}
               submitLabel={isEditing ? 'Save changes' : 'Save deal'}
               onDelete={isEditing ? handleDelete : undefined}
+              onArchive={isEditing ? handleArchive : undefined}
+              completedAt={completedAt}
               submitting={submitting}
               deleting={deleting}
             />

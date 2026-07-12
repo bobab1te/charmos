@@ -26,10 +26,35 @@ export function urgencyForDate(dueDate: string, now = new Date()): Urgency {
  * isn't silently lost for deals with no date entered.
  */
 export function isDealUnpaidAlert(deal: BrandDeal, now = new Date()): boolean {
+  if (deal.archived) return false
   if (deal.compensationType !== 'paid' || deal.paid) return false
   if (deal.stage !== 'live' && deal.stage !== 'completed') return false
   if (deal.expectedPayoutDate) return new Date(deal.expectedPayoutDate) <= now
   return true
+}
+
+/** Whether a deal has a deliverable due within the next 3 days (including overdue) and isn't done or archived. */
+export function isDealDueSoon(deal: BrandDeal, now = new Date()): boolean {
+  if (deal.archived || deal.stage === 'completed') return false
+  const next = nextDeliverable(deal)
+  if (!next) return false
+  return differenceInCalendarDays(new Date(next.dueDate), now) <= 3
+}
+
+/**
+ * Whether a deal looks possibly ghosted: no stage change (the only "last
+ * update" signal the data model tracks) in 7+ days, and it's still in an
+ * active, non-terminal stage.
+ */
+export function isDealGhosted(deal: BrandDeal, now = new Date()): boolean {
+  if (deal.archived || deal.stage === 'completed') return false
+  return differenceInCalendarDays(now, new Date(deal.stageUpdatedAt)) >= 7
+}
+
+/** Whether a completed deal has been sitting for 30+ days and is worth prompting the user to archive. */
+export function isDealStaleCompleted(deal: BrandDeal, now = new Date()): boolean {
+  if (deal.archived || deal.stage !== 'completed') return false
+  return differenceInCalendarDays(now, new Date(deal.stageUpdatedAt)) >= 30
 }
 
 export interface UpcomingDeadline {
@@ -49,7 +74,7 @@ export function getUpcomingDeadlines(
   const brandName = (id: string) => brands.find((b) => b.id === id)?.name ?? 'Unknown brand'
 
   return deals
-    .filter((d) => d.stage !== 'completed')
+    .filter((d) => !d.archived && d.stage !== 'completed')
     .map((d) => ({ deal: d, next: nextDeliverable(d) }))
     .filter((x): x is { deal: BrandDeal; next: NonNullable<ReturnType<typeof nextDeliverable>> } => Boolean(x.next))
     .sort((a, b) => new Date(a.next.dueDate).getTime() - new Date(b.next.dueDate).getTime())
@@ -73,7 +98,7 @@ export function getUpcomingDeadlines(
  * excluded entirely.
  */
 export function dealEarnedDate(deal: BrandDeal): Date | undefined {
-  if (!deal.compensationAmount) return undefined
+  if (deal.archived || !deal.compensationAmount) return undefined
   if (deal.paid && deal.paidDate) return new Date(deal.paidDate)
   if (deal.stage === 'negotiating') return undefined
   return new Date(deal.stageUpdatedAt)
@@ -106,23 +131,22 @@ export function computeMetrics(
     .reduce((sum, entry) => sum + entry.amount, 0)
   const earningsThisMonth = ledgerEarningsThisMonth + dealEarningsInMonth(deals, now)
 
-  const activeDeals = deals.filter((d) => d.stage === 'confirmed' || d.stage === 'live').length
+  const activeDeals = deals.filter((d) => !d.archived && (d.stage === 'confirmed' || d.stage === 'live')).length
 
   const weekFromNow = new Date(now)
   weekFromNow.setDate(weekFromNow.getDate() + 7)
 
   const dueThisWeek = deals.filter((deal) => {
+    if (deal.archived) return false
     const next = nextDeliverable(deal)
     if (!next) return false
     const due = new Date(next.dueDate)
     return isWithinInterval(due, { start: now, end: weekFromNow })
   }).length
 
-  const staleNegotiations = deals.filter(
-    (d) => d.stage === 'negotiating' && differenceInCalendarDays(now, new Date(d.stageUpdatedAt)) > 7,
-  ).length
+  const ghostedCount = deals.filter((d) => isDealGhosted(d, now)).length
   const unpaidCount = deals.filter((d) => isDealUnpaidAlert(d, now)).length
-  const needsFollowUp = staleNegotiations + unpaidCount
+  const needsFollowUp = ghostedCount + unpaidCount
 
   return { earningsThisMonth, activeDeals, dueThisWeek, needsFollowUp, unpaidCount }
 }

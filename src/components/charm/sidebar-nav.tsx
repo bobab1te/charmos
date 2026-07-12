@@ -12,6 +12,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
+import { NotificationBell } from '#/components/charm/notification-bell'
 import { useSidebarCollapsed } from '#/lib/use-sidebar'
 import { getSupabaseBrowserClient } from '#/lib/supabase/browser-client'
 import { cn } from '#/lib/utils'
@@ -58,26 +59,32 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
           )}
         </div>
         {!collapsed && (
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label="Collapse sidebar"
-            className="shrink-0 rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
-          >
-            <ChevronsLeft className="size-4" />
-          </button>
+          <div className="flex shrink-0 items-center gap-1">
+            <NotificationBell />
+            <button
+              type="button"
+              onClick={toggle}
+              aria-label="Collapse sidebar"
+              className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
+            >
+              <ChevronsLeft className="size-4" />
+            </button>
+          </div>
         )}
       </div>
 
       {collapsed && (
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label="Expand sidebar"
-          className="mb-3 flex items-center justify-center self-center rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
-        >
-          <ChevronsRight className="size-4" />
-        </button>
+        <div className="mb-3 flex flex-col items-center gap-1 self-center">
+          <NotificationBell />
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label="Expand sidebar"
+            className="flex items-center justify-center rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
+          >
+            <ChevronsRight className="size-4" />
+          </button>
+        </div>
       )}
 
       <nav className="flex flex-col gap-1">
