@@ -8,7 +8,6 @@ import {
   DialogDescription,
 } from '#/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
-import { Button } from '#/components/ui/button'
 import { DealForm } from './deal-form'
 import { DealParseInput } from './deal-parse-input'
 import type { DealParsePayload, StagedAsset } from './deal-parse-input'
@@ -136,7 +135,12 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
         </DialogHeader>
 
         {!isEditing && !showForm ? (
-          <Tabs defaultValue="parse">
+          <Tabs
+            defaultValue="parse"
+            onValueChange={(value) => {
+              if (value === 'manual') setShowForm(true)
+            }}
+          >
             <TabsList>
               <TabsTrigger value="parse">
                 <Sparkles className="mr-1.5 size-3.5" /> Paste &amp; Parse
@@ -154,13 +158,6 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
                 onParse={handleParse}
                 onSkipToManual={() => setShowForm(true)}
               />
-            </TabsContent>
-            <TabsContent value="manual">
-              <div className="flex justify-end">
-                <Button type="button" onClick={() => setShowForm(true)}>
-                  Start manual entry
-                </Button>
-              </div>
             </TabsContent>
           </Tabs>
         ) : (
