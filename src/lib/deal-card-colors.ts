@@ -7,7 +7,7 @@ export interface DealCardSwatch {
 /** A consistent pastel family (same ~80% lightness/saturation as the app's existing charm-pink-deep) so cards read as soft, not saturated. */
 export const DEAL_CARD_PALETTE: Array<DealCardSwatch> = [
   { id: 'pink', label: 'Pink', value: '#f6a8c4' },
-  { id: 'lavender', label: 'Lavender', value: '#c6adf5' },
+  { id: 'lavender', label: 'Lavender', value: '#bd9ff2' },
   { id: 'blue', label: 'Blue', value: '#add0f5' },
   { id: 'yellow', label: 'Yellow', value: '#f5e3ad' },
   { id: 'green', label: 'Green', value: '#d5e6ab' },
