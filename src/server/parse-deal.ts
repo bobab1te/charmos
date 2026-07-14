@@ -80,10 +80,20 @@ export interface ParsedDeal {
 }
 
 /** Gemini omits absent fields rather than returning null for them (unlike Anthropic's strict-schema tool use) — this backfills the same shape the rest of the app expects. */
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
 function normalize(raw: Record<string, unknown>): ParsedDeal {
   const str = (v: unknown): string | null => (typeof v === 'string' && v.length > 0 ? v : null)
   const num = (v: unknown): number | null => (typeof v === 'number' ? v : null)
   const arr = (v: unknown): Array<string> => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
+  // Gemini is asked for strict "YYYY-MM-DD" but nothing enforces that in its output — a
+  // malformed date (wrong format, natural language) would otherwise flow straight into a
+  // native date input and get silently dropped there. Reject anything non-conforming here
+  // instead, so the field just comes back empty and the user fills it in manually.
+  const dateStr = (v: unknown): string | null => {
+    const s = str(v)
+    return s && DATE_ONLY_PATTERN.test(s) ? s : null
+  }
 
   const rawDeliverables = Array.isArray(raw.deliverables) ? raw.deliverables : []
   const rawShipment = (raw.shipment ?? {}) as Record<string, unknown>
@@ -98,7 +108,7 @@ function normalize(raw: Record<string, unknown>): ParsedDeal {
       return {
         type: str(item.type) ?? 'Deliverable',
         description: str(item.description),
-        dueDate: str(item.dueDate),
+        dueDate: dateStr(item.dueDate),
       }
     }),
     compensationAmount: num(raw.compensationAmount),
@@ -107,8 +117,8 @@ function normalize(raw: Record<string, unknown>): ParsedDeal {
     shipment: {
       carrier: str(rawShipment.carrier),
       trackingNumber: str(rawShipment.trackingNumber),
-      shippedDate: str(rawShipment.shippedDate),
-      estimatedDelivery: str(rawShipment.estimatedDelivery),
+      shippedDate: dateStr(rawShipment.shippedDate),
+      estimatedDelivery: dateStr(rawShipment.estimatedDelivery),
     },
     contentRequirements: {
       hashtags: arr(rawContentRequirements.hashtags),

@@ -8,6 +8,7 @@ import { ScrapbookCalendar } from '#/components/scrapbook/scrapbook-calendar'
 import { DraggableIdeaCard, IdeaCardContent, ideaNoteColor } from '#/components/scrapbook/idea-card'
 import { IdeaDetailModal } from '#/components/scrapbook/idea-detail-modal'
 import { useCharmStore } from '#/lib/charm-store'
+import { dateOnlyToISOString } from '#/lib/date-only'
 import { cn } from '#/lib/utils'
 import type { IdeaPost } from '#/lib/types'
 
@@ -97,7 +98,7 @@ function ScrapbookPage() {
     const overId = String(over.id)
 
     if (DATE_KEY_PATTERN.test(overId)) {
-      assignIdeaDate(String(active.id), new Date(`${overId}T00:00:00`).toISOString())
+      assignIdeaDate(String(active.id), dateOnlyToISOString(overId))
     } else if (overId === UNSCHEDULED_ZONE_ID) {
       unassignIdeaDate(String(active.id))
     }

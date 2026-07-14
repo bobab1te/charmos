@@ -57,7 +57,7 @@ export interface BrandDeal {
   /** User-chosen kanban card color override; undefined means "use the deterministic default". */
   color?: string
   compensationType: CompensationType
-  /** Free-text, user-typed estimate (e.g. "N/A", "net 30", or an actual date) — not parsed as a real date. */
+  /** ISO timestamp at local midnight of the chosen date — see date-only.ts. Undefined if no payout date was set. */
   expectedPayoutDate?: string
   /** Archived deals are hidden from the kanban board and excluded from dashboard metrics, but remain viewable in the Archived tab. */
   archived: boolean

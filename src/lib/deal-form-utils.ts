@@ -1,5 +1,6 @@
 import type { Brand, BrandDeal, DealFormValues } from './types'
 import type { ParsedDeal } from '#/server/parse-deal'
+import { isoStringToDateOnly } from './date-only'
 
 export function emptyDealForm(): DealFormValues {
   return {
@@ -37,19 +38,21 @@ export function dealToFormValues(deal: BrandDeal, brand: Brand): DealFormValues 
         ? deal.deliverables.map((d) => ({
             type: d.type,
             description: d.description ?? '',
-            dueDate: d.dueDate.slice(0, 10),
+            dueDate: isoStringToDateOnly(d.dueDate),
           }))
         : [{ type: '', description: '', dueDate: '' }],
     compensationAmount: String(deal.compensationAmount),
     compensationCurrency: deal.compensationCurrency,
     compensationType: deal.compensationType,
-    expectedPayoutDate: deal.expectedPayoutDate?.slice(0, 10) ?? '',
+    expectedPayoutDate: deal.expectedPayoutDate ? isoStringToDateOnly(deal.expectedPayoutDate) : '',
     paidInFull: deal.paid,
     usageRights: deal.usageRights ?? '',
     shipmentCarrier: deal.shipment?.carrier ?? '',
     shipmentTrackingNumber: deal.shipment?.trackingNumber ?? '',
-    shipmentShippedDate: deal.shipment?.shippedDate?.slice(0, 10) ?? '',
-    shipmentEstimatedDelivery: deal.shipment?.estimatedDelivery?.slice(0, 10) ?? '',
+    shipmentShippedDate: deal.shipment?.shippedDate ? isoStringToDateOnly(deal.shipment.shippedDate) : '',
+    shipmentEstimatedDelivery: deal.shipment?.estimatedDelivery
+      ? isoStringToDateOnly(deal.shipment.estimatedDelivery)
+      : '',
     hashtags: (deal.contentRequirements?.hashtags ?? []).join(', '),
     accountsToTag: (deal.contentRequirements?.accountsToTag ?? []).join(', '),
     clipsToUse: (deal.contentRequirements?.clipsToUse ?? []).join(', '),

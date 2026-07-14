@@ -1,9 +1,10 @@
 import type { Brand, Partnership, PartnershipFormValues } from './types'
+import { isoStringToDateOnly, todayDateOnly } from './date-only'
 
 export function emptyPartnershipForm(): PartnershipFormValues {
   return {
     brandName: '',
-    startDate: new Date().toISOString().slice(0, 10),
+    startDate: todayDateOnly(),
     endDate: '',
     paymentType: 'retainer',
     retainerAmount: '',
@@ -22,8 +23,8 @@ export function emptyPartnershipForm(): PartnershipFormValues {
 export function partnershipToFormValues(partnership: Partnership, brand: Brand): PartnershipFormValues {
   return {
     brandName: brand.name,
-    startDate: partnership.startDate.slice(0, 10),
-    endDate: partnership.endDate?.slice(0, 10) ?? '',
+    startDate: isoStringToDateOnly(partnership.startDate),
+    endDate: partnership.endDate ? isoStringToDateOnly(partnership.endDate) : '',
     paymentType: partnership.paymentType,
     retainerAmount: partnership.retainerAmount != null ? String(partnership.retainerAmount) : '',
     retainerCadence: partnership.retainerCadence ?? 'monthly',

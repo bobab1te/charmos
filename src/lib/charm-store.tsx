@@ -10,6 +10,7 @@ import {
   partnershipFromRow,
 } from './supabase/mappers'
 import { splitList } from './deal-form-utils'
+import { dateOnlyToISOString } from './date-only'
 import type {
   Brand,
   BrandDeal,
@@ -402,7 +403,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
           id: `del-${Date.now()}-${i}`,
           type: d.type.trim(),
           description: d.description.trim() || undefined,
-          dueDate: d.dueDate ? new Date(d.dueDate).toISOString() : now,
+          dueDate: d.dueDate ? dateOnlyToISOString(d.dueDate) : now,
           done: false,
         }))
 
@@ -416,9 +417,9 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         ? {
             carrier: form.shipmentCarrier.trim() || undefined,
             trackingNumber: form.shipmentTrackingNumber.trim() || undefined,
-            shippedDate: form.shipmentShippedDate ? new Date(form.shipmentShippedDate).toISOString() : undefined,
+            shippedDate: form.shipmentShippedDate ? dateOnlyToISOString(form.shipmentShippedDate) : undefined,
             estimatedDelivery: form.shipmentEstimatedDelivery
-              ? new Date(form.shipmentEstimatedDelivery).toISOString()
+              ? dateOnlyToISOString(form.shipmentEstimatedDelivery)
               : undefined,
           }
         : null
@@ -441,7 +442,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         compensation_amount: Number(form.compensationAmount) || 0,
         compensation_currency: form.compensationCurrency.trim() || 'USD',
         compensation_type: form.compensationType,
-        expected_payout_date: form.expectedPayoutDate ? new Date(form.expectedPayoutDate).toISOString() : null,
+        expected_payout_date: form.expectedPayoutDate ? dateOnlyToISOString(form.expectedPayoutDate) : null,
         paid: form.paidInFull,
         paid_date: form.paidInFull ? (existingDeal?.paid && existingDeal.paidDate ? existingDeal.paidDate : now) : null,
         usage_rights: form.usageRights.trim() || undefined,
@@ -552,8 +553,8 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       const payload = {
         user_id: userId,
         brand_id: brandId,
-        start_date: form.startDate ? new Date(form.startDate).toISOString() : new Date().toISOString(),
-        end_date: form.endDate ? new Date(form.endDate).toISOString() : null,
+        start_date: form.startDate ? dateOnlyToISOString(form.startDate) : new Date().toISOString(),
+        end_date: form.endDate ? dateOnlyToISOString(form.endDate) : null,
         payment_type: form.paymentType,
         retainer_amount: form.paymentType === 'retainer' ? Number(form.retainerAmount) || 0 : null,
         retainer_cadence: form.paymentType === 'retainer' ? form.retainerCadence : null,
