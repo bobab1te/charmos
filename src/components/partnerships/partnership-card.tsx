@@ -42,9 +42,12 @@ export function PartnershipCard({
   const hasLogsThisPeriod = completed > 0
 
   return (
-    <div className="charm-glass flex flex-col gap-3 rounded-2xl p-4 transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md">
+    <div
+      onClick={() => onOpen(partnership.id)}
+      className="charm-glass flex cursor-pointer flex-col gap-3 rounded-2xl p-4 transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
+    >
       <div className="flex items-start justify-between gap-2">
-        <button type="button" onClick={() => onOpen(partnership.id)} className="min-w-0 text-left">
+        <div className="min-w-0 text-left">
           <p className="truncate font-display text-base font-semibold text-[var(--charm-ink)]">{brandName}</p>
           <span className="mt-1 flex flex-wrap items-center gap-1.5">
             <span className={cn('inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize', STATUS_STYLES[partnership.status])}>
@@ -56,7 +59,7 @@ export function PartnershipCard({
               </span>
             )}
           </span>
-        </button>
+        </div>
         {renewalDueSoon && (
           <span className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--urgency-orange)]/15 px-2 py-0.5 text-[10px] font-semibold text-[var(--urgency-orange)]">
             <AlertTriangle className="size-3" /> Renewal due soon
@@ -125,7 +128,11 @@ export function PartnershipCard({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => undoLastPartnershipDeliverable(partnership.id)}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              undoLastPartnershipDeliverable(partnership.id)
+            }}
             className="gap-1"
           >
             <Undo2 className="size-3.5" /> Undo
@@ -134,7 +141,11 @@ export function PartnershipCard({
         <Button
           type="button"
           size="sm"
-          onClick={() => logPartnershipDeliverable(partnership.id)}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation()
+            logPartnershipDeliverable(partnership.id)
+          }}
           className="gap-1 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
         >
           <Plus className="size-3.5" /> Log delivered
