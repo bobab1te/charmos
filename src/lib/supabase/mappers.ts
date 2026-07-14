@@ -100,6 +100,8 @@ export function partnershipFromRow(row: PartnershipRow): Partnership {
     contentFormats: row.content_formats,
     notes: row.notes ?? undefined,
     status: row.status,
+    pausedAt: row.paused_at ?? undefined,
+    unpausedAt: row.unpaused_at ?? undefined,
     createdAt: row.created_at,
   }
 }

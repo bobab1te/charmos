@@ -7,6 +7,7 @@ import { Button } from '#/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/components/ui/select'
 import { useCharmStore } from '#/lib/charm-store'
 import { SUPPORTED_CURRENCIES } from '#/lib/currencies'
+import { todayDateOnly } from '#/lib/date-only'
 import type { DeliverableCadence, PartnershipFormValues, PartnershipStatus, PaymentType, RetainerCadence } from '#/lib/types'
 
 const PAYMENT_TYPES: Array<{ value: PaymentType; label: string }> = [
@@ -69,6 +70,19 @@ export function PartnershipForm({
     onChange({ ...values, [key]: value })
   }
 
+  // Ties the pause-tracking dates to the status change itself, so revenue exclusion works
+  // correctly without an extra manual step — but only fills in a date if one isn't already
+  // set, so editing status back and forth doesn't clobber a deliberately-entered date.
+  function setStatus(nextStatus: PartnershipStatus) {
+    if (nextStatus === 'paused' && values.status !== 'paused') {
+      onChange({ ...values, status: nextStatus, pausedDate: values.pausedDate || todayDateOnly(), unpausedDate: '' })
+    } else if (values.status === 'paused' && nextStatus !== 'paused') {
+      onChange({ ...values, status: nextStatus, unpausedDate: values.unpausedDate || todayDateOnly() })
+    } else {
+      set('status', nextStatus)
+    }
+  }
+
   return (
     <form
       onSubmit={(e) => {
@@ -116,7 +130,7 @@ export function PartnershipForm({
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="partnerStatus">Status</Label>
-            <Select value={values.status} onValueChange={(v) => set('status', v as PartnershipStatus)}>
+            <Select value={values.status} onValueChange={(v) => setStatus(v as PartnershipStatus)}>
               <SelectTrigger id="partnerStatus">
                 <SelectValue />
               </SelectTrigger>
@@ -129,6 +143,34 @@ export function PartnershipForm({
               </SelectContent>
             </Select>
           </div>
+          {(values.status === 'paused' || values.pausedDate) && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="partnerPausedDate">Date paused</Label>
+              <Input
+                id="partnerPausedDate"
+                type="date"
+                value={values.pausedDate}
+                onChange={(e) => set('pausedDate', e.target.value)}
+              />
+            </div>
+          )}
+          {(values.status === 'paused' || values.pausedDate) && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="partnerUnpausedDate">Date unpaused</Label>
+              <Input
+                id="partnerUnpausedDate"
+                type="date"
+                value={values.unpausedDate}
+                onChange={(e) => set('unpausedDate', e.target.value)}
+              />
+            </div>
+          )}
+          {values.status === 'paused' && (
+            <p className="text-xs text-[var(--urgency-orange)] sm:col-span-2">
+              Excluded from revenue totals while paused — set "Date unpaused" (or switch status back to Active) to
+              resume counting.
+            </p>
+          )}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="partnerFormats">Content format tag(s)</Label>
             <Input

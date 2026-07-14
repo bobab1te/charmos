@@ -44,13 +44,28 @@ export function isPartnershipRenewalDueSoon(partnership: Partnership, now = new 
   return days >= 0 && days <= thresholdDays
 }
 
-/** The next scheduled retainer payment date, or undefined for per-deliverable partnerships (paid on output, not a schedule). */
+/** The next scheduled retainer payment date, or undefined for per-deliverable partnerships (paid on output, not a schedule) or while paused (no payment is scheduled to resume until unpausedAt is set). */
 export function getNextPaymentDate(partnership: Partnership, now = new Date()): Date | undefined {
   if (partnership.paymentType !== 'retainer') return undefined
+  if (partnership.status === 'paused') return undefined
   const step = partnership.retainerCadence === 'weekly' ? addWeeks : addMonths
   let next = new Date(partnership.startDate)
   while (next < now) next = step(next, 1)
   return next
+}
+
+/**
+ * Whether a given calendar day falls inside the partnership's most recent pause window
+ * (pausedAt, inclusive, through unpausedAt, exclusive — or indefinitely if still paused).
+ * Used to exclude recurring retainer revenue for exactly the paused period, without
+ * retroactively affecting days before the pause or losing track of the cadence once
+ * resumed.
+ */
+export function isPartnershipPausedOn(partnership: Partnership, date: Date): boolean {
+  if (!partnership.pausedAt) return false
+  if (date < new Date(partnership.pausedAt)) return false
+  if (partnership.unpausedAt && date >= new Date(partnership.unpausedAt)) return false
+  return true
 }
 
 /**
@@ -76,14 +91,27 @@ export function partnershipEarningsInMonth(
   if (partnership.paymentType === 'retainer') {
     if (!partnership.retainerAmount) return 0
     if (partnership.retainerCadence === 'monthly') {
-      return convert(partnership.retainerAmount, partnership.currency)
+      // Prorate by the fraction of the month that wasn't paused, so a mid-month pause or
+      // unpause only counts the active portion instead of the full flat amount — and a
+      // partnership that was never paused still gets 100% (activeDays === daysInMonth),
+      // unchanged from before.
+      const daysInMonth = differenceInCalendarDays(monthEnd, monthStart) + 1
+      let activeDays = 0
+      for (let i = 0; i < daysInMonth; i++) {
+        if (!isPartnershipPausedOn(partnership, addDays(monthStart, i))) activeDays += 1
+      }
+      if (activeDays === 0) return 0
+      return convert(partnership.retainerAmount * (activeDays / daysInMonth), partnership.currency)
     }
-    // Weekly: count how many 7-day occurrences from startDate land inside this month.
+    // Weekly: count how many 7-day occurrences from startDate land inside this month,
+    // skipping any occurrence that falls within a paused window.
     let occurrences = 0
     let occurrence = start
     let guard = 0
     while (occurrence <= monthEnd && guard < 520) {
-      if (occurrence >= monthStart && (!end || occurrence <= end)) occurrences += 1
+      if (occurrence >= monthStart && (!end || occurrence <= end) && !isPartnershipPausedOn(partnership, occurrence)) {
+        occurrences += 1
+      }
       occurrence = addDays(occurrence, 7)
       guard += 1
     }

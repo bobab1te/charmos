@@ -177,6 +177,8 @@ export interface Database {
           content_formats: string[]
           notes: string | null
           status: 'active' | 'paused' | 'ended'
+          paused_at: string | null
+          unpaused_at: string | null
           created_at: string
         }
         Insert: {
@@ -196,6 +198,8 @@ export interface Database {
           content_formats?: Array<string>
           notes?: string | null
           status?: 'active' | 'paused' | 'ended'
+          paused_at?: string | null
+          unpaused_at?: string | null
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['partnerships']['Insert']>

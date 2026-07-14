@@ -150,6 +150,10 @@ export interface Partnership {
   contentFormats: Array<string>
   notes?: string
   status: PartnershipStatus
+  /** When the partnership most recently entered "paused" — recurring revenue is excluded from this date until unpausedAt (or indefinitely if still paused). */
+  pausedAt?: string
+  /** When the partnership resumed after its most recent pause — undefined while still paused. */
+  unpausedAt?: string
   createdAt: string
 }
 
@@ -175,4 +179,6 @@ export interface PartnershipFormValues {
   contentFormats: string
   notes: string
   status: PartnershipStatus
+  pausedDate: string
+  unpausedDate: string
 }

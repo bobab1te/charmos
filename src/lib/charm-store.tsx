@@ -566,6 +566,8 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         content_formats: contentFormats,
         notes: form.notes.trim() || null,
         status: form.status,
+        paused_at: form.pausedDate ? dateOnlyToISOString(form.pausedDate) : null,
+        unpaused_at: form.unpausedDate ? dateOnlyToISOString(form.unpausedDate) : null,
       }
 
       if (existingId) {

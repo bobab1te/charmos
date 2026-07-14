@@ -46,8 +46,15 @@ export function PartnershipCard({
       <div className="flex items-start justify-between gap-2">
         <button type="button" onClick={() => onOpen(partnership.id)} className="min-w-0 text-left">
           <p className="truncate font-display text-base font-semibold text-[var(--charm-ink)]">{brandName}</p>
-          <span className={cn('mt-1 inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize', STATUS_STYLES[partnership.status])}>
-            {partnership.status}
+          <span className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span className={cn('inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize', STATUS_STYLES[partnership.status])}>
+              {partnership.status}
+            </span>
+            {partnership.status === 'paused' && partnership.pausedAt && (
+              <span className="text-[10px] text-[var(--charm-ink-soft)]">
+                since {format(new Date(partnership.pausedAt), 'MMM d, yyyy')}
+              </span>
+            )}
           </span>
         </button>
         {renewalDueSoon && (
@@ -84,7 +91,11 @@ export function PartnershipCard({
               : `${currency.format(partnership.perDeliverableRate ?? 0)} / piece`}
           </p>
           <p>
-            {nextPayment ? `Next payment ${format(nextPayment, 'MMM d')}` : 'Paid per deliverable'}
+            {partnership.paymentType === 'retainer' && partnership.status === 'paused'
+              ? 'Paused — excluded from revenue'
+              : nextPayment
+                ? `Next payment ${format(nextPayment, 'MMM d')}`
+                : 'Paid per deliverable'}
             {partnership.currency !== displayCurrency && (
               <>
                 {' '}

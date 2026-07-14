@@ -17,6 +17,8 @@ export function emptyPartnershipForm(): PartnershipFormValues {
     contentFormats: '',
     notes: '',
     status: 'active',
+    pausedDate: '',
+    unpausedDate: '',
   }
 }
 
@@ -36,6 +38,8 @@ export function partnershipToFormValues(partnership: Partnership, brand: Brand):
     contentFormats: partnership.contentFormats.join(', '),
     notes: partnership.notes ?? '',
     status: partnership.status,
+    pausedDate: partnership.pausedAt ? isoStringToDateOnly(partnership.pausedAt) : '',
+    unpausedDate: partnership.unpausedAt ? isoStringToDateOnly(partnership.unpausedAt) : '',
   }
 }
 
