@@ -1,10 +1,27 @@
 import type { Database } from './database.types'
-import type { Brand, BrandDeal, CompensationType, ContentRequirements, DealStage, Deliverable, IdeaPost, LedgerEntry, Platform, PostStatus, ShipmentInfo } from '../types'
+import type {
+  Brand,
+  BrandDeal,
+  CompensationType,
+  ContentRequirements,
+  DealStage,
+  Deliverable,
+  IdeaPost,
+  LedgerEntry,
+  Partnership,
+  PartnershipDeliverableLog,
+  PaymentType,
+  Platform,
+  PostStatus,
+  ShipmentInfo,
+} from '../types'
 
 type BrandRow = Database['public']['Tables']['brands']['Row']
 type DealRow = Database['public']['Tables']['deals']['Row']
 type IdeaRow = Database['public']['Tables']['ideas']['Row']
 type LedgerRow = Database['public']['Tables']['ledger']['Row']
+type PartnershipRow = Database['public']['Tables']['partnerships']['Row']
+type PartnershipDeliverableRow = Database['public']['Tables']['partnership_deliverables']['Row']
 
 export function brandFromRow(row: BrandRow): Brand {
   return {
@@ -63,5 +80,34 @@ export function ledgerFromRow(row: LedgerRow): LedgerEntry {
     description: row.description,
     dealId: row.deal_id ?? undefined,
     brandId: row.brand_id ?? undefined,
+  }
+}
+
+export function partnershipFromRow(row: PartnershipRow): Partnership {
+  return {
+    id: row.id,
+    brandId: row.brand_id,
+    startDate: row.start_date,
+    endDate: row.end_date ?? undefined,
+    paymentType: row.payment_type as PaymentType,
+    retainerAmount: row.retainer_amount ?? undefined,
+    retainerCadence: row.retainer_cadence ?? undefined,
+    perDeliverableRate: row.per_deliverable_rate ?? undefined,
+    currency: row.currency,
+    deliverableCount: row.deliverable_count,
+    deliverableUnit: row.deliverable_unit,
+    deliverableCadence: row.deliverable_cadence,
+    contentFormats: row.content_formats,
+    notes: row.notes ?? undefined,
+    status: row.status,
+    createdAt: row.created_at,
+  }
+}
+
+export function partnershipDeliverableFromRow(row: PartnershipDeliverableRow): PartnershipDeliverableLog {
+  return {
+    id: row.id,
+    partnershipId: row.partnership_id,
+    completedAt: row.completed_at,
   }
 }

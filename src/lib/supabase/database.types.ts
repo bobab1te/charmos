@@ -159,6 +159,64 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['ledger']['Insert']>
         Relationships: []
       }
+      partnerships: {
+        Row: {
+          id: string
+          user_id: string
+          brand_id: string
+          start_date: string
+          end_date: string | null
+          payment_type: 'retainer' | 'per_deliverable'
+          retainer_amount: number | null
+          retainer_cadence: 'weekly' | 'monthly' | null
+          per_deliverable_rate: number | null
+          currency: string
+          deliverable_count: number
+          deliverable_unit: string
+          deliverable_cadence: 'day' | 'week' | 'month'
+          content_formats: string[]
+          notes: string | null
+          status: 'active' | 'paused' | 'ended'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          brand_id: string
+          start_date?: string
+          end_date?: string | null
+          payment_type: 'retainer' | 'per_deliverable'
+          retainer_amount?: number | null
+          retainer_cadence?: 'weekly' | 'monthly' | null
+          per_deliverable_rate?: number | null
+          currency?: string
+          deliverable_count?: number
+          deliverable_unit?: string
+          deliverable_cadence?: 'day' | 'week' | 'month'
+          content_formats?: Array<string>
+          notes?: string | null
+          status?: 'active' | 'paused' | 'ended'
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['partnerships']['Insert']>
+        Relationships: []
+      }
+      partnership_deliverables: {
+        Row: {
+          id: string
+          user_id: string
+          partnership_id: string
+          completed_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          partnership_id: string
+          completed_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['partnership_deliverables']['Insert']>
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

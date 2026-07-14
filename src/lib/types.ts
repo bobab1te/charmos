@@ -119,3 +119,60 @@ export interface DealFormValues {
   contentNotes: string
   referenceLinks: Array<string>
 }
+
+// ---------------------------------------------------------------------------
+// Long-term partnerships (retainers, e.g. Canvas UGC) — a distinct concept
+// from one-off BrandDeal: recurring payment schedule, a deliverable quota
+// per period, and renewal tracking. Deliberately not merged into BrandDeal.
+// ---------------------------------------------------------------------------
+
+export type PaymentType = 'retainer' | 'per_deliverable'
+export type RetainerCadence = 'weekly' | 'monthly'
+export type DeliverableCadence = 'day' | 'week' | 'month'
+export type PartnershipStatus = 'active' | 'paused' | 'ended'
+
+export interface Partnership {
+  id: string
+  brandId: string
+  startDate: string
+  /** Contract end / renewal date. */
+  endDate?: string
+  paymentType: PaymentType
+  retainerAmount?: number
+  retainerCadence?: RetainerCadence
+  perDeliverableRate?: number
+  currency: string
+  /** Required deliverables per `deliverableCadence` period, e.g. 4 "UGC videos" per month. */
+  deliverableCount: number
+  deliverableUnit: string
+  deliverableCadence: DeliverableCadence
+  /** e.g. "Canvas UGC" — freeform so this scales to future content formats. */
+  contentFormats: Array<string>
+  notes?: string
+  status: PartnershipStatus
+  createdAt: string
+}
+
+/** One row per completed deliverable — a log rather than a mutable counter, so period progress and per-deliverable earnings can both be derived by date-filtering regardless of cadence. */
+export interface PartnershipDeliverableLog {
+  id: string
+  partnershipId: string
+  completedAt: string
+}
+
+export interface PartnershipFormValues {
+  brandName: string
+  startDate: string
+  endDate: string
+  paymentType: PaymentType
+  retainerAmount: string
+  retainerCadence: RetainerCadence
+  perDeliverableRate: string
+  currency: string
+  deliverableCount: string
+  deliverableUnit: string
+  deliverableCadence: DeliverableCadence
+  contentFormats: string
+  notes: string
+  status: PartnershipStatus
+}

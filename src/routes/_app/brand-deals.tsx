@@ -1,11 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { z } from 'zod'
-import { ArchiveRestore, Pencil, Trash2, X, Check } from 'lucide-react'
+import { ArchiveRestore, Pencil, Plus, Trash2, X, Check } from 'lucide-react'
 import { Input } from '#/components/ui/input'
 import { Button } from '#/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { DealPipeline } from '#/components/dashboard/deal-pipeline'
+import { PartnershipCard } from '#/components/partnerships/partnership-card'
+import { PartnershipModal } from '#/components/partnerships/partnership-modal'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
 import type { Brand, BrandDeal } from '#/lib/types'
@@ -207,10 +209,52 @@ function ArchivedDealsGrid() {
   )
 }
 
+const STATUS_ORDER = { active: 0, paused: 1, ended: 2 } as const
+
+function PartnershipsGrid({ onOpen }: { onOpen: (id: string) => void }) {
+  const { partnerships, brandById } = useCharmStore()
+
+  if (partnerships.length === 0) {
+    return (
+      <p className="text-sm text-[var(--charm-ink-soft)]">
+        No long-term partnerships yet. Add one for retainer-style relationships like Canvas UGC — separate from the
+        one-off deal pipeline.
+      </p>
+    )
+  }
+
+  const sorted = [...partnerships].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {sorted.map((partnership) => (
+        <PartnershipCard
+          key={partnership.id}
+          partnership={partnership}
+          brandName={brandById(partnership.brandId)?.name ?? 'Unknown brand'}
+          onOpen={onOpen}
+        />
+      ))}
+    </div>
+  )
+}
+
 function BrandDealsPage() {
   const { filter } = Route.useSearch()
-  const { deals } = useCharmStore()
+  const { deals, partnerships } = useCharmStore()
   const archivedCount = deals.filter((d) => d.archived).length
+  const [partnershipModalOpen, setPartnershipModalOpen] = useState(false)
+  const [editingPartnershipId, setEditingPartnershipId] = useState<string | undefined>(undefined)
+
+  function openNewPartnership() {
+    setEditingPartnershipId(undefined)
+    setPartnershipModalOpen(true)
+  }
+
+  function openPartnership(id: string) {
+    setEditingPartnershipId(id)
+    setPartnershipModalOpen(true)
+  }
 
   return (
     <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
@@ -225,6 +269,9 @@ function BrandDealsPage() {
       <Tabs defaultValue="pipeline">
         <TabsList>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+          <TabsTrigger value="partnerships">
+            Long-Term Partnerships{partnerships.length > 0 && ` (${partnerships.length})`}
+          </TabsTrigger>
           <TabsTrigger value="brands">Brands</TabsTrigger>
           <TabsTrigger value="archived">
             Archived{archivedCount > 0 && ` (${archivedCount})`}
@@ -233,6 +280,23 @@ function BrandDealsPage() {
         <TabsContent value="pipeline" className="mt-4">
           <DealPipeline onlyUnpaid={filter === 'unpaid'} />
         </TabsContent>
+        <TabsContent value="partnerships" className="mt-4 flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-[var(--charm-ink-soft)]">
+              Retainers and other ongoing relationships — including Canvas UGC — tracked separately from one-off
+              deals.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              onClick={openNewPartnership}
+              className="shrink-0 gap-1 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+            >
+              <Plus className="size-3.5" /> New Partnership
+            </Button>
+          </div>
+          <PartnershipsGrid onOpen={openPartnership} />
+        </TabsContent>
         <TabsContent value="brands" className="mt-4">
           <BrandsGrid />
         </TabsContent>
@@ -240,6 +304,12 @@ function BrandDealsPage() {
           <ArchivedDealsGrid />
         </TabsContent>
       </Tabs>
+
+      <PartnershipModal
+        open={partnershipModalOpen}
+        onOpenChange={setPartnershipModalOpen}
+        partnershipId={editingPartnershipId}
+      />
     </div>
   )
 }

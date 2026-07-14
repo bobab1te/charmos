@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, isSameMonth, isWithinInterval } from 'date-fns'
-import type { Brand, BrandDeal, LedgerEntry } from './types'
+import { partnershipEarningsInMonth } from './partnership-derived'
+import type { Brand, BrandDeal, LedgerEntry, Partnership, PartnershipDeliverableLog } from './types'
 
 /** Converts an amount from its own currency into the creator's display currency — see CurrencyProvider. */
 export type ConvertFn = (amount: number, fromCurrency: string) => number
@@ -129,11 +130,18 @@ export function computeMetrics(
   ledger: Array<LedgerEntry>,
   convert: ConvertFn,
   now = new Date(),
+  partnerships: Array<Partnership> = [],
+  partnershipLogs: Array<PartnershipDeliverableLog> = [],
 ): DashboardMetrics {
   const ledgerEarningsThisMonth = ledger
     .filter((entry) => entry.type === 'income' && isSameMonth(new Date(entry.date), now))
     .reduce((sum, entry) => sum + convert(entry.amount, entry.currency), 0)
-  const earningsThisMonth = ledgerEarningsThisMonth + dealEarningsInMonth(deals, convert, now)
+  const partnershipEarningsThisMonth = partnerships.reduce(
+    (sum, p) => sum + partnershipEarningsInMonth(p, partnershipLogs, now, convert),
+    0,
+  )
+  const earningsThisMonth =
+    ledgerEarningsThisMonth + dealEarningsInMonth(deals, convert, now) + partnershipEarningsThisMonth
 
   const activeDeals = deals.filter((d) => !d.archived && (d.stage === 'confirmed' || d.stage === 'live')).length
 
@@ -161,11 +169,18 @@ export function monthlyRevenue(
   convert: ConvertFn,
   months = 6,
   now = new Date(),
+  partnerships: Array<Partnership> = [],
+  partnershipLogs: Array<PartnershipDeliverableLog> = [],
 ) {
-  const buckets: Array<{ label: string; total: number; key: string }> = []
+  const buckets: Array<{ label: string; total: number; key: string; date: Date }> = []
   for (let i = months - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    buckets.push({ label: d.toLocaleDateString('en-US', { month: 'short' }), total: 0, key: `${d.getFullYear()}-${d.getMonth()}` })
+    buckets.push({
+      label: d.toLocaleDateString('en-US', { month: 'short' }),
+      total: 0,
+      key: `${d.getFullYear()}-${d.getMonth()}`,
+      date: d,
+    })
   }
   const byKey = new Map(buckets.map((b) => [b.key, b]))
   const addToBucket = (date: Date, amount: number) => {
@@ -180,6 +195,11 @@ export function monthlyRevenue(
     const earnedDate = dealEarnedDate(deal)
     if (earnedDate) addToBucket(earnedDate, convert(deal.compensationAmount, deal.compensationCurrency))
   })
+  buckets.forEach((bucket) => {
+    partnerships.forEach((p) => {
+      bucket.total += partnershipEarningsInMonth(p, partnershipLogs, bucket.date, convert)
+    })
+  })
 
-  return buckets
+  return buckets.map(({ label, total, key }) => ({ label, total, key }))
 }

@@ -19,9 +19,9 @@ interface MetricsGridProps {
 }
 
 export function MetricsGrid({ isHidden, hide }: MetricsGridProps) {
-  const { deals, ledger } = useCharmStore()
+  const { deals, ledger, partnerships, partnershipDeliverables } = useCharmStore()
   const { displayCurrency, convert } = useCurrency()
-  const metrics = computeMetrics(deals, ledger, convert)
+  const metrics = computeMetrics(deals, ledger, convert, new Date(), partnerships, partnershipDeliverables)
 
   const currency = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -36,7 +36,7 @@ export function MetricsGrid({ isHidden, hide }: MetricsGridProps) {
       value: currency.format(metrics.earningsThisMonth),
       icon: <Wallet className="size-4.5" />,
       accentClass: 'bg-[var(--accent)]',
-      hint: 'From paid deals & ledger entries',
+      hint: 'From deals, partnerships & ledger entries',
     },
     {
       id: WIDGET_IDS.activeDeals,

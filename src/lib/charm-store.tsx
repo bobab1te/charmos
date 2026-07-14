@@ -1,9 +1,26 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { getSupabaseBrowserClient, isSupabaseConfigured } from './supabase/browser-client'
-import { brandFromRow, dealFromRow, ideaFromRow, ledgerFromRow } from './supabase/mappers'
+import {
+  brandFromRow,
+  dealFromRow,
+  ideaFromRow,
+  ledgerFromRow,
+  partnershipDeliverableFromRow,
+  partnershipFromRow,
+} from './supabase/mappers'
 import { splitList } from './deal-form-utils'
-import type { Brand, BrandDeal, DealFormValues, DealStage, IdeaPost, LedgerEntry } from './types'
+import type {
+  Brand,
+  BrandDeal,
+  DealFormValues,
+  DealStage,
+  IdeaPost,
+  LedgerEntry,
+  Partnership,
+  PartnershipDeliverableLog,
+  PartnershipFormValues,
+} from './types'
 import type { Database, Json } from './supabase/database.types'
 
 /**
@@ -17,6 +34,8 @@ interface CharmStoreValue {
   deals: Array<BrandDeal>
   ideas: Array<IdeaPost>
   ledger: Array<LedgerEntry>
+  partnerships: Array<Partnership>
+  partnershipDeliverables: Array<PartnershipDeliverableLog>
   moveDeal: (dealId: string, stage: DealStage) => void
   /** Pass null to clear the override and fall back to the deterministic default color. */
   updateDealColor: (dealId: string, color: string | null) => void
@@ -40,6 +59,13 @@ interface CharmStoreValue {
   updateBrand: (brandId: string, updates: Partial<Pick<Brand, 'name' | 'contactName' | 'contactEmail'>>) => void
   /** Returns false without deleting if the brand still has deals attached. */
   deleteBrand: (brandId: string) => Promise<boolean>
+  partnershipById: (id: string) => Partnership | undefined
+  /** Finds-or-creates the brand by (case-insensitive) name, then creates or updates the partnership. Returns the partnership id. */
+  savePartnership: (form: PartnershipFormValues, existingId?: string) => Promise<string>
+  deletePartnership: (partnershipId: string) => Promise<void>
+  logPartnershipDeliverable: (partnershipId: string) => void
+  /** Removes the most recently logged deliverable for this partnership, if any — for correcting mis-clicks. */
+  undoLastPartnershipDeliverable: (partnershipId: string) => void
 }
 
 const CharmStoreContext = createContext<CharmStoreValue | null>(null)
@@ -71,6 +97,8 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
   const [deals, setDeals] = useState<Array<BrandDeal>>([])
   const [ideas, setIdeas] = useState<Array<IdeaPost>>([])
   const [ledger, setLedger] = useState<Array<LedgerEntry>>([])
+  const [partnerships, setPartnerships] = useState<Array<Partnership>>([])
+  const [partnershipDeliverables, setPartnershipDeliverables] = useState<Array<PartnershipDeliverableLog>>([])
 
   // This provider lives at the app root and never unmounts across client-side
   // navigation, so it must react to login/logout rather than only checking once.
@@ -95,6 +123,8 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       setDeals([])
       setIdeas([])
       setLedger([])
+      setPartnerships([])
+      setPartnershipDeliverables([])
       return
     }
 
@@ -102,17 +132,22 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
     let cancelled = false
 
     async function loadInitial() {
-      const [brandsRes, dealsRes, ideasRes, ledgerRes] = await Promise.all([
-        supabase.from('brands').select('*').order('created_at', { ascending: false }),
-        supabase.from('deals').select('*').order('created_at', { ascending: false }),
-        supabase.from('ideas').select('*').order('created_at', { ascending: false }),
-        supabase.from('ledger').select('*').order('date', { ascending: false }),
-      ])
+      const [brandsRes, dealsRes, ideasRes, ledgerRes, partnershipsRes, partnershipDeliverablesRes] =
+        await Promise.all([
+          supabase.from('brands').select('*').order('created_at', { ascending: false }),
+          supabase.from('deals').select('*').order('created_at', { ascending: false }),
+          supabase.from('ideas').select('*').order('created_at', { ascending: false }),
+          supabase.from('ledger').select('*').order('date', { ascending: false }),
+          supabase.from('partnerships').select('*').order('created_at', { ascending: false }),
+          supabase.from('partnership_deliverables').select('*').order('completed_at', { ascending: false }),
+        ])
       if (cancelled) return
       setBrands((brandsRes.data ?? []).map(brandFromRow))
       setDeals((dealsRes.data ?? []).map(dealFromRow))
       setIdeas((ideasRes.data ?? []).map(ideaFromRow))
       setLedger((ledgerRes.data ?? []).map(ledgerFromRow))
+      setPartnerships((partnershipsRes.data ?? []).map(partnershipFromRow))
+      setPartnershipDeliverables((partnershipDeliverablesRes.data ?? []).map(partnershipDeliverableFromRow))
     }
 
     loadInitial()
@@ -138,6 +173,16 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'ledger', filter: `user_id=eq.${userId}` },
         (payload) => setLedger((prev) => applyChange(prev, payload, ledgerFromRow)),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'partnerships', filter: `user_id=eq.${userId}` },
+        (payload) => setPartnerships((prev) => applyChange(prev, payload, partnershipFromRow)),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'partnership_deliverables', filter: `user_id=eq.${userId}` },
+        (payload) => setPartnershipDeliverables((prev) => applyChange(prev, payload, partnershipDeliverableFromRow)),
       )
       .subscribe()
 
@@ -469,14 +514,124 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
 
   const deleteBrand = useCallback(
     async (brandId: string): Promise<boolean> => {
-      if (deals.some((d) => d.brandId === brandId)) return false
+      if (deals.some((d) => d.brandId === brandId) || partnerships.some((p) => p.brandId === brandId)) return false
       setBrands((prev) => prev.filter((b) => b.id !== brandId))
       if (userId) {
         await getSupabaseBrowserClient().from('brands').delete().eq('id', brandId)
       }
       return true
     },
-    [deals, userId],
+    [deals, partnerships, userId],
+  )
+
+  const partnershipById = useCallback((id: string) => partnerships.find((p) => p.id === id), [partnerships])
+
+  const savePartnership = useCallback(
+    async (form: PartnershipFormValues, existingId?: string): Promise<string> => {
+      if (!userId) throw new Error('Not signed in')
+      const supabase = getSupabaseBrowserClient()
+      const trimmedName = form.brandName.trim()
+
+      let brandId: string
+      const existingBrand = brands.find((b) => b.name.toLowerCase() === trimmedName.toLowerCase())
+      if (existingBrand) {
+        brandId = existingBrand.id
+      } else {
+        const { data, error } = await supabase
+          .from('brands')
+          .insert({ user_id: userId, name: trimmedName })
+          .select('*')
+          .single()
+        if (error || !data) throw new Error(error?.message ?? 'Failed to create brand')
+        brandId = data.id
+        setBrands((prev) => [brandFromRow(data), ...prev])
+      }
+
+      const contentFormats = splitList(form.contentFormats)
+
+      const payload = {
+        user_id: userId,
+        brand_id: brandId,
+        start_date: form.startDate ? new Date(form.startDate).toISOString() : new Date().toISOString(),
+        end_date: form.endDate ? new Date(form.endDate).toISOString() : null,
+        payment_type: form.paymentType,
+        retainer_amount: form.paymentType === 'retainer' ? Number(form.retainerAmount) || 0 : null,
+        retainer_cadence: form.paymentType === 'retainer' ? form.retainerCadence : null,
+        per_deliverable_rate: form.paymentType === 'per_deliverable' ? Number(form.perDeliverableRate) || 0 : null,
+        currency: form.currency.trim() || 'USD',
+        deliverable_count: Number(form.deliverableCount) || 1,
+        deliverable_unit: form.deliverableUnit.trim() || 'pieces of content',
+        deliverable_cadence: form.deliverableCadence,
+        content_formats: contentFormats,
+        notes: form.notes.trim() || null,
+        status: form.status,
+      }
+
+      if (existingId) {
+        const { data, error } = await supabase
+          .from('partnerships')
+          .update(payload)
+          .eq('id', existingId)
+          .select('*')
+          .single()
+        if (error || !data) throw new Error(error?.message ?? 'Failed to update partnership')
+        const updated = partnershipFromRow(data)
+        setPartnerships((prev) => prev.map((p) => (p.id === existingId ? updated : p)))
+        return existingId
+      }
+
+      const { data, error } = await supabase.from('partnerships').insert(payload).select('*').single()
+      if (error || !data) throw new Error(error?.message ?? 'Failed to create partnership')
+      const created = partnershipFromRow(data)
+      setPartnerships((prev) => [created, ...prev])
+      return created.id
+    },
+    [userId, brands],
+  )
+
+  const deletePartnership = useCallback(
+    async (partnershipId: string) => {
+      setPartnerships((prev) => prev.filter((p) => p.id !== partnershipId))
+      setPartnershipDeliverables((prev) => prev.filter((d) => d.partnershipId !== partnershipId))
+      if (!userId) return
+      await getSupabaseBrowserClient().from('partnerships').delete().eq('id', partnershipId)
+    },
+    [userId],
+  )
+
+  const logPartnershipDeliverable = useCallback(
+    (partnershipId: string) => {
+      const tempId = `partnership-deliverable-temp-${Date.now()}`
+      const completedAt = new Date().toISOString()
+      setPartnershipDeliverables((prev) => [{ id: tempId, partnershipId, completedAt }, ...prev])
+
+      if (!userId) return
+      getSupabaseBrowserClient()
+        .from('partnership_deliverables')
+        .insert({ user_id: userId, partnership_id: partnershipId, completed_at: completedAt })
+        .select('*')
+        .single()
+        .then(({ data }) => {
+          if (!data) return
+          const real = partnershipDeliverableFromRow(data)
+          setPartnershipDeliverables((prev) => prev.map((d) => (d.id === tempId ? real : d)))
+        })
+    },
+    [userId],
+  )
+
+  const undoLastPartnershipDeliverable = useCallback(
+    (partnershipId: string) => {
+      const logsForPartnership = partnershipDeliverables
+        .filter((d) => d.partnershipId === partnershipId)
+        .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
+      const mostRecent = logsForPartnership[0]
+      if (!mostRecent) return
+      setPartnershipDeliverables((prev) => prev.filter((d) => d.id !== mostRecent.id))
+      if (!userId) return
+      getSupabaseBrowserClient().from('partnership_deliverables').delete().eq('id', mostRecent.id).then(() => {})
+    },
+    [partnershipDeliverables, userId],
   )
 
   const value = useMemo(
@@ -485,6 +640,8 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       deals,
       ideas,
       ledger,
+      partnerships,
+      partnershipDeliverables,
       moveDeal,
       updateDealColor,
       assignIdeaDate,
@@ -501,12 +658,19 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       unarchiveDeal,
       updateBrand,
       deleteBrand,
+      partnershipById,
+      savePartnership,
+      deletePartnership,
+      logPartnershipDeliverable,
+      undoLastPartnershipDeliverable,
     }),
     [
       brands,
       deals,
       ideas,
       ledger,
+      partnerships,
+      partnershipDeliverables,
       moveDeal,
       updateDealColor,
       assignIdeaDate,
@@ -523,6 +687,11 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       unarchiveDeal,
       updateBrand,
       deleteBrand,
+      partnershipById,
+      savePartnership,
+      deletePartnership,
+      logPartnershipDeliverable,
+      undoLastPartnershipDeliverable,
     ],
   )
 
