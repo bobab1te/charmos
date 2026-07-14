@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import {
   Dialog,
@@ -13,6 +13,7 @@ import { DealParseInput } from './deal-parse-input'
 import type { DealParsePayload, StagedAsset } from './deal-parse-input'
 import { useCharmStore } from '#/lib/charm-store'
 import { dealToFormValues, emptyDealForm, formValuesMissingFields, parsedDealToFormValues } from '#/lib/deal-form-utils'
+import { clearDraft, readDraft, writeDraft } from '#/lib/form-draft'
 import { parseDealText } from '#/server/parse-deal'
 import type { DealFormValues } from '#/lib/types'
 
@@ -27,16 +28,25 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
   const { deals, brandById, saveDeal, deleteDeal, archiveDeal } = useCharmStore()
   const isEditing = Boolean(dealId)
 
-  const [rawText, setRawText] = useState('')
+  // Keyed per-deal (or "new") so an in-progress draft survives a full unmount — navigating to
+  // another section and back, or a browser tab switch — instead of disappearing with it. Only
+  // cleared on an explicit close (X/Cancel) or after a successful save/delete/archive, never as
+  // a side effect of unmounting. Note: staged file attachments can't be persisted this way (raw
+  // File objects aren't serializable) and won't survive a full unmount — everything else will.
+  const draftKey = `charmos:deal-form:${dealId ?? 'new'}`
+
+  const [rawText, setRawText] = useState(() => readDraft<string>(`${draftKey}:rawText`) ?? '')
   const [stagedAssets, setStagedAssets] = useState<Array<StagedAsset>>([])
   const [parsing, setParsing] = useState(false)
   const [parseError, setParseError] = useState<string | null>(null)
-  const [showForm, setShowForm] = useState(isEditing)
+  const [showForm, setShowForm] = useState(() => readDraft<boolean>(`${draftKey}:showForm`) ?? isEditing)
   const [missingFields, setMissingFields] = useState<Array<string>>([])
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [values, setValues] = useState<DealFormValues>(() => {
+    const draft = readDraft<DealFormValues>(`${draftKey}:values`)
+    if (draft) return draft
     if (dealId) {
       const deal = deals.find((d) => d.id === dealId)
       const brand = deal ? brandById(deal.brandId) : undefined
@@ -46,7 +56,26 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
   })
 
   useEffect(() => {
-    if (!open) return
+    if (open) writeDraft(`${draftKey}:values`, values)
+  }, [open, draftKey, values])
+  useEffect(() => {
+    if (open) writeDraft(`${draftKey}:rawText`, rawText)
+  }, [open, draftKey, rawText])
+  useEffect(() => {
+    if (open) writeDraft(`${draftKey}:showForm`, showForm)
+  }, [open, draftKey, showForm])
+
+  // Reset/prefill only on a genuine open-transition or a switch to editing a different deal —
+  // not on every render, and not when the component mounts already-open with a restored draft
+  // (which would otherwise immediately overwrite that draft with fresh/empty values).
+  const prevRef = useRef({ open, dealId })
+  useEffect(() => {
+    const prev = prevRef.current
+    const justOpened = open && !prev.open
+    const dealSwitched = open && prev.dealId !== dealId
+    prevRef.current = { open, dealId }
+    if (!justOpened && !dealSwitched) return
+
     setSaveError(null)
     if (dealId) {
       const deal = deals.find((d) => d.id === dealId)
@@ -63,6 +92,17 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, dealId])
+
+  function clearDealDraft() {
+    clearDraft(`${draftKey}:values`)
+    clearDraft(`${draftKey}:rawText`)
+    clearDraft(`${draftKey}:showForm`)
+  }
+
+  function handleDialogOpenChange(next: boolean) {
+    if (!next) clearDealDraft()
+    onOpenChange(next)
+  }
 
   async function handleParse(payload: DealParsePayload) {
     setParsing(true)
@@ -91,6 +131,7 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
     setSaveError(null)
     try {
       await saveDeal(values, dealId)
+      clearDealDraft()
       onOpenChange(false)
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Something went wrong saving that deal.')
@@ -105,6 +146,7 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
     setSaveError(null)
     try {
       await deleteDeal(dealId)
+      clearDealDraft()
       onOpenChange(false)
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Something went wrong deleting that deal.')
@@ -116,6 +158,7 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
   function handleArchive() {
     if (!dealId) return
     archiveDeal(dealId)
+    clearDealDraft()
     onOpenChange(false)
   }
 
@@ -123,7 +166,7 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
   const completedAt = currentDeal?.stage === 'completed' ? currentDeal.stageUpdatedAt : undefined
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="charm-glass max-h-[85vh] overflow-y-auto border-0 sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="font-display">{isEditing ? 'Edit deal' : 'New brand deal'}</DialogTitle>

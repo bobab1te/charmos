@@ -21,6 +21,7 @@ import { DealModal } from '#/components/deals/deal-modal'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
 import { isDealUnpaidAlert, nextDeliverable, urgencyForDate } from '#/lib/derived'
+import { readDraft, writeDraft } from '#/lib/form-draft'
 import { cn } from '#/lib/utils'
 import { DEAL_CARD_PALETTE, defaultCardColor, readableTextColor } from '#/lib/deal-card-colors'
 import type { BrandDeal, DealStage } from '#/lib/types'
@@ -280,9 +281,17 @@ export function DealPipeline({ onHide, onlyUnpaid }: { onHide?: () => void; only
   const { deals, brandById, moveDeal, updateDealColor } = useCharmStore()
   const [activeDeal, setActiveDeal] = useState<BrandDeal | null>(null)
   const [interactive, setInteractive] = useState(false)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editingDealId, setEditingDealId] = useState<string | undefined>(undefined)
+  // Persisted (not plain useState) so the "New Deal"/"Edit Deal" modal stays open across a full
+  // unmount — navigating to another section and back, or a browser tab switch — instead of just
+  // silently disappearing along with whatever the user had typed into it.
+  const [modalOpen, setModalOpen] = useState(() => readDraft<boolean>('charmos:deal-modal-open') ?? false)
+  const [editingDealId, setEditingDealId] = useState<string | undefined>(
+    () => readDraft<string | undefined>('charmos:deal-modal-editing-id') ?? undefined,
+  )
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
+
+  useEffect(() => writeDraft('charmos:deal-modal-open', modalOpen), [modalOpen])
+  useEffect(() => writeDraft('charmos:deal-modal-editing-id', editingDealId), [editingDealId])
 
   function openNewDeal() {
     setEditingDealId(undefined)

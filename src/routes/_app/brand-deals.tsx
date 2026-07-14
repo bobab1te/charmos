@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { ArchiveRestore, Pencil, Plus, Trash2, X, Check } from 'lucide-react'
 import { Input } from '#/components/ui/input'
@@ -10,6 +10,7 @@ import { PartnershipCard } from '#/components/partnerships/partnership-card'
 import { PartnershipModal } from '#/components/partnerships/partnership-modal'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
+import { readDraft, writeDraft } from '#/lib/form-draft'
 import type { Brand, BrandDeal } from '#/lib/types'
 
 export const Route = createFileRoute('/_app/brand-deals')({
@@ -243,8 +244,18 @@ function BrandDealsPage() {
   const { filter } = Route.useSearch()
   const { deals, partnerships } = useCharmStore()
   const archivedCount = deals.filter((d) => d.archived).length
-  const [partnershipModalOpen, setPartnershipModalOpen] = useState(false)
-  const [editingPartnershipId, setEditingPartnershipId] = useState<string | undefined>(undefined)
+  const [partnershipModalOpen, setPartnershipModalOpen] = useState(
+    () => readDraft<boolean>('charmos:partnership-modal-open') ?? false,
+  )
+  const [editingPartnershipId, setEditingPartnershipId] = useState<string | undefined>(
+    () => readDraft<string | undefined>('charmos:partnership-modal-editing-id') ?? undefined,
+  )
+
+  useEffect(() => writeDraft('charmos:partnership-modal-open', partnershipModalOpen), [partnershipModalOpen])
+  useEffect(
+    () => writeDraft('charmos:partnership-modal-editing-id', editingPartnershipId),
+    [editingPartnershipId],
+  )
 
   function openNewPartnership() {
     setEditingPartnershipId(undefined)
