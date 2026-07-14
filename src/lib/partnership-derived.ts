@@ -55,17 +55,20 @@ export function getNextPaymentDate(partnership: Partnership, now = new Date()): 
 }
 
 /**
- * Whether a given calendar day falls inside the partnership's most recent pause window
- * (pausedAt, inclusive, through unpausedAt, exclusive — or indefinitely if still paused).
- * Used to exclude recurring retainer revenue for exactly the paused period, without
- * retroactively affecting days before the pause or losing track of the cadence once
- * resumed.
+ * Whether a given calendar day falls inside the partnership's most recent pause window.
+ * The live `status` field is authoritative for "currently paused" — a partnership whose
+ * status is "paused" is excluded from `pausedAt` onward, or unconditionally if `pausedAt`
+ * was never recorded (e.g. one paused before this date tracking existed — better to
+ * exclude too much than to keep silently accruing revenue for something the user marked
+ * paused). Once resumed, only the specific recorded [pausedAt, unpausedAt) window is
+ * excluded, so days before the pause and after the resume both count normally.
  */
 export function isPartnershipPausedOn(partnership: Partnership, date: Date): boolean {
-  if (!partnership.pausedAt) return false
-  if (date < new Date(partnership.pausedAt)) return false
-  if (partnership.unpausedAt && date >= new Date(partnership.unpausedAt)) return false
-  return true
+  if (partnership.status === 'paused') {
+    return !partnership.pausedAt || date >= new Date(partnership.pausedAt)
+  }
+  if (!partnership.pausedAt || !partnership.unpausedAt) return false
+  return date >= new Date(partnership.pausedAt) && date < new Date(partnership.unpausedAt)
 }
 
 /**
