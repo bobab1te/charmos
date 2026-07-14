@@ -23,7 +23,7 @@ import { useCurrency } from '#/lib/currency-context'
 import { isDealUnpaidAlert, nextDeliverable, urgencyForDate } from '#/lib/derived'
 import { readDraft, writeDraft } from '#/lib/form-draft'
 import { cn } from '#/lib/utils'
-import { DEAL_CARD_PALETTE, defaultCardColor, readableTextColor } from '#/lib/deal-card-colors'
+import { DEAL_CARD_PALETTE, defaultCardColor, resolveTextColor } from '#/lib/deal-card-colors'
 import type { BrandDeal, DealStage } from '#/lib/types'
 
 const COLUMNS: Array<{ id: DealStage; label: string }> = [
@@ -105,7 +105,7 @@ function DealCardInner({
 }) {
   const next = nextDeliverable(deal)
   const color = deal.color ?? defaultCardColor(deal.id)
-  const textColor = readableTextColor(color)
+  const textColor = resolveTextColor(color)
   const softTextColor = textColor === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(26,18,32,0.65)'
   const isUnpaid = isDealUnpaidAlert(deal)
   const { displayCurrency, convert } = useCurrency()
