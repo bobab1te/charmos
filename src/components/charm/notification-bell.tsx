@@ -97,7 +97,17 @@ function StaleCompletedRow({
 export function NotificationBell() {
   const { deals, brandById } = useCharmStore()
   const [openDealId, setOpenDealId] = useState<string | null>(null)
+  // Controlled (not just PopoverTrigger's default toggle) so opening a deal from a row can
+  // also close the panel — Radix never does this on its own, since a click on a row's own
+  // content isn't an "outside" interaction, so the panel would otherwise stay open behind
+  // the deal modal and reappear once that's closed.
+  const [panelOpen, setPanelOpen] = useState(false)
   const brandName = (id: string) => brandById(id)?.name ?? 'Unknown brand'
+
+  function openDeal(dealId: string) {
+    setOpenDealId(dealId)
+    setPanelOpen(false)
+  }
 
   const dueSoon = useMemo(
     () =>
@@ -116,7 +126,7 @@ export function NotificationBell() {
 
   return (
     <>
-      <Popover>
+      <Popover open={panelOpen} onOpenChange={setPanelOpen}>
         <PopoverTrigger asChild>
           <button
             type="button"
@@ -147,7 +157,7 @@ export function NotificationBell() {
                       <button
                         key={deal.id}
                         type="button"
-                        onClick={() => setOpenDealId(deal.id)}
+                        onClick={() => openDeal(deal.id)}
                         className="flex flex-col gap-0.5 rounded-xl bg-white/50 p-2.5 text-left transition duration-150 ease-out hover:bg-white/70"
                       >
                         <div className="flex items-center gap-1.5">
@@ -176,7 +186,7 @@ export function NotificationBell() {
                     Possible ghosting
                   </h3>
                   {ghosted.map((deal) => (
-                    <GhostedRow key={deal.id} deal={deal} brandName={brandName(deal.brandId)} onOpen={setOpenDealId} />
+                    <GhostedRow key={deal.id} deal={deal} brandName={brandName(deal.brandId)} onOpen={openDeal} />
                   ))}
                 </div>
               )}
@@ -191,7 +201,7 @@ export function NotificationBell() {
                       key={deal.id}
                       deal={deal}
                       brandName={brandName(deal.brandId)}
-                      onOpen={setOpenDealId}
+                      onOpen={openDeal}
                     />
                   ))}
                 </div>
