@@ -20,8 +20,8 @@ export interface DealCardSwatch {
  * for this palette in either theme).
  */
 export const DEAL_CARD_PALETTE: Array<DealCardSwatch> = [
-  { id: 'blush', label: 'Blush', value: '#f2d9d9', textColor: '#1a1220' },
-  { id: 'dusty-rose', label: 'Dusty Rose', value: '#dcb8c4', textColor: '#1a1220' },
+  { id: 'pale-pink', label: 'Pale Pink', value: '#ffe1e6', textColor: '#1a1220' },
+  { id: 'azalea', label: 'Azalea', value: '#f7c9d4', textColor: '#1a1220' },
   { id: 'lilac', label: 'Lilac', value: '#d9c7e3', textColor: '#1a1220' },
   { id: 'dusty-blue', label: 'Dusty Blue', value: '#a9b7db', textColor: '#1a1220' },
   { id: 'sage', label: 'Sage', value: '#b7c2a8', textColor: '#1a1220' },
