@@ -12,12 +12,13 @@ import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useDraggable } from '@dnd-kit/core'
 import { format } from 'date-fns'
-import { AlertTriangle, Briefcase, Plus } from 'lucide-react'
+import { AlertTriangle, Briefcase, Plus, Upload } from 'lucide-react'
 import { WidgetCard } from '#/components/charm/widget-card'
 import { Button } from '#/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '#/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import { DealModal } from '#/components/deals/deal-modal'
+import { BulkImportModal } from '#/components/deals/bulk-import-modal'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
 import { isDealUnpaidAlert, nextDeliverable, urgencyForDate } from '#/lib/derived'
@@ -369,10 +370,14 @@ export function DealPipeline({ onHide, onlyUnpaid }: { onHide?: () => void; only
   const [editingDealId, setEditingDealId] = useState<string | undefined>(
     () => readDraft<string | undefined>('charmos:deal-modal-editing-id') ?? undefined,
   )
+  const [importModalOpen, setImportModalOpen] = useState(
+    () => readDraft<boolean>('charmos:bulk-import-modal-open') ?? false,
+  )
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
   useEffect(() => writeDraft('charmos:deal-modal-open', modalOpen), [modalOpen])
   useEffect(() => writeDraft('charmos:deal-modal-editing-id', editingDealId), [editingDealId])
+  useEffect(() => writeDraft('charmos:bulk-import-modal-open', importModalOpen), [importModalOpen])
 
   function openNewDeal() {
     setEditingDealId(undefined)
@@ -428,14 +433,25 @@ export function DealPipeline({ onHide, onlyUnpaid }: { onHide?: () => void; only
       icon={<Briefcase className="size-4" />}
       onHide={onHide}
       headerAction={
-        <Button
-          type="button"
-          size="sm"
-          onClick={openNewDeal}
-          className="gap-1 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
-        >
-          <Plus className="size-3.5" /> New Deal
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setImportModalOpen(true)}
+            className="gap-1"
+          >
+            <Upload className="size-3.5" /> Import Deals
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={openNewDeal}
+            className="gap-1 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+          >
+            <Plus className="size-3.5" /> New Deal
+          </Button>
+        </div>
       }
     >
       {onlyUnpaid && (
@@ -471,6 +487,7 @@ export function DealPipeline({ onHide, onlyUnpaid }: { onHide?: () => void; only
         )}
       </div>
       <DealModal open={modalOpen} onOpenChange={setModalOpen} dealId={editingDealId} />
+      <BulkImportModal open={importModalOpen} onOpenChange={setImportModalOpen} />
     </WidgetCard>
   )
 

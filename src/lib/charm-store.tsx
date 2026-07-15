@@ -11,6 +11,7 @@ import {
 } from './supabase/mappers'
 import { splitList } from './deal-form-utils'
 import { dateOnlyToISOString } from './date-only'
+import type { BulkImportRow } from './bulk-import-utils'
 import type {
   Brand,
   BrandDeal,
@@ -56,6 +57,8 @@ interface CharmStoreValue {
   dealById: (id: string) => BrandDeal | undefined
   /** Finds-or-creates the brand by (case-insensitive) name, then creates or updates the deal. Returns the deal id. */
   saveDeal: (form: DealFormValues, existingDealId?: string) => Promise<string>
+  /** Finds-or-creates brands (deduped case-insensitively, one insert for all new ones) and inserts all deals in a single batch — for the bulk import review flow. Returns how many deals were created. */
+  bulkCreateDeals: (rows: Array<BulkImportRow>) => Promise<number>
   deleteDeal: (dealId: string) => Promise<void>
   archiveDeal: (dealId: string) => void
   unarchiveDeal: (dealId: string) => void
@@ -486,6 +489,70 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
     [userId, brands, deals],
   )
 
+  const bulkCreateDeals = useCallback(
+    async (rows: Array<BulkImportRow>): Promise<number> => {
+      if (!userId) throw new Error('Not signed in')
+      if (rows.length === 0) return 0
+      const supabase = getSupabaseBrowserClient()
+      const now = new Date().toISOString()
+
+      // Resolve brands first: reuse an existing brand (case-insensitive) if one matches, and
+      // create every genuinely new brand name in a single insert rather than one round trip per row.
+      const brandIdByName = new Map<string, string>()
+      for (const b of brands) brandIdByName.set(b.name.toLowerCase(), b.id)
+
+      const uniqueNewNames = Array.from(
+        new Set(
+          rows
+            .map((r) => r.brandName.trim())
+            .filter((name) => name && !brandIdByName.has(name.toLowerCase())),
+        ),
+      )
+
+      if (uniqueNewNames.length > 0) {
+        const { data, error } = await supabase
+          .from('brands')
+          .insert(uniqueNewNames.map((name) => ({ user_id: userId, name })))
+          .select('*')
+        if (error || !data) throw new Error(error?.message ?? 'Failed to create brands')
+        data.forEach((row) => brandIdByName.set(row.name.toLowerCase(), row.id))
+        setBrands((prev) => [...data.map(brandFromRow), ...prev])
+      }
+
+      const dealPayloads = rows.map((row) => {
+        const brandId = brandIdByName.get(row.brandName.trim().toLowerCase())
+        if (!brandId) throw new Error(`No brand resolved for "${row.brandName}"`)
+        const deliverables = row.dueDate
+          ? [
+              {
+                id: `del-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                type: row.deliverableType.trim() || 'Deliverable',
+                dueDate: dateOnlyToISOString(row.dueDate),
+                done: false,
+              },
+            ]
+          : []
+        return {
+          user_id: userId,
+          brand_id: brandId,
+          stage: row.stage,
+          deliverables: deliverables as unknown as Json,
+          compensation_amount: Number(row.compensationAmount) || 0,
+          compensation_currency: row.compensationCurrency.trim() || 'USD',
+          compensation_type: row.compensationType,
+          stage_updated_at: now,
+        }
+      })
+
+      const { data, error } = await supabase.from('deals').insert(dealPayloads).select('*')
+      if (error || !data) throw new Error(error?.message ?? 'Failed to import deals')
+      const created = data.map(dealFromRow)
+      setDeals((prev) => [...created, ...prev])
+      return created.length
+    },
+    [userId, brands],
+  )
+
   const deleteDeal = useCallback(
     async (dealId: string) => {
       setDeals((prev) => prev.filter((d) => d.id !== dealId))
@@ -670,6 +737,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       brandById,
       dealById,
       saveDeal,
+      bulkCreateDeals,
       deleteDeal,
       archiveDeal,
       unarchiveDeal,
@@ -700,6 +768,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       brandById,
       dealById,
       saveDeal,
+      bulkCreateDeals,
       deleteDeal,
       archiveDeal,
       unarchiveDeal,
