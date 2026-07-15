@@ -238,7 +238,7 @@ function DealCardInner({
       </p>
       <DealCardNotes
         dealId={deal.id}
-        notes={deal.contentRequirements?.notes}
+        notes={deal.notes}
         softTextColor={softTextColor}
         onNotesChange={onNotesChange}
       />

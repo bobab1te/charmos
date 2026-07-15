@@ -357,6 +357,19 @@ export function DealForm({
               </div>
             </div>
           </Section>
+
+          <Section title="Notes">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="dealNotes">General notes</Label>
+              <Textarea
+                id="dealNotes"
+                value={values.dealNotes}
+                onChange={(e) => set('dealNotes', e.target.value)}
+                placeholder="Anything worth remembering about this deal — separate from the brand's content requirements"
+                rows={4}
+              />
+            </div>
+          </Section>
         </TabsContent>
 
         <TabsContent value="content" className="mt-4 flex flex-col gap-4">

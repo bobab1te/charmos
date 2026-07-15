@@ -14,7 +14,6 @@ import { dateOnlyToISOString } from './date-only'
 import type {
   Brand,
   BrandDeal,
-  ContentRequirements,
   DealFormValues,
   DealStage,
   IdeaPost,
@@ -41,7 +40,7 @@ interface CharmStoreValue {
   moveDeal: (dealId: string, stage: DealStage) => void
   /** Pass null to clear the override and fall back to the deterministic default color. */
   updateDealColor: (dealId: string, color: string | null) => void
-  /** Quick inline edit for the card-level notes preview — updates contentRequirements.notes without touching the rest of the deal. */
+  /** Quick inline edit for the card-level notes preview — updates the general BrandDeal.notes field, distinct from contentRequirements.notes. */
   updateDealNotes: (dealId: string, notes: string) => void
   assignIdeaDate: (ideaId: string, date: string) => void
   /** Clears scheduledDate and reverts status back to 'idea' if it hadn't progressed past 'scheduled'. */
@@ -221,27 +220,10 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
 
   const updateDealNotes = useCallback(
     (dealId: string, notes: string) => {
-      let nextContentRequirements: ContentRequirements | undefined
-      setDeals((prev) =>
-        prev.map((deal) => {
-          if (deal.id !== dealId) return deal
-          nextContentRequirements = {
-            hashtags: [],
-            accountsToTag: [],
-            clipsToUse: [],
-            referenceLinks: [],
-            ...deal.contentRequirements,
-            notes: notes.trim() || undefined,
-          }
-          return { ...deal, contentRequirements: nextContentRequirements }
-        }),
-      )
-      if (!userId || !nextContentRequirements) return
-      getSupabaseBrowserClient()
-        .from('deals')
-        .update({ content_requirements: nextContentRequirements as unknown as Json })
-        .eq('id', dealId)
-        .then(() => {})
+      const trimmed = notes.trim() || undefined
+      setDeals((prev) => prev.map((deal) => (deal.id === dealId ? { ...deal, notes: trimmed } : deal)))
+      if (!userId) return
+      getSupabaseBrowserClient().from('deals').update({ notes: trimmed ?? null }).eq('id', dealId).then(() => {})
     },
     [userId],
   )
@@ -478,6 +460,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         usage_rights: form.usageRights.trim() || undefined,
         shipment: shipment as unknown as Json,
         content_requirements: contentRequirements as unknown as Json,
+        notes: form.dealNotes.trim() || null,
         stage_updated_at: existingDeal && existingDeal.stage === form.stage ? existingDeal.stageUpdatedAt : now,
       }
 

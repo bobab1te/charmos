@@ -77,6 +77,7 @@ export interface Database {
           compensation_type: 'paid' | 'gifted' | 'commission'
           expected_payout_date: string | null
           archived: boolean
+          notes: string | null
         }
         Insert: {
           id?: string
@@ -97,6 +98,7 @@ export interface Database {
           compensation_type?: 'paid' | 'gifted' | 'commission'
           expected_payout_date?: string | null
           archived?: boolean
+          notes?: string | null
         }
         Update: Partial<Database['public']['Tables']['deals']['Insert']>
         Relationships: []

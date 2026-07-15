@@ -9,6 +9,7 @@ export function emptyDealForm(): DealFormValues {
     brandContactEmail: '',
     stage: 'negotiating',
     deliverables: [{ type: '', description: '', dueDate: '' }],
+    dealNotes: '',
     compensationAmount: '',
     compensationCurrency: 'USD',
     compensationType: 'paid',
@@ -41,6 +42,7 @@ export function dealToFormValues(deal: BrandDeal, brand: Brand): DealFormValues 
             dueDate: isoStringToDateOnly(d.dueDate),
           }))
         : [{ type: '', description: '', dueDate: '' }],
+    dealNotes: deal.notes ?? '',
     compensationAmount: String(deal.compensationAmount),
     compensationCurrency: deal.compensationCurrency,
     compensationType: deal.compensationType,

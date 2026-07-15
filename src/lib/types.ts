@@ -61,6 +61,8 @@ export interface BrandDeal {
   expectedPayoutDate?: string
   /** Archived deals are hidden from the kanban board and excluded from dashboard metrics, but remain viewable in the Archived tab. */
   archived: boolean
+  /** General freeform notes about the deal (e.g. "brand is slow to respond") — shown as a quick preview on the kanban card. Distinct from contentRequirements.notes, which is the brand's creative-brief notes for the content itself. */
+  notes?: string
 }
 
 export interface IdeaPost {
@@ -103,6 +105,8 @@ export interface DealFormValues {
   brandContactEmail: string
   stage: DealStage
   deliverables: Array<DealFormDeliverable>
+  /** General freeform notes about the deal — see BrandDeal.notes. */
+  dealNotes: string
   compensationAmount: string
   compensationCurrency: string
   compensationType: CompensationType
