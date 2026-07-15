@@ -3,22 +3,31 @@ export interface DealCardSwatch {
   label: string
   value: string
   /**
-   * Overrides readableTextColor's generic pick for this swatch specifically. Needed for
-   * lavender: the luminance formula under-weights blue, so a visually-light violet like this
-   * lands just under the 0.5 white/dark cutoff and gets white text despite dark text actually
-   * having far better contrast against it (~9:1 vs ~2:1) — see resolveTextColor.
+   * Overrides readableTextColor's generic pick for this swatch specifically — see
+   * resolveTextColor and the palette's own comment below for why every current swatch sets this.
    */
   textColor?: string
 }
 
-/** A consistent pastel family (same ~80% lightness/saturation as the app's existing charm-pink-deep) so cards read as soft, not saturated. */
+/**
+ * "Pastel Bridesmaids" palette. Every swatch gets an explicit dark-text override rather
+ * than relying on the generic luminance heuristic below: the card background is actually
+ * `color-mix(in oklab, swatch 82%, var(--surface-strong))`, and --surface-strong is a dark
+ * plum in dark mode — mixing that in drags every one of these pastels' effective luminance
+ * under the heuristic's 0.5 cutoff, which would pick white text (checked by rendering the
+ * real color-mix result in both themes: dark text measures 6.4–9.6:1 contrast in dark mode
+ * and 10.4–14.8:1 in light mode, vs. white's 1.9–2.9:1 in dark mode — white is never right
+ * for this palette in either theme).
+ */
 export const DEAL_CARD_PALETTE: Array<DealCardSwatch> = [
-  { id: 'pink', label: 'Pink', value: '#f6a8c4' },
-  { id: 'lavender', label: 'Lavender', value: '#bd9ff2', textColor: '#1a1220' },
-  { id: 'blue', label: 'Blue', value: '#add0f5' },
-  { id: 'yellow', label: 'Yellow', value: '#f5e3ad' },
-  { id: 'green', label: 'Green', value: '#d5e6ab' },
-  { id: 'orange', label: 'Orange', value: '#f5d3ad' },
+  { id: 'blush', label: 'Blush', value: '#f2d9d9', textColor: '#1a1220' },
+  { id: 'dusty-rose', label: 'Dusty Rose', value: '#dcb8c4', textColor: '#1a1220' },
+  { id: 'lilac', label: 'Lilac', value: '#d9c7e3', textColor: '#1a1220' },
+  { id: 'dusty-blue', label: 'Dusty Blue', value: '#a9b7db', textColor: '#1a1220' },
+  { id: 'sage', label: 'Sage', value: '#b7c2a8', textColor: '#1a1220' },
+  { id: 'mint', label: 'Mint', value: '#c2e3d6', textColor: '#1a1220' },
+  { id: 'peach', label: 'Peach', value: '#f2c9a8', textColor: '#1a1220' },
+  { id: 'butter', label: 'Butter', value: '#f2e3a8', textColor: '#1a1220' },
 ]
 
 /**
