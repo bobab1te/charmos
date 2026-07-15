@@ -92,16 +92,85 @@ function DealColorPicker({ color, onChange }: { color: string; onChange: (color:
   )
 }
 
+function DealCardNotes({
+  dealId,
+  notes,
+  softTextColor,
+  onNotesChange,
+}: {
+  dealId: string
+  notes: string | undefined
+  softTextColor: string
+  onNotesChange?: (dealId: string, notes: string) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(notes ?? '')
+
+  if (!onNotesChange) {
+    if (!notes) return null
+    return (
+      <p className="mt-1.5 line-clamp-2 text-xs italic" style={{ color: softTextColor }}>
+        {notes}
+      </p>
+    )
+  }
+
+  if (editing) {
+    return (
+      <textarea
+        autoFocus
+        rows={2}
+        value={draft}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          setEditing(false)
+          if (draft.trim() !== (notes ?? '')) onNotesChange(dealId, draft)
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            setDraft(notes ?? '')
+            setEditing(false)
+          }
+        }}
+        placeholder="Add a note..."
+        className="mt-1.5 w-full resize-none rounded-lg border border-black/10 bg-white/60 p-1.5 text-xs text-[var(--charm-ink)] outline-none focus:border-[var(--accent)]"
+      />
+    )
+  }
+
+  return (
+    <p
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation()
+        setDraft(notes ?? '')
+        setEditing(true)
+      }}
+      className={cn(
+        'mt-1.5 line-clamp-2 cursor-text rounded-lg px-1.5 py-1 text-xs transition duration-150 ease-out hover:bg-black/5',
+        !notes && 'italic opacity-70',
+      )}
+      style={{ color: softTextColor }}
+    >
+      {notes || 'Add a note...'}
+    </p>
+  )
+}
+
 function DealCardInner({
   deal,
   brandName,
   onOpen,
   onColorChange,
+  onNotesChange,
 }: {
   deal: BrandDeal
   brandName: string
   onOpen?: (dealId: string) => void
   onColorChange?: (color: string | null) => void
+  onNotesChange?: (dealId: string, notes: string) => void
 }) {
   const next = nextDeliverable(deal)
   const color = deal.color ?? defaultCardColor(deal.id)
@@ -167,6 +236,12 @@ function DealCardInner({
           </span>
         )}
       </p>
+      <DealCardNotes
+        dealId={deal.id}
+        notes={deal.contentRequirements?.notes}
+        softTextColor={softTextColor}
+        onNotesChange={onNotesChange}
+      />
     </div>
   )
 }
@@ -176,11 +251,13 @@ function DraggableDealCard({
   brandName,
   onOpen,
   onColorChange,
+  onNotesChange,
 }: {
   deal: BrandDeal
   brandName: string
   onOpen: (dealId: string) => void
   onColorChange: (dealId: string, color: string | null) => void
+  onNotesChange: (dealId: string, notes: string) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: deal.id,
@@ -202,6 +279,7 @@ function DraggableDealCard({
         brandName={brandName}
         onOpen={onOpen}
         onColorChange={(color) => onColorChange(deal.id, color)}
+        onNotesChange={onNotesChange}
       />
     </div>
   )
@@ -214,6 +292,7 @@ function DroppableColumn({
   brandName,
   onOpen,
   onColorChange,
+  onNotesChange,
 }: {
   id: DealStage
   label: string
@@ -221,6 +300,7 @@ function DroppableColumn({
   brandName: (id: string) => string
   onOpen: (dealId: string) => void
   onColorChange: (dealId: string, color: string | null) => void
+  onNotesChange: (dealId: string, notes: string) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id })
 
@@ -245,6 +325,7 @@ function DroppableColumn({
           brandName={brandName(deal.brandId)}
           onOpen={onOpen}
           onColorChange={onColorChange}
+          onNotesChange={onNotesChange}
         />
       ))}
     </div>
@@ -278,7 +359,7 @@ function StaticColumn({
 }
 
 export function DealPipeline({ onHide, onlyUnpaid }: { onHide?: () => void; onlyUnpaid?: boolean } = {}) {
-  const { deals, brandById, moveDeal, updateDealColor } = useCharmStore()
+  const { deals, brandById, moveDeal, updateDealColor, updateDealNotes } = useCharmStore()
   const [activeDeal, setActiveDeal] = useState<BrandDeal | null>(null)
   const [interactive, setInteractive] = useState(false)
   // Persisted (not plain useState) so the "New Deal"/"Edit Deal" modal stays open across a full
@@ -376,6 +457,7 @@ export function DealPipeline({ onHide, onlyUnpaid }: { onHide?: () => void; only
               brandName={brandName}
               onOpen={openDeal}
               onColorChange={updateDealColor}
+              onNotesChange={updateDealNotes}
             />
           ) : (
             <StaticColumn

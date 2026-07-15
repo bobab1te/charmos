@@ -14,6 +14,7 @@ import { dateOnlyToISOString } from './date-only'
 import type {
   Brand,
   BrandDeal,
+  ContentRequirements,
   DealFormValues,
   DealStage,
   IdeaPost,
@@ -40,6 +41,8 @@ interface CharmStoreValue {
   moveDeal: (dealId: string, stage: DealStage) => void
   /** Pass null to clear the override and fall back to the deterministic default color. */
   updateDealColor: (dealId: string, color: string | null) => void
+  /** Quick inline edit for the card-level notes preview — updates contentRequirements.notes without touching the rest of the deal. */
+  updateDealNotes: (dealId: string, notes: string) => void
   assignIdeaDate: (ideaId: string, date: string) => void
   /** Clears scheduledDate and reverts status back to 'idea' if it hadn't progressed past 'scheduled'. */
   unassignIdeaDate: (ideaId: string) => void
@@ -212,6 +215,33 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       setDeals((prev) => prev.map((deal) => (deal.id === dealId ? { ...deal, color: color ?? undefined } : deal)))
       if (!userId) return
       getSupabaseBrowserClient().from('deals').update({ color }).eq('id', dealId).then(() => {})
+    },
+    [userId],
+  )
+
+  const updateDealNotes = useCallback(
+    (dealId: string, notes: string) => {
+      let nextContentRequirements: ContentRequirements | undefined
+      setDeals((prev) =>
+        prev.map((deal) => {
+          if (deal.id !== dealId) return deal
+          nextContentRequirements = {
+            hashtags: [],
+            accountsToTag: [],
+            clipsToUse: [],
+            referenceLinks: [],
+            ...deal.contentRequirements,
+            notes: notes.trim() || undefined,
+          }
+          return { ...deal, contentRequirements: nextContentRequirements }
+        }),
+      )
+      if (!userId || !nextContentRequirements) return
+      getSupabaseBrowserClient()
+        .from('deals')
+        .update({ content_requirements: nextContentRequirements as unknown as Json })
+        .eq('id', dealId)
+        .then(() => {})
     },
     [userId],
   )
@@ -647,6 +677,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       partnershipDeliverables,
       moveDeal,
       updateDealColor,
+      updateDealNotes,
       assignIdeaDate,
       unassignIdeaDate,
       addIdea,
@@ -676,6 +707,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       partnershipDeliverables,
       moveDeal,
       updateDealColor,
+      updateDealNotes,
       assignIdeaDate,
       unassignIdeaDate,
       addIdea,
