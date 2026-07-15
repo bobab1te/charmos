@@ -91,6 +91,8 @@ export interface LedgerEntry {
   description: string
   dealId?: string
   brandId?: string
+  /** Set for an auto-generated retainer-cycle payment entry — see markPartnershipCyclePaid. */
+  partnershipId?: string
 }
 
 export interface DealFormDeliverable {

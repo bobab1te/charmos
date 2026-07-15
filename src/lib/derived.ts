@@ -108,6 +108,16 @@ export function dealEarnedDate(deal: BrandDeal): Date | undefined {
   return new Date(deal.stageUpdatedAt)
 }
 
+/**
+ * Whether a ledger entry was hand-entered rather than auto-generated from a paid deal or
+ * confirmed partnership cycle. Auto-generated entries exist so the Transactions list has a
+ * line item for every dollar earned, but their amount is already counted via dealEarningsInMonth
+ * / partnershipEarningsInMonth below — summing them again here would double-count.
+ */
+function isManualLedgerEntry(entry: LedgerEntry): boolean {
+  return !entry.dealId && !entry.partnershipId
+}
+
 function dealEarningsInMonth(deals: Array<BrandDeal>, convert: ConvertFn, now: Date): number {
   return deals.reduce((sum, deal) => {
     const earnedDate = dealEarnedDate(deal)
@@ -134,7 +144,7 @@ export function computeMetrics(
   partnershipLogs: Array<PartnershipDeliverableLog> = [],
 ): DashboardMetrics {
   const ledgerEarningsThisMonth = ledger
-    .filter((entry) => entry.type === 'income' && isSameMonth(new Date(entry.date), now))
+    .filter((entry) => entry.type === 'income' && isManualLedgerEntry(entry) && isSameMonth(new Date(entry.date), now))
     .reduce((sum, entry) => sum + convert(entry.amount, entry.currency), 0)
   const partnershipEarningsThisMonth = partnerships.reduce(
     (sum, p) => sum + partnershipEarningsInMonth(p, partnershipLogs, now, convert),
@@ -189,7 +199,7 @@ export function monthlyRevenue(
   }
 
   ledger
-    .filter((e) => e.type === 'income')
+    .filter((e) => e.type === 'income' && isManualLedgerEntry(e))
     .forEach((entry) => addToBucket(new Date(entry.date), convert(entry.amount, entry.currency)))
   deals.forEach((deal) => {
     const earnedDate = dealEarnedDate(deal)

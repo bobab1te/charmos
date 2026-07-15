@@ -144,6 +144,7 @@ export interface Database {
           description: string
           deal_id: string | null
           brand_id: string | null
+          partnership_id: string | null
           created_at: string
         }
         Insert: {
@@ -156,6 +157,7 @@ export interface Database {
           description: string
           deal_id?: string | null
           brand_id?: string | null
+          partnership_id?: string | null
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['ledger']['Insert']>

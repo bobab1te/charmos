@@ -81,6 +81,7 @@ export function ledgerFromRow(row: LedgerRow): LedgerEntry {
     description: row.description,
     dealId: row.deal_id ?? undefined,
     brandId: row.brand_id ?? undefined,
+    partnershipId: row.partnership_id ?? undefined,
   }
 }
 

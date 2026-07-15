@@ -12,7 +12,7 @@ import {
   startOfWeek,
 } from 'date-fns'
 import type { ConvertFn } from './derived'
-import type { Partnership, PartnershipDeliverableLog } from './types'
+import type { LedgerEntry, Partnership, PartnershipDeliverableLog } from './types'
 
 export interface PeriodWindow {
   start: Date
@@ -42,6 +42,23 @@ export function isPartnershipRenewalDueSoon(partnership: Partnership, now = new 
   if (partnership.status === 'ended' || !partnership.endDate) return false
   const days = differenceInCalendarDays(new Date(partnership.endDate), now)
   return days >= 0 && days <= thresholdDays
+}
+
+/** The current tracking period for a retainer's payment cadence — same idea as getCurrentPeriodWindow, but keyed off retainerCadence ('weekly'/'monthly') rather than deliverableCadence, since the two can differ for the same partnership. */
+export function getCurrentRetainerPeriodWindow(cadence: Partnership['retainerCadence'], now = new Date()): PeriodWindow {
+  if (cadence === 'weekly') return { start: startOfWeek(now), end: endOfWeek(now), label: 'this week' }
+  return { start: startOfMonth(now), end: endOfMonth(now), label: 'this month' }
+}
+
+/** How many retainer-cycle payments have been manually confirmed (see markPartnershipCyclePaid) for this partnership within the given window. */
+export function countPartnershipPaymentsInWindow(
+  ledger: Array<LedgerEntry>,
+  partnershipId: string,
+  window: PeriodWindow,
+): number {
+  return ledger.filter(
+    (entry) => entry.partnershipId === partnershipId && isWithinInterval(new Date(entry.date), window),
+  ).length
 }
 
 /** The next scheduled retainer payment date, or undefined for per-deliverable partnerships (paid on output, not a schedule) or while paused (no payment is scheduled to resume until unpausedAt is set). */

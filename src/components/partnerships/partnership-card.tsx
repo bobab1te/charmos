@@ -1,11 +1,13 @@
 import { format } from 'date-fns'
-import { AlertTriangle, Plus, Repeat2, Undo2 } from 'lucide-react'
+import { AlertTriangle, CircleDollarSign, Plus, Repeat2, Undo2 } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
 import {
   countDeliverablesInWindow,
+  countPartnershipPaymentsInWindow,
   getCurrentPeriodWindow,
+  getCurrentRetainerPeriodWindow,
   getNextPaymentDate,
   isPartnershipRenewalDueSoon,
 } from '#/lib/partnership-derived'
@@ -27,7 +29,14 @@ export function PartnershipCard({
   brandName: string
   onOpen: (id: string) => void
 }) {
-  const { partnershipDeliverables, logPartnershipDeliverable, undoLastPartnershipDeliverable } = useCharmStore()
+  const {
+    partnershipDeliverables,
+    logPartnershipDeliverable,
+    undoLastPartnershipDeliverable,
+    ledger,
+    markPartnershipCyclePaid,
+    undoLastPartnershipPayment,
+  } = useCharmStore()
   const { displayCurrency, convert } = useCurrency()
   const currency = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -40,6 +49,12 @@ export function PartnershipCard({
   const renewalDueSoon = isPartnershipRenewalDueSoon(partnership)
   const nextPayment = getNextPaymentDate(partnership)
   const hasLogsThisPeriod = completed > 0
+
+  const canConfirmPayment = partnership.paymentType === 'retainer' && partnership.status !== 'paused'
+  const retainerPeriodWindow = getCurrentRetainerPeriodWindow(partnership.retainerCadence)
+  const paymentsThisPeriod = canConfirmPayment
+    ? countPartnershipPaymentsInWindow(ledger, partnership.id, retainerPeriodWindow)
+    : 0
 
   return (
     <div
@@ -151,6 +166,46 @@ export function PartnershipCard({
           <Plus className="size-3.5" /> Log delivered
         </Button>
       </div>
+
+      {canConfirmPayment && (
+        <div className="flex items-center justify-between gap-1.5 border-t border-white/40 pt-2.5">
+          <p className="text-[10px] text-[var(--charm-ink-soft)]">
+            {paymentsThisPeriod > 0
+              ? `Payment confirmed ${retainerPeriodWindow.label}`
+              : `No payment confirmed ${retainerPeriodWindow.label} yet`}
+          </p>
+          <div className="flex shrink-0 gap-1.5">
+            {paymentsThisPeriod > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  undoLastPartnershipPayment(partnership.id)
+                }}
+                className="gap-1"
+              >
+                <Undo2 className="size-3.5" /> Undo
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                markPartnershipCyclePaid(partnership.id)
+              }}
+              className="gap-1"
+            >
+              <CircleDollarSign className="size-3.5" /> Mark cycle paid
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

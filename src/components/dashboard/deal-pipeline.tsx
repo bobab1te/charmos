@@ -359,7 +359,11 @@ function StaticColumn({
   )
 }
 
-export function DealPipeline({ onHide, onlyUnpaid }: { onHide?: () => void; onlyUnpaid?: boolean } = {}) {
+export function DealPipeline({
+  onHide,
+  onlyUnpaid,
+  initialOpenDealId,
+}: { onHide?: () => void; onlyUnpaid?: boolean; initialOpenDealId?: string } = {}) {
   const { deals, brandById, moveDeal, updateDealColor, updateDealNotes } = useCharmStore()
   const [activeDeal, setActiveDeal] = useState<BrandDeal | null>(null)
   const [interactive, setInteractive] = useState(false)
@@ -388,6 +392,12 @@ export function DealPipeline({ onHide, onlyUnpaid }: { onHide?: () => void; only
     setEditingDealId(dealId)
     setModalOpen(true)
   }
+
+  // Deep-link support for "View deal" from a Finances ledger entry.
+  useEffect(() => {
+    if (initialOpenDealId) openDeal(initialOpenDealId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only run for the search param present on arrival
+  }, [initialOpenDealId])
 
   // dnd-kit generates internal ids that can drift between the SSR pass and
   // the first client render; mounting it only after hydration avoids that

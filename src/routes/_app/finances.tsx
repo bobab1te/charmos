@@ -1,5 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { format } from 'date-fns'
+import { ArrowRight } from 'lucide-react'
 import { EarningsChart } from '#/components/dashboard/earnings-chart'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
@@ -13,7 +14,7 @@ function formatMoney(amount: number, currencyCode: string) {
 }
 
 function FinancesPage() {
-  const { ledger, brandById } = useCharmStore()
+  const { ledger, brandById, dealById, partnershipById } = useCharmStore()
   const { displayCurrency, convert } = useCurrency()
   const sorted = [...ledger].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
@@ -32,33 +33,59 @@ function FinancesPage() {
           <p className="text-sm text-[var(--charm-ink-soft)]">No ledger entries yet.</p>
         ) : (
           <ul className="flex flex-col divide-y divide-white/40">
-            {sorted.map((entry) => (
-              <li key={entry.id} className="flex items-center justify-between gap-3 py-2.5">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-[var(--charm-ink)]">{entry.description}</p>
-                  <p className="text-xs text-[var(--charm-ink-soft)]">
-                    {format(new Date(entry.date), 'MMM d, yyyy')}
-                    {entry.brandId && ` · ${brandById(entry.brandId)?.name ?? 'Unknown brand'}`}
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <span
-                    className={
-                      'text-sm font-semibold ' +
-                      (entry.type === 'income' ? 'text-[var(--urgency-green)]' : 'text-[var(--urgency-red)]')
-                    }
-                  >
-                    {entry.type === 'income' ? '+' : '-'}
-                    {formatMoney(Math.abs(entry.amount), entry.currency)}
-                  </span>
-                  {entry.currency !== displayCurrency && (
+            {sorted.map((entry) => {
+              // Auto-generated entries link back to their deal/partnership via id — but that
+              // record may have since been deleted (deals/partnerships are ON DELETE SET NULL,
+              // not cascaded, so the entry itself always survives as a historical record).
+              // Only offer the link when the target still actually exists.
+              const linkedDeal = entry.dealId ? dealById(entry.dealId) : undefined
+              const linkedPartnership = entry.partnershipId ? partnershipById(entry.partnershipId) : undefined
+              return (
+                <li key={entry.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-[var(--charm-ink)]">{entry.description}</p>
                     <p className="text-xs text-[var(--charm-ink-soft)]">
-                      ≈ {formatMoney(Math.abs(convert(entry.amount, entry.currency)), displayCurrency)}
+                      {format(new Date(entry.date), 'MMM d, yyyy')}
+                      {entry.brandId && ` · ${brandById(entry.brandId)?.name ?? 'Unknown brand'}`}
                     </p>
-                  )}
-                </div>
-              </li>
-            ))}
+                    {linkedDeal && (
+                      <Link
+                        to="/brand-deals"
+                        search={{ openDeal: linkedDeal.id }}
+                        className="mt-0.5 flex items-center gap-0.5 text-xs font-medium text-[var(--accent)] hover:underline"
+                      >
+                        View deal <ArrowRight className="size-3" />
+                      </Link>
+                    )}
+                    {linkedPartnership && (
+                      <Link
+                        to="/brand-deals"
+                        search={{ openPartnership: linkedPartnership.id }}
+                        className="mt-0.5 flex items-center gap-0.5 text-xs font-medium text-[var(--accent)] hover:underline"
+                      >
+                        View partnership <ArrowRight className="size-3" />
+                      </Link>
+                    )}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <span
+                      className={
+                        'text-sm font-semibold ' +
+                        (entry.type === 'income' ? 'text-[var(--urgency-green)]' : 'text-[var(--urgency-red)]')
+                      }
+                    >
+                      {entry.type === 'income' ? '+' : '-'}
+                      {formatMoney(Math.abs(entry.amount), entry.currency)}
+                    </span>
+                    {entry.currency !== displayCurrency && (
+                      <p className="text-xs text-[var(--charm-ink-soft)]">
+                        ≈ {formatMoney(Math.abs(convert(entry.amount, entry.currency)), displayCurrency)}
+                      </p>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         )}
         <p className="mt-3 text-xs text-[var(--charm-ink-soft)]">

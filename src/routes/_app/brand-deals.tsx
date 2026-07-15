@@ -14,7 +14,15 @@ import { readDraft, writeDraft } from '#/lib/form-draft'
 import type { Brand, BrandDeal } from '#/lib/types'
 
 export const Route = createFileRoute('/_app/brand-deals')({
-  validateSearch: (search: Record<string, unknown>) => z.object({ filter: z.literal('unpaid').optional() }).parse(search),
+  validateSearch: (search: Record<string, unknown>) =>
+    z
+      .object({
+        filter: z.literal('unpaid').optional(),
+        // Deep-link targets — e.g. "View deal"/"View partnership" from a Finances ledger entry.
+        openDeal: z.string().optional(),
+        openPartnership: z.string().optional(),
+      })
+      .parse(search),
   component: BrandDealsPage,
 })
 
@@ -241,7 +249,7 @@ function PartnershipsGrid({ onOpen }: { onOpen: (id: string) => void }) {
 }
 
 function BrandDealsPage() {
-  const { filter } = Route.useSearch()
+  const { filter, openDeal, openPartnership: openPartnershipId } = Route.useSearch()
   const { deals, partnerships } = useCharmStore()
   const archivedCount = deals.filter((d) => d.archived).length
   const [partnershipModalOpen, setPartnershipModalOpen] = useState(
@@ -267,6 +275,12 @@ function BrandDealsPage() {
     setPartnershipModalOpen(true)
   }
 
+  // Deep-link support for "View partnership" from a Finances ledger entry.
+  useEffect(() => {
+    if (openPartnershipId) openPartnership(openPartnershipId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only run for the search param present on arrival
+  }, [openPartnershipId])
+
   return (
     <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
       <div>
@@ -277,7 +291,7 @@ function BrandDealsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="pipeline">
+      <Tabs defaultValue={openPartnershipId ? 'partnerships' : 'pipeline'}>
         <TabsList>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="partnerships">
@@ -289,7 +303,7 @@ function BrandDealsPage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="pipeline" className="mt-4">
-          <DealPipeline onlyUnpaid={filter === 'unpaid'} />
+          <DealPipeline onlyUnpaid={filter === 'unpaid'} initialOpenDealId={openDeal} />
         </TabsContent>
         <TabsContent value="partnerships" className="mt-4 flex flex-col gap-4">
           <div className="flex items-center justify-between gap-2">

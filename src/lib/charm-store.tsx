@@ -72,6 +72,10 @@ interface CharmStoreValue {
   logPartnershipDeliverable: (partnershipId: string) => void
   /** Removes the most recently logged deliverable for this partnership, if any — for correcting mis-clicks. */
   undoLastPartnershipDeliverable: (partnershipId: string) => void
+  /** Manually confirms a retainer cycle's payment as received, creating a ledger revenue entry. No-op for non-retainer partnerships. */
+  markPartnershipCyclePaid: (partnershipId: string) => void
+  /** Removes the most recently confirmed payment for this partnership, if any — for correcting mis-clicks. */
+  undoLastPartnershipPayment: (partnershipId: string) => void
 }
 
 const CharmStoreContext = createContext<CharmStoreValue | null>(null)
@@ -477,6 +481,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         if (error || !data) throw new Error(error?.message ?? 'Failed to update deal')
         const updated = dealFromRow(data)
         setDeals((prev) => prev.map((d) => (d.id === existingDealId ? updated : d)))
+        await syncDealLedgerEntry(existingDealId, brandId, trimmedName, dealPayload)
         return existingDealId
       }
 
@@ -484,9 +489,66 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       if (error || !data) throw new Error(error?.message ?? 'Failed to create deal')
       const created = dealFromRow(data)
       setDeals((prev) => [created, ...prev])
+      await syncDealLedgerEntry(created.id, brandId, trimmedName, dealPayload)
       return created.id
     },
-    [userId, brands, deals],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- syncDealLedgerEntry is defined
+    // below but shares saveDeal's userId/ledger deps, so it's always fresh when this is.
+    [userId, brands, deals, ledger],
+  )
+
+  /**
+   * Keeps a deal's ledger revenue entry in sync with its paid/amount/date fields — created
+   * once the deal is marked paid in full, updated in place on later edits (rather than
+   * inserting a duplicate), and removed if "paid in full" is unmarked again. Deleting the
+   * deal itself is handled separately: the DB's `on delete set null` keeps this entry as a
+   * historical record rather than cascading the delete.
+   */
+  const syncDealLedgerEntry = useCallback(
+    async (
+      dealId: string,
+      brandId: string,
+      brandName: string,
+      dealPayload: { paid: boolean; paid_date: string | null; compensation_amount: number; compensation_currency: string },
+    ) => {
+      if (!userId) return
+      const supabase = getSupabaseBrowserClient()
+      const existingEntry = ledger.find((e) => e.dealId === dealId && e.type === 'income')
+
+      if (dealPayload.paid && dealPayload.paid_date) {
+        const ledgerPayload = {
+          user_id: userId,
+          type: 'income' as const,
+          amount: dealPayload.compensation_amount,
+          currency: dealPayload.compensation_currency,
+          date: dealPayload.paid_date,
+          description: `${brandName} — brand deal payment`,
+          deal_id: dealId,
+          brand_id: brandId,
+        }
+        if (existingEntry) {
+          const { data, error } = await supabase
+            .from('ledger')
+            .update(ledgerPayload)
+            .eq('id', existingEntry.id)
+            .select('*')
+            .single()
+          if (!error && data) {
+            const updatedEntry = ledgerFromRow(data)
+            setLedger((prev) => prev.map((e) => (e.id === existingEntry.id ? updatedEntry : e)))
+          }
+        } else {
+          const { data, error } = await supabase.from('ledger').insert(ledgerPayload).select('*').single()
+          if (!error && data) setLedger((prev) => [ledgerFromRow(data), ...prev])
+        }
+      } else if (existingEntry) {
+        // "Paid in full" was unmarked (likely a correction) — the entry no longer reflects
+        // confirmed revenue, so remove it rather than leave a stale claim in the ledger.
+        await supabase.from('ledger').delete().eq('id', existingEntry.id)
+        setLedger((prev) => prev.filter((e) => e.id !== existingEntry.id))
+      }
+    },
+    [userId, ledger],
   )
 
   const bulkCreateDeals = useCallback(
@@ -717,6 +779,70 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
     [partnershipDeliverables, userId],
   )
 
+  /**
+   * Manually confirms a retainer cycle's payment as received — there's no automatic "paid"
+   * signal for partnerships the way a deal has a Paid-in-full toggle, so this is an explicit
+   * action (mirroring logPartnershipDeliverable) rather than inferring it from the schedule.
+   * Each click creates its own ledger entry, same shape as a paid deal's.
+   */
+  const markPartnershipCyclePaid = useCallback(
+    (partnershipId: string) => {
+      const partnership = partnerships.find((p) => p.id === partnershipId)
+      if (!partnership || partnership.paymentType !== 'retainer' || !partnership.retainerAmount) return
+      const tempId = `ledger-temp-${Date.now()}`
+      const date = new Date().toISOString()
+      const brand = brandById(partnership.brandId)
+      const tempEntry: LedgerEntry = {
+        id: tempId,
+        type: 'income',
+        amount: partnership.retainerAmount,
+        currency: partnership.currency,
+        date,
+        description: `${brand?.name ?? 'Unknown brand'} — retainer payment`,
+        partnershipId,
+        brandId: partnership.brandId,
+      }
+      setLedger((prev) => [tempEntry, ...prev])
+
+      if (!userId) return
+      getSupabaseBrowserClient()
+        .from('ledger')
+        .insert({
+          user_id: userId,
+          type: 'income',
+          amount: partnership.retainerAmount,
+          currency: partnership.currency,
+          date,
+          description: tempEntry.description,
+          partnership_id: partnershipId,
+          brand_id: partnership.brandId,
+        })
+        .select('*')
+        .single()
+        .then(({ data }) => {
+          if (!data) return
+          const real = ledgerFromRow(data)
+          setLedger((prev) => prev.map((e) => (e.id === tempId ? real : e)))
+        })
+    },
+    [partnerships, brandById, userId],
+  )
+
+  /** Removes the most recently confirmed payment for this partnership, if any — for correcting mis-clicks, same pattern as undoLastPartnershipDeliverable. */
+  const undoLastPartnershipPayment = useCallback(
+    (partnershipId: string) => {
+      const entriesForPartnership = ledger
+        .filter((e) => e.partnershipId === partnershipId)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      const mostRecent = entriesForPartnership[0]
+      if (!mostRecent) return
+      setLedger((prev) => prev.filter((e) => e.id !== mostRecent.id))
+      if (!userId) return
+      getSupabaseBrowserClient().from('ledger').delete().eq('id', mostRecent.id).then(() => {})
+    },
+    [ledger, userId],
+  )
+
   const value = useMemo(
     () => ({
       brands,
@@ -748,6 +874,8 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       deletePartnership,
       logPartnershipDeliverable,
       undoLastPartnershipDeliverable,
+      markPartnershipCyclePaid,
+      undoLastPartnershipPayment,
     }),
     [
       brands,
@@ -779,6 +907,8 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       deletePartnership,
       logPartnershipDeliverable,
       undoLastPartnershipDeliverable,
+      markPartnershipCyclePaid,
+      undoLastPartnershipPayment,
     ],
   )
 
