@@ -131,7 +131,7 @@ export function PartnershipForm({
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="partnerStatus">Status</Label>
             <Select value={values.status} onValueChange={(v) => setStatus(v as PartnershipStatus)}>
-              <SelectTrigger id="partnerStatus">
+              <SelectTrigger id="partnerStatus" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -194,7 +194,7 @@ export function PartnershipForm({
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="partnerPaymentType">Type</Label>
             <Select value={values.paymentType} onValueChange={(v) => set('paymentType', v as PaymentType)}>
-              <SelectTrigger id="partnerPaymentType">
+              <SelectTrigger id="partnerPaymentType" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -227,7 +227,7 @@ export function PartnershipForm({
                   value={values.retainerCadence}
                   onValueChange={(v) => set('retainerCadence', v as RetainerCadence)}
                 >
-                  <SelectTrigger id="partnerRetainerCadence">
+                  <SelectTrigger id="partnerRetainerCadence" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -258,7 +258,7 @@ export function PartnershipForm({
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="partnerCurrency">Currency</Label>
             <Select value={values.currency} onValueChange={(v) => set('currency', v)}>
-              <SelectTrigger id="partnerCurrency">
+              <SelectTrigger id="partnerCurrency" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -301,7 +301,7 @@ export function PartnershipForm({
               value={values.deliverableCadence}
               onValueChange={(v) => set('deliverableCadence', v as DeliverableCadence)}
             >
-              <SelectTrigger id="partnerDeliverableCadence">
+              <SelectTrigger id="partnerDeliverableCadence" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
