@@ -172,7 +172,7 @@ export interface Database {
           end_date: string | null
           payment_type: 'retainer' | 'per_deliverable'
           retainer_amount: number | null
-          retainer_cadence: 'weekly' | 'monthly' | null
+          retainer_cadence: 'weekly' | 'biweekly' | 'monthly' | null
           per_deliverable_rate: number | null
           currency: string
           deliverable_count: number
@@ -193,7 +193,7 @@ export interface Database {
           end_date?: string | null
           payment_type: 'retainer' | 'per_deliverable'
           retainer_amount?: number | null
-          retainer_cadence?: 'weekly' | 'monthly' | null
+          retainer_cadence?: 'weekly' | 'biweekly' | 'monthly' | null
           per_deliverable_rate?: number | null
           currency?: string
           deliverable_count?: number
@@ -223,6 +223,36 @@ export interface Database {
           completed_at?: string
         }
         Update: Partial<Database['public']['Tables']['partnership_deliverables']['Insert']>
+        Relationships: []
+      }
+      partnership_payment_cycles: {
+        Row: {
+          id: string
+          user_id: string
+          partnership_id: string
+          period_start: string
+          period_end: string
+          expected_amount: number
+          currency: string
+          status: 'unconfirmed' | 'confirmed'
+          confirmed_at: string | null
+          ledger_entry_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          partnership_id: string
+          period_start: string
+          period_end: string
+          expected_amount: number
+          currency: string
+          status?: 'unconfirmed' | 'confirmed'
+          confirmed_at?: string | null
+          ledger_entry_id?: string | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['partnership_payment_cycles']['Insert']>
         Relationships: []
       }
     }

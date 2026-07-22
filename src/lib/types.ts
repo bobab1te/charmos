@@ -133,7 +133,7 @@ export interface DealFormValues {
 // ---------------------------------------------------------------------------
 
 export type PaymentType = 'retainer' | 'per_deliverable'
-export type RetainerCadence = 'weekly' | 'monthly'
+export type RetainerCadence = 'weekly' | 'biweekly' | 'monthly'
 export type DeliverableCadence = 'day' | 'week' | 'month'
 export type PartnershipStatus = 'active' | 'paused' | 'ended'
 
@@ -168,6 +168,27 @@ export interface PartnershipDeliverableLog {
   id: string
   partnershipId: string
   completedAt: string
+}
+
+export type PartnershipCycleStatus = 'unconfirmed' | 'confirmed'
+
+/**
+ * One retainer payment cycle. Generated lazily for whatever the partnership's cadence/
+ * amount currently is; freely regenerated in place while unconfirmed (so editing terms
+ * before confirming updates it), but permanently frozen once confirmed — later edits to
+ * the partnership must never change a confirmed cycle. Confirming is what creates the
+ * linked ledger entry; only confirmed cycles count toward revenue totals.
+ */
+export interface PartnershipPaymentCycle {
+  id: string
+  partnershipId: string
+  periodStart: string
+  periodEnd: string
+  expectedAmount: number
+  currency: string
+  status: PartnershipCycleStatus
+  confirmedAt?: string
+  ledgerEntryId?: string
 }
 
 export interface PartnershipFormValues {

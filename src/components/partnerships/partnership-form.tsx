@@ -17,6 +17,7 @@ const PAYMENT_TYPES: Array<{ value: PaymentType; label: string }> = [
 
 const RETAINER_CADENCES: Array<{ value: RetainerCadence; label: string }> = [
   { value: 'weekly', label: 'Weekly' },
+  { value: 'biweekly', label: 'Biweekly' },
   { value: 'monthly', label: 'Monthly' },
 ]
 

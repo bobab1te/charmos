@@ -1,13 +1,14 @@
+import { useEffect } from 'react'
 import { format } from 'date-fns'
 import { AlertTriangle, CircleDollarSign, Plus, Repeat2, Undo2 } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
 import {
+  computeCurrentRetainerCycleWindow,
   countDeliverablesInWindow,
-  countPartnershipPaymentsInWindow,
+  cycleMatchesWindow,
   getCurrentPeriodWindow,
-  getCurrentRetainerPeriodWindow,
   getNextPaymentDate,
   isPartnershipRenewalDueSoon,
 } from '#/lib/partnership-derived'
@@ -33,7 +34,8 @@ export function PartnershipCard({
     partnershipDeliverables,
     logPartnershipDeliverable,
     undoLastPartnershipDeliverable,
-    ledger,
+    partnershipPaymentCycles,
+    ensurePartnershipCycle,
     markPartnershipCyclePaid,
     undoLastPartnershipPayment,
   } = useCharmStore()
@@ -51,10 +53,29 @@ export function PartnershipCard({
   const hasLogsThisPeriod = completed > 0
 
   const canConfirmPayment = partnership.paymentType === 'retainer' && partnership.status !== 'paused'
-  const retainerPeriodWindow = getCurrentRetainerPeriodWindow(partnership.retainerCadence)
-  const paymentsThisPeriod = canConfirmPayment
-    ? countPartnershipPaymentsInWindow(ledger, partnership.id, retainerPeriodWindow)
-    : 0
+  const cycleWindow = canConfirmPayment ? computeCurrentRetainerCycleWindow(partnership) : undefined
+  const currentCycle = cycleWindow
+    ? partnershipPaymentCycles.find((c) => c.partnershipId === partnership.id && cycleMatchesWindow(c, cycleWindow))
+    : undefined
+  const cycleConfirmed = currentCycle?.status === 'confirmed'
+
+  // Keeps the current cycle's row generated/up to date with the partnership's live terms —
+  // regenerating an unconfirmed cycle when amount/cadence changes, never touching a
+  // confirmed one. Re-runs whenever anything that could affect "what's the current cycle" changes.
+  useEffect(() => {
+    if (!canConfirmPayment) return
+    ensurePartnershipCycle(partnership.id)
+  }, [
+    canConfirmPayment,
+    ensurePartnershipCycle,
+    partnership.id,
+    partnership.retainerAmount,
+    partnership.retainerCadence,
+    partnership.currency,
+    partnership.status,
+    partnership.pausedAt,
+    partnership.unpausedAt,
+  ])
 
   return (
     <div
@@ -167,15 +188,15 @@ export function PartnershipCard({
         </Button>
       </div>
 
-      {canConfirmPayment && (
+      {canConfirmPayment && cycleWindow && (
         <div className="flex items-center justify-between gap-1.5 border-t border-white/40 pt-2.5">
           <p className="text-[10px] text-[var(--charm-ink-soft)]">
-            {paymentsThisPeriod > 0
-              ? `Payment confirmed ${retainerPeriodWindow.label}`
-              : `No payment confirmed ${retainerPeriodWindow.label} yet`}
+            {cycleConfirmed
+              ? `Payment confirmed for ${format(cycleWindow.start, 'MMM d')} – ${format(cycleWindow.end, 'MMM d')}`
+              : `No payment confirmed yet for ${format(cycleWindow.start, 'MMM d')} – ${format(cycleWindow.end, 'MMM d')}`}
           </p>
           <div className="flex shrink-0 gap-1.5">
-            {paymentsThisPeriod > 0 && (
+            {cycleConfirmed && (
               <Button
                 type="button"
                 variant="ghost"
@@ -190,19 +211,21 @@ export function PartnershipCard({
                 <Undo2 className="size-3.5" /> Undo
               </Button>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation()
-                markPartnershipCyclePaid(partnership.id)
-              }}
-              className="gap-1"
-            >
-              <CircleDollarSign className="size-3.5" /> Mark cycle paid
-            </Button>
+            {!cycleConfirmed && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  markPartnershipCyclePaid(partnership.id)
+                }}
+                className="gap-1"
+              >
+                <CircleDollarSign className="size-3.5" /> Mark cycle paid
+              </Button>
+            )}
           </div>
         </div>
       )}

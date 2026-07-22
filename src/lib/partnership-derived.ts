@@ -1,5 +1,4 @@
 import {
-  addDays,
   addMonths,
   addWeeks,
   differenceInCalendarDays,
@@ -11,8 +10,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
-import type { ConvertFn } from './derived'
-import type { LedgerEntry, Partnership, PartnershipDeliverableLog } from './types'
+import type { Partnership, PartnershipDeliverableLog, RetainerCadence } from './types'
 
 export interface PeriodWindow {
   start: Date
@@ -44,33 +42,6 @@ export function isPartnershipRenewalDueSoon(partnership: Partnership, now = new 
   return days >= 0 && days <= thresholdDays
 }
 
-/** The current tracking period for a retainer's payment cadence — same idea as getCurrentPeriodWindow, but keyed off retainerCadence ('weekly'/'monthly') rather than deliverableCadence, since the two can differ for the same partnership. */
-export function getCurrentRetainerPeriodWindow(cadence: Partnership['retainerCadence'], now = new Date()): PeriodWindow {
-  if (cadence === 'weekly') return { start: startOfWeek(now), end: endOfWeek(now), label: 'this week' }
-  return { start: startOfMonth(now), end: endOfMonth(now), label: 'this month' }
-}
-
-/** How many retainer-cycle payments have been manually confirmed (see markPartnershipCyclePaid) for this partnership within the given window. */
-export function countPartnershipPaymentsInWindow(
-  ledger: Array<LedgerEntry>,
-  partnershipId: string,
-  window: PeriodWindow,
-): number {
-  return ledger.filter(
-    (entry) => entry.partnershipId === partnershipId && isWithinInterval(new Date(entry.date), window),
-  ).length
-}
-
-/** The next scheduled retainer payment date, or undefined for per-deliverable partnerships (paid on output, not a schedule) or while paused (no payment is scheduled to resume until unpausedAt is set). */
-export function getNextPaymentDate(partnership: Partnership, now = new Date()): Date | undefined {
-  if (partnership.paymentType !== 'retainer') return undefined
-  if (partnership.status === 'paused') return undefined
-  const step = partnership.retainerCadence === 'weekly' ? addWeeks : addMonths
-  let next = new Date(partnership.startDate)
-  while (next < now) next = step(next, 1)
-  return next
-}
-
 /**
  * Whether a given calendar day falls inside the partnership's most recent pause window.
  * The live `status` field is authoritative for "currently paused" — a partnership whose
@@ -88,59 +59,55 @@ export function isPartnershipPausedOn(partnership: Partnership, date: Date): boo
   return date >= new Date(partnership.pausedAt) && date < new Date(partnership.unpausedAt)
 }
 
+/** Steps a date forward by one retainer cadence unit — the one place cadence-specific logic lives, so cycle-window computation stays generic instead of branching per cadence value. */
+function stepRetainerCadence(cadence: RetainerCadence, date: Date): Date {
+  if (cadence === 'weekly') return addWeeks(date, 1)
+  if (cadence === 'biweekly') return addWeeks(date, 2)
+  return addMonths(date, 1)
+}
+
+export interface RetainerCycleWindow {
+  start: Date
+  /** Exclusive — a cycle covers [start, end). */
+  end: Date
+}
+
 /**
- * A partnership's earnings contribution for a given calendar month —
- * schedule-based for retainers (so recurring payments count automatically
- * without re-entry), completion-log-based for per-deliverable. Uses date
- * overlap against start/end dates rather than the live `status` field, so
- * historical months stay accurate even after a partnership is later paused
- * or ended.
+ * The [start, end) window of the retainer cycle containing `now`, walking forward from
+ * the partnership's startDate in cadence-sized steps. Generic across weekly/biweekly/
+ * monthly (or any cadence added to stepRetainerCadence) rather than one branch per value.
+ * Returns undefined for non-retainer partnerships or if the partnership hasn't started yet.
  */
-export function partnershipEarningsInMonth(
+export function computeCurrentRetainerCycleWindow(
   partnership: Partnership,
-  logs: Array<PartnershipDeliverableLog>,
-  monthDate: Date,
-  convert: ConvertFn,
-): number {
-  const monthStart = startOfMonth(monthDate)
-  const monthEnd = endOfMonth(monthDate)
+  now = new Date(),
+): RetainerCycleWindow | undefined {
+  if (partnership.paymentType !== 'retainer' || !partnership.retainerCadence) return undefined
   const start = new Date(partnership.startDate)
-  const end = partnership.endDate ? new Date(partnership.endDate) : undefined
-  if (start > monthEnd || (end && end < monthStart)) return 0
+  if (start > now) return undefined
 
-  if (partnership.paymentType === 'retainer') {
-    if (!partnership.retainerAmount) return 0
-    if (partnership.retainerCadence === 'monthly') {
-      // Prorate by the fraction of the month that wasn't paused, so a mid-month pause or
-      // unpause only counts the active portion instead of the full flat amount — and a
-      // partnership that was never paused still gets 100% (activeDays === daysInMonth),
-      // unchanged from before.
-      const daysInMonth = differenceInCalendarDays(monthEnd, monthStart) + 1
-      let activeDays = 0
-      for (let i = 0; i < daysInMonth; i++) {
-        if (!isPartnershipPausedOn(partnership, addDays(monthStart, i))) activeDays += 1
-      }
-      if (activeDays === 0) return 0
-      return convert(partnership.retainerAmount * (activeDays / daysInMonth), partnership.currency)
-    }
-    // Weekly: count how many 7-day occurrences from startDate land inside this month,
-    // skipping any occurrence that falls within a paused window.
-    let occurrences = 0
-    let occurrence = start
-    let guard = 0
-    while (occurrence <= monthEnd && guard < 520) {
-      if (occurrence >= monthStart && (!end || occurrence <= end) && !isPartnershipPausedOn(partnership, occurrence)) {
-        occurrences += 1
-      }
-      occurrence = addDays(occurrence, 7)
-      guard += 1
-    }
-    return convert(partnership.retainerAmount * occurrences, partnership.currency)
+  let cycleStart = start
+  let guard = 0
+  while (guard < 1000) {
+    const cycleEnd = stepRetainerCadence(partnership.retainerCadence, cycleStart)
+    if (now < cycleEnd) return { start: cycleStart, end: cycleEnd }
+    cycleStart = cycleEnd
+    guard += 1
   }
+  return undefined
+}
 
-  if (!partnership.perDeliverableRate) return 0
-  const completedThisMonth = logs.filter(
-    (log) => log.partnershipId === partnership.id && isWithinInterval(new Date(log.completedAt), { start: monthStart, end: monthEnd }),
-  ).length
-  return convert(partnership.perDeliverableRate * completedThisMonth, partnership.currency)
+/** Whether a persisted cycle's stored period exactly matches a computed window — the basis for "is there already a cycle for this period" checks. */
+export function cycleMatchesWindow(
+  cycle: { periodStart: string; periodEnd: string },
+  window: RetainerCycleWindow,
+): boolean {
+  return new Date(cycle.periodStart).getTime() === window.start.getTime() && new Date(cycle.periodEnd).getTime() === window.end.getTime()
+}
+
+/** The next scheduled retainer payment date, or undefined for per-deliverable partnerships (paid on output, not a schedule) or while paused (no payment is scheduled to resume until unpausedAt is set). Informational display only — see PartnershipPaymentCycle for what actually counts toward revenue. */
+export function getNextPaymentDate(partnership: Partnership, now = new Date()): Date | undefined {
+  if (partnership.paymentType !== 'retainer') return undefined
+  if (partnership.status === 'paused') return undefined
+  return computeCurrentRetainerCycleWindow(partnership, now)?.end
 }

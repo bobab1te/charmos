@@ -1,6 +1,5 @@
 import { differenceInCalendarDays, isSameMonth, isWithinInterval } from 'date-fns'
-import { partnershipEarningsInMonth } from './partnership-derived'
-import type { Brand, BrandDeal, LedgerEntry, Partnership, PartnershipDeliverableLog } from './types'
+import type { Brand, BrandDeal, LedgerEntry } from './types'
 
 /** Converts an amount from its own currency into the creator's display currency — see CurrencyProvider. */
 export type ConvertFn = (amount: number, fromCurrency: string) => number
@@ -109,13 +108,16 @@ export function dealEarnedDate(deal: BrandDeal): Date | undefined {
 }
 
 /**
- * Whether a ledger entry was hand-entered rather than auto-generated from a paid deal or
- * confirmed partnership cycle. Auto-generated entries exist so the Transactions list has a
- * line item for every dollar earned, but their amount is already counted via dealEarningsInMonth
- * / partnershipEarningsInMonth below — summing them again here would double-count.
+ * Whether a ledger entry should be summed as "ledger income" for the totals below.
+ * Deal-linked entries are excluded because a deal's revenue is already counted via
+ * dealEarningsInMonth's accrual (dealEarnedDate) — summing the entry too would double
+ * it. Partnership-linked entries are NOT excluded: confirming a payment cycle (see
+ * markPartnershipCyclePaid) is the only thing that makes retainer revenue count at all,
+ * so its ledger entry is the sole source of truth for that money, not a parallel record
+ * of something already counted elsewhere.
  */
-function isManualLedgerEntry(entry: LedgerEntry): boolean {
-  return !entry.dealId && !entry.partnershipId
+function countsTowardLedgerIncome(entry: LedgerEntry): boolean {
+  return !entry.dealId
 }
 
 function dealEarningsInMonth(deals: Array<BrandDeal>, convert: ConvertFn, now: Date): number {
@@ -140,18 +142,13 @@ export function computeMetrics(
   ledger: Array<LedgerEntry>,
   convert: ConvertFn,
   now = new Date(),
-  partnerships: Array<Partnership> = [],
-  partnershipLogs: Array<PartnershipDeliverableLog> = [],
 ): DashboardMetrics {
   const ledgerEarningsThisMonth = ledger
-    .filter((entry) => entry.type === 'income' && isManualLedgerEntry(entry) && isSameMonth(new Date(entry.date), now))
+    .filter(
+      (entry) => entry.type === 'income' && countsTowardLedgerIncome(entry) && isSameMonth(new Date(entry.date), now),
+    )
     .reduce((sum, entry) => sum + convert(entry.amount, entry.currency), 0)
-  const partnershipEarningsThisMonth = partnerships.reduce(
-    (sum, p) => sum + partnershipEarningsInMonth(p, partnershipLogs, now, convert),
-    0,
-  )
-  const earningsThisMonth =
-    ledgerEarningsThisMonth + dealEarningsInMonth(deals, convert, now) + partnershipEarningsThisMonth
+  const earningsThisMonth = ledgerEarningsThisMonth + dealEarningsInMonth(deals, convert, now)
 
   const activeDeals = deals.filter((d) => !d.archived && (d.stage === 'confirmed' || d.stage === 'live')).length
 
@@ -173,15 +170,7 @@ export function computeMetrics(
   return { earningsThisMonth, activeDeals, dueThisWeek, needsFollowUp, unpaidCount }
 }
 
-export function monthlyRevenue(
-  ledger: Array<LedgerEntry>,
-  deals: Array<BrandDeal>,
-  convert: ConvertFn,
-  months = 6,
-  now = new Date(),
-  partnerships: Array<Partnership> = [],
-  partnershipLogs: Array<PartnershipDeliverableLog> = [],
-) {
+export function monthlyRevenue(ledger: Array<LedgerEntry>, deals: Array<BrandDeal>, convert: ConvertFn, months = 6, now = new Date()) {
   const buckets: Array<{ label: string; total: number; key: string; date: Date }> = []
   for (let i = months - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
@@ -199,16 +188,11 @@ export function monthlyRevenue(
   }
 
   ledger
-    .filter((e) => e.type === 'income' && isManualLedgerEntry(e))
+    .filter((e) => e.type === 'income' && countsTowardLedgerIncome(e))
     .forEach((entry) => addToBucket(new Date(entry.date), convert(entry.amount, entry.currency)))
   deals.forEach((deal) => {
     const earnedDate = dealEarnedDate(deal)
     if (earnedDate) addToBucket(earnedDate, convert(deal.compensationAmount, deal.compensationCurrency))
-  })
-  buckets.forEach((bucket) => {
-    partnerships.forEach((p) => {
-      bucket.total += partnershipEarningsInMonth(p, partnershipLogs, bucket.date, convert)
-    })
   })
 
   return buckets.map(({ label, total, key }) => ({ label, total, key }))

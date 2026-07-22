@@ -6,9 +6,9 @@ import { useCurrency } from '#/lib/currency-context'
 import { monthlyRevenue } from '#/lib/derived'
 
 export function EarningsChart({ onHide }: { onHide?: () => void } = {}) {
-  const { ledger, deals, partnerships, partnershipDeliverables } = useCharmStore()
+  const { ledger, deals } = useCharmStore()
   const { displayCurrency, convert } = useCurrency()
-  const months = monthlyRevenue(ledger, deals, convert, 6, new Date(), partnerships, partnershipDeliverables)
+  const months = monthlyRevenue(ledger, deals, convert, 6, new Date())
   const max = Math.max(...months.map((m) => m.total), 1)
   const currency = new Intl.NumberFormat('en-US', {
     style: 'currency',

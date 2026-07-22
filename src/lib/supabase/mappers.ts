@@ -10,6 +10,7 @@ import type {
   LedgerEntry,
   Partnership,
   PartnershipDeliverableLog,
+  PartnershipPaymentCycle,
   PaymentType,
   Platform,
   PostStatus,
@@ -22,6 +23,7 @@ type IdeaRow = Database['public']['Tables']['ideas']['Row']
 type LedgerRow = Database['public']['Tables']['ledger']['Row']
 type PartnershipRow = Database['public']['Tables']['partnerships']['Row']
 type PartnershipDeliverableRow = Database['public']['Tables']['partnership_deliverables']['Row']
+type PartnershipPaymentCycleRow = Database['public']['Tables']['partnership_payment_cycles']['Row']
 
 export function brandFromRow(row: BrandRow): Brand {
   return {
@@ -113,5 +115,19 @@ export function partnershipDeliverableFromRow(row: PartnershipDeliverableRow): P
     id: row.id,
     partnershipId: row.partnership_id,
     completedAt: row.completed_at,
+  }
+}
+
+export function partnershipPaymentCycleFromRow(row: PartnershipPaymentCycleRow): PartnershipPaymentCycle {
+  return {
+    id: row.id,
+    partnershipId: row.partnership_id,
+    periodStart: row.period_start,
+    periodEnd: row.period_end,
+    expectedAmount: row.expected_amount,
+    currency: row.currency,
+    status: row.status,
+    confirmedAt: row.confirmed_at ?? undefined,
+    ledgerEntryId: row.ledger_entry_id ?? undefined,
   }
 }

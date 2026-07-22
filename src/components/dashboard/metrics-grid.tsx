@@ -19,9 +19,9 @@ interface MetricsGridProps {
 }
 
 export function MetricsGrid({ isHidden, hide }: MetricsGridProps) {
-  const { deals, ledger, partnerships, partnershipDeliverables } = useCharmStore()
+  const { deals, ledger } = useCharmStore()
   const { displayCurrency, convert } = useCurrency()
-  const metrics = computeMetrics(deals, ledger, convert, new Date(), partnerships, partnershipDeliverables)
+  const metrics = computeMetrics(deals, ledger, convert, new Date())
 
   const currency = new Intl.NumberFormat('en-US', {
     style: 'currency',

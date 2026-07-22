@@ -8,9 +8,11 @@ import {
   ledgerFromRow,
   partnershipDeliverableFromRow,
   partnershipFromRow,
+  partnershipPaymentCycleFromRow,
 } from './supabase/mappers'
 import { splitList } from './deal-form-utils'
 import { dateOnlyToISOString } from './date-only'
+import { computeCurrentRetainerCycleWindow, cycleMatchesWindow, isPartnershipPausedOn } from './partnership-derived'
 import type { BulkImportRow } from './bulk-import-utils'
 import type {
   Brand,
@@ -22,6 +24,7 @@ import type {
   Partnership,
   PartnershipDeliverableLog,
   PartnershipFormValues,
+  PartnershipPaymentCycle,
 } from './types'
 import type { Database, Json } from './supabase/database.types'
 
@@ -38,6 +41,7 @@ interface CharmStoreValue {
   ledger: Array<LedgerEntry>
   partnerships: Array<Partnership>
   partnershipDeliverables: Array<PartnershipDeliverableLog>
+  partnershipPaymentCycles: Array<PartnershipPaymentCycle>
   moveDeal: (dealId: string, stage: DealStage) => void
   /** Pass null to clear the override and fall back to the deterministic default color. */
   updateDealColor: (dealId: string, color: string | null) => void
@@ -72,9 +76,16 @@ interface CharmStoreValue {
   logPartnershipDeliverable: (partnershipId: string) => void
   /** Removes the most recently logged deliverable for this partnership, if any — for correcting mis-clicks. */
   undoLastPartnershipDeliverable: (partnershipId: string) => void
-  /** Manually confirms a retainer cycle's payment as received, creating a ledger revenue entry. No-op for non-retainer partnerships. */
+  /** Generates/updates the current retainer cycle to match the partnership's live terms, or no-ops if paused/not-retainer/not-started. Called reactively (e.g. on mount, or whenever terms change) so the UI always has an up-to-date cycle to display and confirm. */
+  ensurePartnershipCycle: (partnershipId: string) => Promise<PartnershipPaymentCycle | undefined>
+  /**
+   * Confirms the *current* retainer cycle as paid: creates its ledger entry and locks the
+   * cycle row permanently (later edits to the partnership's terms can never change a
+   * confirmed cycle). Generates the current cycle first if it doesn't exist yet. No-op for
+   * non-retainer or paused partnerships.
+   */
   markPartnershipCyclePaid: (partnershipId: string) => void
-  /** Removes the most recently confirmed payment for this partnership, if any — for correcting mis-clicks. */
+  /** Reverts the current cycle's confirmation (deletes its ledger entry, sets it back to unconfirmed) — for correcting mis-clicks, not for un-confirming old history. */
   undoLastPartnershipPayment: (partnershipId: string) => void
 }
 
@@ -109,6 +120,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
   const [ledger, setLedger] = useState<Array<LedgerEntry>>([])
   const [partnerships, setPartnerships] = useState<Array<Partnership>>([])
   const [partnershipDeliverables, setPartnershipDeliverables] = useState<Array<PartnershipDeliverableLog>>([])
+  const [partnershipPaymentCycles, setPartnershipPaymentCycles] = useState<Array<PartnershipPaymentCycle>>([])
 
   // This provider lives at the app root and never unmounts across client-side
   // navigation, so it must react to login/logout rather than only checking once.
@@ -135,6 +147,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       setLedger([])
       setPartnerships([])
       setPartnershipDeliverables([])
+      setPartnershipPaymentCycles([])
       return
     }
 
@@ -142,15 +155,23 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
     let cancelled = false
 
     async function loadInitial() {
-      const [brandsRes, dealsRes, ideasRes, ledgerRes, partnershipsRes, partnershipDeliverablesRes] =
-        await Promise.all([
-          supabase.from('brands').select('*').order('created_at', { ascending: false }),
-          supabase.from('deals').select('*').order('created_at', { ascending: false }),
-          supabase.from('ideas').select('*').order('created_at', { ascending: false }),
-          supabase.from('ledger').select('*').order('date', { ascending: false }),
-          supabase.from('partnerships').select('*').order('created_at', { ascending: false }),
-          supabase.from('partnership_deliverables').select('*').order('completed_at', { ascending: false }),
-        ])
+      const [
+        brandsRes,
+        dealsRes,
+        ideasRes,
+        ledgerRes,
+        partnershipsRes,
+        partnershipDeliverablesRes,
+        partnershipPaymentCyclesRes,
+      ] = await Promise.all([
+        supabase.from('brands').select('*').order('created_at', { ascending: false }),
+        supabase.from('deals').select('*').order('created_at', { ascending: false }),
+        supabase.from('ideas').select('*').order('created_at', { ascending: false }),
+        supabase.from('ledger').select('*').order('date', { ascending: false }),
+        supabase.from('partnerships').select('*').order('created_at', { ascending: false }),
+        supabase.from('partnership_deliverables').select('*').order('completed_at', { ascending: false }),
+        supabase.from('partnership_payment_cycles').select('*').order('period_start', { ascending: false }),
+      ])
       if (cancelled) return
       setBrands((brandsRes.data ?? []).map(brandFromRow))
       setDeals((dealsRes.data ?? []).map(dealFromRow))
@@ -158,6 +179,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       setLedger((ledgerRes.data ?? []).map(ledgerFromRow))
       setPartnerships((partnershipsRes.data ?? []).map(partnershipFromRow))
       setPartnershipDeliverables((partnershipDeliverablesRes.data ?? []).map(partnershipDeliverableFromRow))
+      setPartnershipPaymentCycles((partnershipPaymentCyclesRes.data ?? []).map(partnershipPaymentCycleFromRow))
     }
 
     loadInitial()
@@ -193,6 +215,12 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'partnership_deliverables', filter: `user_id=eq.${userId}` },
         (payload) => setPartnershipDeliverables((prev) => applyChange(prev, payload, partnershipDeliverableFromRow)),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'partnership_payment_cycles', filter: `user_id=eq.${userId}` },
+        (payload) =>
+          setPartnershipPaymentCycles((prev) => applyChange(prev, payload, partnershipPaymentCycleFromRow)),
       )
       .subscribe()
 
@@ -738,6 +766,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
     async (partnershipId: string) => {
       setPartnerships((prev) => prev.filter((p) => p.id !== partnershipId))
       setPartnershipDeliverables((prev) => prev.filter((d) => d.partnershipId !== partnershipId))
+      setPartnershipPaymentCycles((prev) => prev.filter((c) => c.partnershipId !== partnershipId))
       if (!userId) return
       await getSupabaseBrowserClient().from('partnerships').delete().eq('id', partnershipId)
     },
@@ -780,67 +809,157 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
   )
 
   /**
-   * Manually confirms a retainer cycle's payment as received — there's no automatic "paid"
-   * signal for partnerships the way a deal has a Paid-in-full toggle, so this is an explicit
-   * action (mirroring logPartnershipDeliverable) rather than inferring it from the schedule.
-   * Each click creates its own ledger entry, same shape as a paid deal's.
+   * Ensures a persisted cycle exists for the partnership's *current* retainer period,
+   * regenerating it in place if the terms changed since it was last generated — but never
+   * touching a cycle that's already confirmed (that's the whole point: confirmed cycles are
+   * locked history). Returns undefined for non-retainer or currently-paused partnerships, or
+   * one that hasn't started yet.
+   *
+   * Cadence changes mid-cycle: the new "current window" (computed from the *current*
+   * cadence) won't match the old cycle's stored period, so it falls through to the "no
+   * cycle for this window yet" branch below. Any unconfirmed cycle whose old period still
+   * spans `now` is superseded at that point and removed, then a fresh cycle is inserted for
+   * the new cadence's window — a confirmed cycle is never a match here (deleting is
+   * restricted to unconfirmed), so it's left untouched regardless of what the cadence
+   * becomes afterward.
+   */
+  const ensurePartnershipCycle = useCallback(
+    async (partnershipId: string): Promise<PartnershipPaymentCycle | undefined> => {
+      if (!userId) return undefined
+      const partnership = partnerships.find((p) => p.id === partnershipId)
+      if (!partnership || partnership.paymentType !== 'retainer' || !partnership.retainerAmount) return undefined
+      const now = new Date()
+      if (isPartnershipPausedOn(partnership, now)) return undefined
+      const window = computeCurrentRetainerCycleWindow(partnership, now)
+      if (!window) return undefined
+
+      const supabase = getSupabaseBrowserClient()
+      const cyclesForPartnership = partnershipPaymentCycles.filter((c) => c.partnershipId === partnershipId)
+      const matching = cyclesForPartnership.find((c) => cycleMatchesWindow(c, window))
+
+      if (matching) {
+        if (matching.status === 'confirmed') return matching
+        if (matching.expectedAmount === partnership.retainerAmount && matching.currency === partnership.currency) {
+          return matching
+        }
+        const { data, error } = await supabase
+          .from('partnership_payment_cycles')
+          .update({ expected_amount: partnership.retainerAmount, currency: partnership.currency })
+          .eq('id', matching.id)
+          .select('*')
+          .single()
+        if (error || !data) return matching
+        const updated = partnershipPaymentCycleFromRow(data)
+        setPartnershipPaymentCycles((prev) => prev.map((c) => (c.id === matching.id ? updated : c)))
+        return updated
+      }
+
+      const staleOverlapping = cyclesForPartnership.find(
+        (c) => c.status === 'unconfirmed' && now >= new Date(c.periodStart) && now < new Date(c.periodEnd),
+      )
+      if (staleOverlapping) {
+        await supabase.from('partnership_payment_cycles').delete().eq('id', staleOverlapping.id)
+        setPartnershipPaymentCycles((prev) => prev.filter((c) => c.id !== staleOverlapping.id))
+      }
+
+      const { data, error } = await supabase
+        .from('partnership_payment_cycles')
+        .insert({
+          user_id: userId,
+          partnership_id: partnershipId,
+          period_start: window.start.toISOString(),
+          period_end: window.end.toISOString(),
+          expected_amount: partnership.retainerAmount,
+          currency: partnership.currency,
+        })
+        .select('*')
+        .single()
+      if (error || !data) return undefined
+      const created = partnershipPaymentCycleFromRow(data)
+      setPartnershipPaymentCycles((prev) => [created, ...prev])
+      return created
+    },
+    [userId, partnerships, partnershipPaymentCycles],
+  )
+
+  /**
+   * Confirms the current retainer cycle as paid — creates its ledger entry (the only thing
+   * that makes retainer revenue count toward totals) and locks the cycle row. Generates the
+   * current cycle first if it doesn't exist yet, so this works even on the very first click.
    */
   const markPartnershipCyclePaid = useCallback(
-    (partnershipId: string) => {
-      const partnership = partnerships.find((p) => p.id === partnershipId)
-      if (!partnership || partnership.paymentType !== 'retainer' || !partnership.retainerAmount) return
-      const tempId = `ledger-temp-${Date.now()}`
-      const date = new Date().toISOString()
-      const brand = brandById(partnership.brandId)
-      const tempEntry: LedgerEntry = {
-        id: tempId,
-        type: 'income',
-        amount: partnership.retainerAmount,
-        currency: partnership.currency,
-        date,
-        description: `${brand?.name ?? 'Unknown brand'} — retainer payment`,
-        partnershipId,
-        brandId: partnership.brandId,
-      }
-      setLedger((prev) => [tempEntry, ...prev])
-
+    async (partnershipId: string) => {
       if (!userId) return
-      getSupabaseBrowserClient()
+      const cycle = await ensurePartnershipCycle(partnershipId)
+      if (!cycle || cycle.status === 'confirmed') return
+      const partnership = partnerships.find((p) => p.id === partnershipId)
+      if (!partnership) return
+      const brand = brandById(partnership.brandId)
+      const date = new Date().toISOString()
+      const supabase = getSupabaseBrowserClient()
+
+      const { data: ledgerData, error: ledgerError } = await supabase
         .from('ledger')
         .insert({
           user_id: userId,
           type: 'income',
-          amount: partnership.retainerAmount,
-          currency: partnership.currency,
+          amount: cycle.expectedAmount,
+          currency: cycle.currency,
           date,
-          description: tempEntry.description,
+          description: `${brand?.name ?? 'Unknown brand'} — retainer payment`,
           partnership_id: partnershipId,
           brand_id: partnership.brandId,
         })
         .select('*')
         .single()
-        .then(({ data }) => {
-          if (!data) return
-          const real = ledgerFromRow(data)
-          setLedger((prev) => prev.map((e) => (e.id === tempId ? real : e)))
-        })
+      if (ledgerError || !ledgerData) return
+      const ledgerEntry = ledgerFromRow(ledgerData)
+      setLedger((prev) => [ledgerEntry, ...prev])
+
+      const { data: cycleData, error: cycleError } = await supabase
+        .from('partnership_payment_cycles')
+        .update({ status: 'confirmed', confirmed_at: date, ledger_entry_id: ledgerEntry.id })
+        .eq('id', cycle.id)
+        .select('*')
+        .single()
+      if (cycleError || !cycleData) return
+      const confirmed = partnershipPaymentCycleFromRow(cycleData)
+      setPartnershipPaymentCycles((prev) => prev.map((c) => (c.id === cycle.id ? confirmed : c)))
     },
-    [partnerships, brandById, userId],
+    [userId, partnerships, brandById, ensurePartnershipCycle],
   )
 
-  /** Removes the most recently confirmed payment for this partnership, if any — for correcting mis-clicks, same pattern as undoLastPartnershipDeliverable. */
+  /** Reverts the current cycle's confirmation — deletes its ledger entry and sets it back to unconfirmed — for correcting a mis-click. Only ever acts on the current period's cycle, never older confirmed history. */
   const undoLastPartnershipPayment = useCallback(
     (partnershipId: string) => {
-      const entriesForPartnership = ledger
-        .filter((e) => e.partnershipId === partnershipId)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      const mostRecent = entriesForPartnership[0]
-      if (!mostRecent) return
-      setLedger((prev) => prev.filter((e) => e.id !== mostRecent.id))
+      const partnership = partnerships.find((p) => p.id === partnershipId)
+      if (!partnership) return
+      const window = computeCurrentRetainerCycleWindow(partnership, new Date())
+      if (!window) return
+      const cycle = partnershipPaymentCycles.find(
+        (c) => c.partnershipId === partnershipId && c.status === 'confirmed' && cycleMatchesWindow(c, window),
+      )
+      if (!cycle) return
+
+      setPartnershipPaymentCycles((prev) =>
+        prev.map((c) =>
+          c.id === cycle.id ? { ...c, status: 'unconfirmed', confirmedAt: undefined, ledgerEntryId: undefined } : c,
+        ),
+      )
+      if (cycle.ledgerEntryId) setLedger((prev) => prev.filter((e) => e.id !== cycle.ledgerEntryId))
+
       if (!userId) return
-      getSupabaseBrowserClient().from('ledger').delete().eq('id', mostRecent.id).then(() => {})
+      const supabase = getSupabaseBrowserClient()
+      supabase
+        .from('partnership_payment_cycles')
+        .update({ status: 'unconfirmed', confirmed_at: null, ledger_entry_id: null })
+        .eq('id', cycle.id)
+        .then(() => {})
+      if (cycle.ledgerEntryId) {
+        supabase.from('ledger').delete().eq('id', cycle.ledgerEntryId).then(() => {})
+      }
     },
-    [ledger, userId],
+    [partnerships, partnershipPaymentCycles, userId],
   )
 
   const value = useMemo(
@@ -851,6 +970,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       ledger,
       partnerships,
       partnershipDeliverables,
+      partnershipPaymentCycles,
       moveDeal,
       updateDealColor,
       updateDealNotes,
@@ -874,6 +994,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       deletePartnership,
       logPartnershipDeliverable,
       undoLastPartnershipDeliverable,
+      ensurePartnershipCycle,
       markPartnershipCyclePaid,
       undoLastPartnershipPayment,
     }),
@@ -884,6 +1005,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       ledger,
       partnerships,
       partnershipDeliverables,
+      partnershipPaymentCycles,
       moveDeal,
       updateDealColor,
       updateDealNotes,
@@ -907,6 +1029,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       deletePartnership,
       logPartnershipDeliverable,
       undoLastPartnershipDeliverable,
+      ensurePartnershipCycle,
       markPartnershipCyclePaid,
       undoLastPartnershipPayment,
     ],
