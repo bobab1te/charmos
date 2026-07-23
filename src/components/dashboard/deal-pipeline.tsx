@@ -14,8 +14,8 @@ import { useDraggable } from '@dnd-kit/core'
 import { format } from 'date-fns'
 import { AlertTriangle, Briefcase, Plus, Upload } from 'lucide-react'
 import { WidgetCard } from '#/components/charm/widget-card'
+import { WidgetColorPicker } from '#/components/charm/widget-color-picker'
 import { Button } from '#/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '#/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import { DealModal } from '#/components/deals/deal-modal'
 import { BulkImportModal } from '#/components/deals/bulk-import-modal'
@@ -24,7 +24,7 @@ import { useCurrency } from '#/lib/currency-context'
 import { isDealUnpaidAlert, nextDeliverable, urgencyForDate } from '#/lib/derived'
 import { readDraft, writeDraft } from '#/lib/form-draft'
 import { cn } from '#/lib/utils'
-import { DEAL_CARD_PALETTE, defaultCardColor, resolveTextColor } from '#/lib/deal-card-colors'
+import { defaultCardColor, resolveTextColor } from '#/lib/widget-colors'
 import type { BrandDeal, DealStage } from '#/lib/types'
 
 const COLUMNS: Array<{ id: DealStage; label: string }> = [
@@ -38,59 +38,6 @@ const urgencyDot: Record<string, string> = {
   red: 'bg-[var(--urgency-red)]',
   orange: 'bg-[var(--urgency-orange)]',
   green: 'bg-[var(--urgency-green)]',
-}
-
-function DealColorPicker({ color, onChange }: { color: string; onChange: (color: string | null) => void }) {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-          aria-label="Change card color"
-          className="size-4 shrink-0 rounded-full border border-black/15 shadow-sm transition duration-150 ease-out hover:scale-110 active:scale-95"
-          style={{ background: color }}
-        />
-      </PopoverTrigger>
-      <PopoverContent
-        onPointerDown={(e) => e.stopPropagation()}
-        align="end"
-        className="w-auto p-3"
-      >
-        <div className="flex flex-wrap gap-2">
-          {DEAL_CARD_PALETTE.map((swatch) => (
-            <button
-              key={swatch.id}
-              type="button"
-              aria-label={swatch.label}
-              onClick={() => onChange(swatch.value)}
-              className="size-6 rounded-full border border-black/15 transition duration-150 ease-out hover:scale-110 active:scale-95"
-              style={{ background: swatch.value }}
-            />
-          ))}
-        </div>
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <label className="flex items-center gap-2 text-xs text-[var(--charm-ink-soft)]">
-            Custom
-            <input
-              type="color"
-              value={color}
-              onChange={(e) => onChange(e.target.value)}
-              className="size-6 cursor-pointer rounded border border-black/15 bg-transparent p-0"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => onChange(null)}
-            className="text-xs font-medium text-[var(--charm-ink-soft)] underline underline-offset-2 hover:text-[var(--charm-ink)]"
-          >
-            Reset
-          </button>
-        </div>
-      </PopoverContent>
-    </Popover>
-  )
 }
 
 function DealCardNotes({
@@ -204,7 +151,7 @@ function DealCardInner({
               </TooltipContent>
             </Tooltip>
           )}
-          {onColorChange && <DealColorPicker color={color} onChange={onColorChange} />}
+          {onColorChange && <WidgetColorPicker color={color} onChange={onColorChange} />}
         </div>
       </div>
       {next ? (

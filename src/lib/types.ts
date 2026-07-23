@@ -78,6 +78,8 @@ export interface IdeaPost {
   createdAt: string
   /** Shared tag grouping this idea with others in the same content series; undefined means "not part of a series". */
   series?: string
+  /** User-chosen card color override; undefined means "use the deterministic default" — see widget-colors.ts. */
+  color?: string
 }
 
 export type LedgerEntryType = 'income' | 'expense'
@@ -161,6 +163,8 @@ export interface Partnership {
   /** When the partnership resumed after its most recent pause — undefined while still paused. */
   unpausedAt?: string
   createdAt: string
+  /** User-chosen card color override; undefined means "use the deterministic default" — see widget-colors.ts. */
+  color?: string
 }
 
 /** One row per completed deliverable — a log rather than a mutable counter, so period progress and per-deliverable earnings can both be derived by date-filtering regardless of cadence. */

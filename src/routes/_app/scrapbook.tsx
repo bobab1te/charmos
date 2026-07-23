@@ -5,11 +5,12 @@ import { DndContext, DragOverlay, PointerSensor, useDroppable, useSensor, useSen
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { NotebookPen, Plus } from 'lucide-react'
 import { ScrapbookCalendar } from '#/components/scrapbook/scrapbook-calendar'
-import { DraggableIdeaCard, IdeaCardContent, ideaNoteColor } from '#/components/scrapbook/idea-card'
+import { DraggableIdeaCard, IdeaCardContent } from '#/components/scrapbook/idea-card'
 import { IdeaDetailModal } from '#/components/scrapbook/idea-detail-modal'
 import { useCharmStore } from '#/lib/charm-store'
 import { dateOnlyToISOString } from '#/lib/date-only'
 import { cn } from '#/lib/utils'
+import { defaultCardColor, resolveTextColor } from '#/lib/widget-colors'
 import type { IdeaPost } from '#/lib/types'
 
 export const Route = createFileRoute('/_app/scrapbook')({ component: ScrapbookPage })
@@ -152,11 +153,19 @@ function ScrapbookPage() {
         <DndContext id="scrapbook" sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           {calendarAndList}
           <DragOverlay>
-            {activeIdea ? (
-              <div className={cn('w-56 rounded-xl shadow-lg', ideaNoteColor(activeIdea.id))}>
-                <IdeaCardContent idea={activeIdea} />
-              </div>
-            ) : null}
+            {activeIdea
+              ? (() => {
+                  const color = activeIdea.color ?? defaultCardColor(activeIdea.id)
+                  return (
+                    <div
+                      className="w-56 rounded-xl shadow-lg"
+                      style={{ background: `color-mix(in oklab, ${color} 82%, var(--surface-strong))` }}
+                    >
+                      <IdeaCardContent idea={activeIdea} textColor={resolveTextColor(color)} />
+                    </div>
+                  )
+                })()
+              : null}
           </DragOverlay>
         </DndContext>
       ) : (

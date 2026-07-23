@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { format } from 'date-fns'
 import { AlertTriangle, CircleDollarSign, Plus, Repeat2, Undo2 } from 'lucide-react'
+import { WidgetColorPicker } from '#/components/charm/widget-color-picker'
 import { Button } from '#/components/ui/button'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
@@ -13,6 +14,7 @@ import {
   isPartnershipRenewalDueSoon,
 } from '#/lib/partnership-derived'
 import { cn } from '#/lib/utils'
+import { defaultCardColor, resolveTextColor } from '#/lib/widget-colors'
 import type { Partnership } from '#/lib/types'
 
 const STATUS_STYLES: Record<Partnership['status'], string> = {
@@ -38,6 +40,7 @@ export function PartnershipCard({
     ensurePartnershipCycle,
     markPartnershipCyclePaid,
     undoLastPartnershipPayment,
+    updatePartnershipColor,
   } = useCharmStore()
   const { displayCurrency, convert } = useCurrency()
   const currency = new Intl.NumberFormat('en-US', {
@@ -45,6 +48,9 @@ export function PartnershipCard({
     currency: partnership.currency,
     maximumFractionDigits: 0,
   })
+  const color = partnership.color ?? defaultCardColor(partnership.id)
+  const textColor = resolveTextColor(color)
+  const softTextColor = textColor === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(26,18,32,0.65)'
 
   const periodWindow = getCurrentPeriodWindow(partnership.deliverableCadence)
   const completed = countDeliverablesInWindow(partnershipDeliverables, partnership.id, periodWindow)
@@ -81,26 +87,32 @@ export function PartnershipCard({
     <div
       onClick={() => onOpen(partnership.id)}
       className="charm-glass flex cursor-pointer flex-col gap-3 rounded-2xl p-4 transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
+      style={{ background: `color-mix(in oklab, ${color} 82%, var(--surface-strong))` }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 text-left">
-          <p className="truncate font-display text-base font-semibold text-[var(--charm-ink)]">{brandName}</p>
+          <p className="truncate font-display text-base font-semibold" style={{ color: textColor }}>
+            {brandName}
+          </p>
           <span className="mt-1 flex flex-wrap items-center gap-1.5">
             <span className={cn('inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize', STATUS_STYLES[partnership.status])}>
               {partnership.status}
             </span>
             {partnership.status === 'paused' && partnership.pausedAt && (
-              <span className="text-[10px] text-[var(--charm-ink-soft)]">
+              <span className="text-[10px]" style={{ color: softTextColor }}>
                 since {format(new Date(partnership.pausedAt), 'MMM d, yyyy')}
               </span>
             )}
           </span>
         </div>
-        {renewalDueSoon && (
-          <span className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--urgency-orange)]/15 px-2 py-0.5 text-[10px] font-semibold text-[var(--urgency-orange)]">
-            <AlertTriangle className="size-3" /> Renewal due soon
-          </span>
-        )}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {renewalDueSoon && (
+            <span className="flex items-center gap-1 rounded-full bg-[var(--urgency-orange)]/15 px-2 py-0.5 text-[10px] font-semibold text-[var(--urgency-orange)]">
+              <AlertTriangle className="size-3" /> Renewal due soon
+            </span>
+          )}
+          <WidgetColorPicker color={color} onChange={(next) => updatePartnershipColor(partnership.id, next)} label="Change partnership color" />
+        </div>
       </div>
 
       {partnership.contentFormats.length > 0 && (
@@ -108,7 +120,8 @@ export function PartnershipCard({
           {partnership.contentFormats.map((tag) => (
             <span
               key={tag}
-              className="flex items-center gap-1 rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-medium text-[var(--charm-ink-soft)]"
+              className="flex items-center gap-1 rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-medium"
+              style={{ color: softTextColor }}
             >
               <Repeat2 className="size-2.5" /> {tag}
             </span>
@@ -116,15 +129,15 @@ export function PartnershipCard({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-2 text-xs text-[var(--charm-ink-soft)]">
+      <div className="grid grid-cols-2 gap-2 text-xs" style={{ color: softTextColor }}>
         <div>
-          <p className="font-medium text-[var(--charm-ink)]">
+          <p className="font-medium" style={{ color: textColor }}>
             {completed}/{partnership.deliverableCount} {periodWindow.label}
           </p>
           <p>{partnership.deliverableUnit}</p>
         </div>
         <div>
-          <p className="font-medium text-[var(--charm-ink)]">
+          <p className="font-medium" style={{ color: textColor }}>
             {partnership.paymentType === 'retainer'
               ? `${currency.format(partnership.retainerAmount ?? 0)} / ${partnership.retainerCadence}`
               : `${currency.format(partnership.perDeliverableRate ?? 0)} / piece`}
@@ -153,7 +166,7 @@ export function PartnershipCard({
         </div>
         {partnership.endDate && (
           <div className="col-span-2">
-            <p className="text-[var(--charm-ink-soft)]">Renewal: {format(new Date(partnership.endDate), 'MMM d, yyyy')}</p>
+            <p>Renewal: {format(new Date(partnership.endDate), 'MMM d, yyyy')}</p>
           </div>
         )}
       </div>
@@ -190,7 +203,7 @@ export function PartnershipCard({
 
       {canConfirmPayment && cycleWindow && (
         <div className="flex items-center justify-between gap-1.5 border-t border-white/40 pt-2.5">
-          <p className="text-[10px] text-[var(--charm-ink-soft)]">
+          <p className="text-[10px]" style={{ color: softTextColor }}>
             {cycleConfirmed
               ? `Payment confirmed for ${format(cycleWindow.start, 'MMM d')} – ${format(cycleWindow.end, 'MMM d')}`
               : `No payment confirmed yet for ${format(cycleWindow.start, 'MMM d')} – ${format(cycleWindow.end, 'MMM d')}`}

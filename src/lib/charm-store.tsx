@@ -55,6 +55,8 @@ interface CharmStoreValue {
   assignIdeaDate: (ideaId: string, date: string) => void
   /** Clears scheduledDate and reverts status back to 'idea' if it hadn't progressed past 'scheduled'. */
   unassignIdeaDate: (ideaId: string) => void
+  /** Pass null to clear the override and fall back to the deterministic default color. */
+  updateIdeaColor: (ideaId: string, color: string | null) => void
   addIdea: (idea: Pick<IdeaPost, 'title'> & Partial<IdeaPost>) => void
   updateIdea: (
     ideaId: string,
@@ -77,6 +79,8 @@ interface CharmStoreValue {
   partnershipById: (id: string) => Partnership | undefined
   /** Finds-or-creates the brand by (case-insensitive) name, then creates or updates the partnership. Returns the partnership id. */
   savePartnership: (form: PartnershipFormValues, existingId?: string) => Promise<string>
+  /** Pass null to clear the override and fall back to the deterministic default color. */
+  updatePartnershipColor: (partnershipId: string, color: string | null) => void
   deletePartnership: (partnershipId: string) => Promise<void>
   logPartnershipDeliverable: (partnershipId: string) => void
   /** Removes the most recently logged deliverable for this partnership, if any — for correcting mis-clicks. */
@@ -289,16 +293,23 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         .from('ideas')
         .update({ scheduled_date: date, status: nextStatus })
         .eq('id', ideaId)
-        .then(() => {})
+        .then(({ error }) => {
+          if (error) console.error('Failed to save idea schedule date:', error)
+        })
     },
     [userId],
   )
 
   const addIdea = useCallback(
     (idea: Pick<IdeaPost, 'title'> & Partial<IdeaPost>) => {
-      const tempId = `idea-temp-${Date.now()}`
+      // Generated client-side (rather than a placeholder string swapped for the
+      // real id once the insert resolves) so the id is stable and correct from the
+      // very first render — dragging the idea onto the calendar right after
+      // creating it (before the insert round-trip finishes) still targets a row
+      // that genuinely exists, instead of racing an update against a since-replaced
+      // temp id and silently updating nothing.
       const newIdea: IdeaPost = {
-        id: tempId,
+        id: crypto.randomUUID(),
         title: idea.title,
         hook: idea.hook,
         description: idea.description,
@@ -315,6 +326,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       getSupabaseBrowserClient()
         .from('ideas')
         .insert({
+          id: newIdea.id,
           user_id: userId,
           title: newIdea.title,
           hook: newIdea.hook,
@@ -325,13 +337,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
           reference_links: newIdea.referenceLinks,
           series: newIdea.series,
         })
-        .select('*')
-        .single()
-        .then(({ data }) => {
-          if (!data) return
-          const real = ideaFromRow(data)
-          setIdeas((prev) => prev.map((i) => (i.id === tempId ? real : i)))
-        })
+        .then(() => {})
     },
     [userId],
   )
@@ -351,7 +357,18 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         .from('ideas')
         .update({ scheduled_date: null, status: nextStatus })
         .eq('id', ideaId)
-        .then(() => {})
+        .then(({ error }) => {
+          if (error) console.error('Failed to unschedule idea:', error)
+        })
+    },
+    [userId],
+  )
+
+  const updateIdeaColor = useCallback(
+    (ideaId: string, color: string | null) => {
+      setIdeas((prev) => prev.map((idea) => (idea.id === ideaId ? { ...idea, color: color ?? undefined } : idea)))
+      if (!userId) return
+      getSupabaseBrowserClient().from('ideas').update({ color }).eq('id', ideaId).then(() => {})
     },
     [userId],
   )
@@ -773,6 +790,15 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
     [userId, brands],
   )
 
+  const updatePartnershipColor = useCallback(
+    (partnershipId: string, color: string | null) => {
+      setPartnerships((prev) => prev.map((p) => (p.id === partnershipId ? { ...p, color: color ?? undefined } : p)))
+      if (!userId) return
+      getSupabaseBrowserClient().from('partnerships').update({ color }).eq('id', partnershipId).then(() => {})
+    },
+    [userId],
+  )
+
   const deletePartnership = useCallback(
     async (partnershipId: string) => {
       setPartnerships((prev) => prev.filter((p) => p.id !== partnershipId))
@@ -1053,6 +1079,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       updateDealNotes,
       assignIdeaDate,
       unassignIdeaDate,
+      updateIdeaColor,
       addIdea,
       updateIdea,
       deleteIdea,
@@ -1068,6 +1095,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       deleteBrand,
       partnershipById,
       savePartnership,
+      updatePartnershipColor,
       deletePartnership,
       logPartnershipDeliverable,
       undoLastPartnershipDeliverable,
@@ -1091,6 +1119,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       updateDealNotes,
       assignIdeaDate,
       unassignIdeaDate,
+      updateIdeaColor,
       addIdea,
       updateIdea,
       deleteIdea,
@@ -1106,6 +1135,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       deleteBrand,
       partnershipById,
       savePartnership,
+      updatePartnershipColor,
       deletePartnership,
       logPartnershipDeliverable,
       undoLastPartnershipDeliverable,

@@ -1,4 +1,4 @@
-export interface DealCardSwatch {
+export interface WidgetColorSwatch {
   id: string
   label: string
   value: string
@@ -10,16 +10,21 @@ export interface DealCardSwatch {
 }
 
 /**
- * "Pastel Bridesmaids" palette. Every swatch gets an explicit dark-text override rather
- * than relying on the generic luminance heuristic below: the card background is actually
- * `color-mix(in oklab, swatch 82%, var(--surface-strong))`, and --surface-strong is a dark
- * plum in dark mode — mixing that in drags every one of these pastels' effective luminance
- * under the heuristic's 0.5 cutoff, which would pick white text (checked by rendering the
- * real color-mix result in both themes: dark text measures 6.4–9.6:1 contrast in dark mode
- * and 10.4–14.8:1 in light mode, vs. white's 1.9–2.9:1 in dark mode — white is never right
- * for this palette in either theme).
+ * "Pastel Bridesmaids" palette — one deterministic-default-plus-custom-override system used by
+ * every colorable widget (brand deal cards, idea/scrapbook cards, partnership cards, ...), so a
+ * color picked anywhere in the app looks and behaves the same everywhere. Brightening this
+ * palette was tried and reverted (too dark/saturated, didn't read as pastel) — these are the
+ * original values, kept for now.
+ *
+ * Every swatch gets an explicit dark-text override rather than relying on the generic luminance
+ * heuristic below: the card background is actually `color-mix(in oklab, swatch 82%,
+ * var(--surface-strong))`, and --surface-strong is a dark plum in dark mode — mixing that in
+ * drags every one of these pastels' effective luminance under the heuristic's 0.5 cutoff, which
+ * would pick white text (checked by rendering the real color-mix result in both themes: dark
+ * text measures 6.4–9.6:1 contrast in dark mode and 10.4–14.8:1 in light mode, vs. white's
+ * 1.9–2.9:1 in dark mode — white is never right for this palette in either theme).
  */
-export const DEAL_CARD_PALETTE: Array<DealCardSwatch> = [
+export const WIDGET_COLOR_PALETTE: Array<WidgetColorSwatch> = [
   { id: 'pale-pink', label: 'Pale Pink', value: '#ffe1e6', textColor: '#1a1220' },
   { id: 'azalea', label: 'Azalea', value: '#f7c9d4', textColor: '#1a1220' },
   { id: 'lilac', label: 'Lilac', value: '#d9c7e3', textColor: '#1a1220' },
@@ -31,17 +36,17 @@ export const DEAL_CARD_PALETTE: Array<DealCardSwatch> = [
 ]
 
 /**
- * Deterministic per-deal default, cycling through the palette by a hash of the
- * deal's id rather than its position in a list — stable across reloads and
- * unaffected by other deals being added, moved, or deleted, unlike an
- * index-based cycle would be.
+ * Deterministic per-item default, cycling through the palette by a hash of the
+ * item's id rather than its position in a list — stable across reloads and
+ * unaffected by other items being added, moved, or deleted, unlike an
+ * index-based cycle would be. Used for deal, idea, and partnership cards alike.
  */
-export function defaultCardColor(dealId: string): string {
+export function defaultCardColor(id: string): string {
   let hash = 0
-  for (let i = 0; i < dealId.length; i++) {
-    hash = (hash * 31 + dealId.charCodeAt(i)) >>> 0
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) >>> 0
   }
-  return DEAL_CARD_PALETTE[hash % DEAL_CARD_PALETTE.length].value
+  return WIDGET_COLOR_PALETTE[hash % WIDGET_COLOR_PALETTE.length].value
 }
 
 /**
@@ -60,11 +65,11 @@ export function readableTextColor(hex: string): string {
 }
 
 /**
- * Text color for a deal card background: uses a palette swatch's explicit `textColor`
+ * Text color for a widget card background: uses a palette swatch's explicit `textColor`
  * override when the color matches one exactly, else falls back to the generic
  * luminance heuristic above (for arbitrary custom colors picked via the native color input).
  */
 export function resolveTextColor(color: string): string {
-  const swatch = DEAL_CARD_PALETTE.find((s) => s.value.toLowerCase() === color.toLowerCase())
+  const swatch = WIDGET_COLOR_PALETTE.find((s) => s.value.toLowerCase() === color.toLowerCase())
   return swatch?.textColor ?? readableTextColor(color)
 }

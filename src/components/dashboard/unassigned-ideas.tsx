@@ -6,9 +6,9 @@ import { ArrowUpRight, Lightbulb, Plus } from 'lucide-react'
 import { WidgetCard } from '#/components/charm/widget-card'
 import { useCharmStore } from '#/lib/charm-store'
 import { cn } from '#/lib/utils'
+import { defaultCardColor, resolveTextColor } from '#/lib/widget-colors'
 
 const NOTE_TILTS = ['-rotate-2', 'rotate-1', '-rotate-1']
-const NOTE_COLORS = ['bg-[var(--charm-pink)]', 'bg-[var(--charm-yellow)]', 'bg-[var(--charm-blue)]']
 
 export function UnassignedIdeas({ onHide }: { onHide: () => void }) {
   const { ideas, addIdea } = useCharmStore()
@@ -71,24 +71,35 @@ export function UnassignedIdeas({ onHide }: { onHide: () => void }) {
           </p>
         ) : (
           <AnimatePresence initial={false}>
-            {unassigned.map((idea, i) => (
-              <motion.div
-                key={idea.id}
-                layout
-                initial={{ opacity: 0, scale: 0.85, y: 8 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-                className={cn(
-                  'w-full max-w-[220px] rounded-xl p-3 shadow-sm transition-shadow duration-150 ease-out hover:shadow-md',
-                  NOTE_TILTS[i % NOTE_TILTS.length],
-                  NOTE_COLORS[i % NOTE_COLORS.length],
-                )}
-              >
-                <p className="text-sm font-medium text-[var(--charm-ink)]">{idea.title}</p>
-                {idea.hook && <p className="mt-1 line-clamp-2 text-xs text-[var(--charm-ink)]/70">{idea.hook}</p>}
-              </motion.div>
-            ))}
+            {unassigned.map((idea, i) => {
+              const color = idea.color ?? defaultCardColor(idea.id)
+              const textColor = resolveTextColor(color)
+              const softTextColor = textColor === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(26,18,32,0.65)'
+              return (
+                <motion.div
+                  key={idea.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.85, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                  className={cn(
+                    'w-full max-w-[220px] rounded-xl p-3 shadow-sm transition-shadow duration-150 ease-out hover:shadow-md',
+                    NOTE_TILTS[i % NOTE_TILTS.length],
+                  )}
+                  style={{ background: `color-mix(in oklab, ${color} 82%, var(--surface-strong))` }}
+                >
+                  <p className="text-sm font-medium" style={{ color: textColor }}>
+                    {idea.title}
+                  </p>
+                  {idea.hook && (
+                    <p className="mt-1 line-clamp-2 text-xs" style={{ color: softTextColor }}>
+                      {idea.hook}
+                    </p>
+                  )}
+                </motion.div>
+              )
+            })}
           </AnimatePresence>
         )}
       </div>

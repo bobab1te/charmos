@@ -70,6 +70,7 @@ export function ideaFromRow(row: IdeaRow): IdeaPost {
     referenceLinks: row.reference_links,
     createdAt: row.created_at,
     series: row.series ?? undefined,
+    color: row.color ?? undefined,
   }
 }
 
@@ -107,6 +108,7 @@ export function partnershipFromRow(row: PartnershipRow): Partnership {
     pausedAt: row.paused_at ?? undefined,
     unpausedAt: row.unpaused_at ?? undefined,
     createdAt: row.created_at,
+    color: row.color ?? undefined,
   }
 }
 

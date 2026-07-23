@@ -116,6 +116,7 @@ export interface Database {
           reference_links: string[]
           created_at: string
           series: string | null
+          color: string | null
         }
         Insert: {
           id?: string
@@ -129,6 +130,7 @@ export interface Database {
           reference_links?: Array<string>
           created_at?: string
           series?: string | null
+          color?: string | null
         }
         Update: Partial<Database['public']['Tables']['ideas']['Insert']>
         Relationships: []
@@ -184,6 +186,7 @@ export interface Database {
           paused_at: string | null
           unpaused_at: string | null
           created_at: string
+          color: string | null
         }
         Insert: {
           id?: string
@@ -205,6 +208,7 @@ export interface Database {
           paused_at?: string | null
           unpaused_at?: string | null
           created_at?: string
+          color?: string | null
         }
         Update: Partial<Database['public']['Tables']['partnerships']['Insert']>
         Relationships: []
