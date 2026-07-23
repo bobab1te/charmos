@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { DealPipeline } from '#/components/dashboard/deal-pipeline'
 import { PartnershipCard } from '#/components/partnerships/partnership-card'
 import { PartnershipModal } from '#/components/partnerships/partnership-modal'
+import { GiftedLabel, isGiftedAmount } from '#/components/deals/gifted-label'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
 import { readDraft, writeDraft } from '#/lib/form-draft'
@@ -180,9 +181,15 @@ function ArchivedDealCard({ deal, brandName }: { deal: BrandDeal; brandName: str
           <p className="text-xs text-[var(--charm-ink-soft)] capitalize">Archived from: {deal.stage}</p>
         </div>
         <span className="shrink-0 rounded-full bg-white/50 px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
-          {currency.format(deal.compensationAmount)}
-          {showsConverted &&
-            ` (≈ ${new Intl.NumberFormat('en-US', { style: 'currency', currency: displayCurrency, maximumFractionDigits: 0 }).format(convert(deal.compensationAmount, deal.compensationCurrency))})`}
+          {isGiftedAmount(deal.compensationAmount) ? (
+            <GiftedLabel />
+          ) : (
+            <>
+              {currency.format(deal.compensationAmount)}
+              {showsConverted &&
+                ` (≈ ${new Intl.NumberFormat('en-US', { style: 'currency', currency: displayCurrency, maximumFractionDigits: 0 }).format(convert(deal.compensationAmount, deal.compensationCurrency))})`}
+            </>
+          )}
         </span>
       </div>
       <div className="flex justify-end gap-1 pt-1">

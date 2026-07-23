@@ -19,6 +19,7 @@ import { Button } from '#/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import { DealModal } from '#/components/deals/deal-modal'
 import { BulkImportModal } from '#/components/deals/bulk-import-modal'
+import { GiftedLabel, isGiftedAmount } from '#/components/deals/gifted-label'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
 import { isDealUnpaidAlert, nextDeliverable, urgencyForDate } from '#/lib/derived'
@@ -167,21 +168,27 @@ function DealCardInner({
         </p>
       )}
       <p className="mt-1.5 text-xs font-semibold" style={{ color: textColor }}>
-        {new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: deal.compensationCurrency,
-          maximumFractionDigits: 0,
-        }).format(deal.compensationAmount)}
-        {showsConverted && (
-          <span className="ml-1 font-medium" style={{ color: softTextColor }}>
-            (≈{' '}
+        {isGiftedAmount(deal.compensationAmount) ? (
+          <GiftedLabel />
+        ) : (
+          <>
             {new Intl.NumberFormat('en-US', {
               style: 'currency',
-              currency: displayCurrency,
+              currency: deal.compensationCurrency,
               maximumFractionDigits: 0,
-            }).format(convert(deal.compensationAmount, deal.compensationCurrency))}
-            )
-          </span>
+            }).format(deal.compensationAmount)}
+            {showsConverted && (
+              <span className="ml-1 font-medium" style={{ color: softTextColor }}>
+                (≈{' '}
+                {new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: displayCurrency,
+                  maximumFractionDigits: 0,
+                }).format(convert(deal.compensationAmount, deal.compensationCurrency))}
+                )
+              </span>
+            )}
+          </>
         )}
       </p>
       <DealCardNotes

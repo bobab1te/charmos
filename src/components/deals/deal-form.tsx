@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
+import { GiftedLabel, isGiftedAmount } from '#/components/deals/gifted-label'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
 import { SUPPORTED_CURRENCIES } from '#/lib/currencies'
@@ -226,7 +227,12 @@ export function DealForm({
           <Section title="Compensation & Usage Rights">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="compensationAmount">Amount</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="compensationAmount">Amount</Label>
+                  {isGiftedAmount(Number(values.compensationAmount) || 0) && (
+                    <GiftedLabel className="text-xs text-[var(--charm-ink-soft)]" />
+                  )}
+                </div>
                 <Input
                   id="compensationAmount"
                   type="number"

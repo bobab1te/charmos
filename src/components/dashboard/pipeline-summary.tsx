@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { Link } from '@tanstack/react-router'
 import { ArrowUpRight, Briefcase } from 'lucide-react'
 import { WidgetCard } from '#/components/charm/widget-card'
+import { GiftedLabel, isGiftedAmount } from '#/components/deals/gifted-label'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
 import { nextDeliverable } from '#/lib/derived'
@@ -21,16 +22,22 @@ function DealRow({ deal, brandName }: { deal: BrandDeal; brandName: string }) {
   const next = nextDeliverable(deal)
   const detail = next
     ? `${format(new Date(next.dueDate), 'MMM d')} · ${next.type}`
-    : new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: displayCurrency,
-        maximumFractionDigits: 0,
-      }).format(convert(deal.compensationAmount, deal.compensationCurrency))
+    : isGiftedAmount(deal.compensationAmount)
+      ? undefined
+      : new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: displayCurrency,
+          maximumFractionDigits: 0,
+        }).format(convert(deal.compensationAmount, deal.compensationCurrency))
 
   return (
     <li className="rounded-lg px-1.5 py-1 transition-colors duration-150 ease-out hover:bg-white/40">
       <p className="truncate text-xs font-medium text-[var(--charm-ink)]">{brandName}</p>
-      <p className="truncate text-[11px] text-[var(--charm-ink-soft)]">{detail}</p>
+      {detail ? (
+        <p className="truncate text-[11px] text-[var(--charm-ink-soft)]">{detail}</p>
+      ) : (
+        <GiftedLabel className="text-[11px] text-[var(--charm-ink-soft)]" />
+      )}
     </li>
   )
 }

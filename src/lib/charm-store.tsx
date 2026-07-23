@@ -602,7 +602,9 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       const supabase = getSupabaseBrowserClient()
       const existingEntry = ledger.find((e) => e.dealId === dealId && e.type === 'income')
 
-      if (dealPayload.paid && dealPayload.paid_date) {
+      // A $0 deal is treated as gifted (see gifted-label.tsx) - marking it "paid" doesn't
+      // represent any real cash movement, so it shouldn't create a $0 entry cluttering Finances.
+      if (dealPayload.paid && dealPayload.paid_date && dealPayload.compensation_amount > 0) {
         const ledgerPayload = {
           user_id: userId,
           type: 'income' as const,

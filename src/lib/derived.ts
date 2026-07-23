@@ -29,7 +29,7 @@ export function urgencyForDate(dueDate: string, now = new Date()): Urgency {
  * isn't silently lost for deals with no date entered.
  */
 export function isDealUnpaidAlert(deal: BrandDeal, now = new Date()): boolean {
-  if (deal.archived) return false
+  if (deal.archived || deal.compensationAmount === 0) return false
   if (deal.compensationType !== 'paid' || deal.paid) return false
   if (deal.stage !== 'live' && deal.stage !== 'completed') return false
   if (deal.expectedPayoutDate) return new Date(deal.expectedPayoutDate) <= now
