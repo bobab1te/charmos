@@ -100,6 +100,8 @@ interface CharmStoreValue {
   confirmPartnershipCycle: (cycleId: string) => Promise<void>
   /** Reverts a specific cycle's confirmation by id — the general counterpart to undoLastPartnershipPayment's "current cycle only" shortcut. */
   unconfirmPartnershipCycle: (cycleId: string) => void
+  /** Corrects a cycle's amount — works whether it's confirmed or not, keeping its linked ledger entry (if any) in sync. */
+  updatePartnershipCycleAmount: (cycleId: string, amount: number) => void
   /** Fills in any missing past cycles between the partnership's start date and now, for a partnership added to the app well after it actually started. Never touches an existing (confirmed or unconfirmed) cycle. */
   backfillPastPartnershipCycles: (partnershipId: string) => Promise<void>
 }
@@ -965,6 +967,32 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
     [userId, partnerships, partnershipPaymentCycles, brandById],
   )
 
+  /**
+   * Corrects a specific cycle's amount — e.g. the actual payment received differed from the
+   * partnership's standard rate. Works on unconfirmed cycles (so the right amount is what gets
+   * confirmed) and confirmed ones (so a mistake can still be fixed after the fact): if the cycle
+   * already has a linked ledger entry, that entry's amount is updated too, since it — not
+   * expectedAmount — is what actually counts toward revenue once confirmed.
+   */
+  const updatePartnershipCycleAmount = useCallback(
+    (cycleId: string, amount: number) => {
+      const cycle = partnershipPaymentCycles.find((c) => c.id === cycleId)
+      if (!cycle) return
+      setPartnershipPaymentCycles((prev) => prev.map((c) => (c.id === cycleId ? { ...c, expectedAmount: amount } : c)))
+      if (cycle.ledgerEntryId) {
+        const ledgerEntryId = cycle.ledgerEntryId
+        setLedger((prev) => prev.map((entry) => (entry.id === ledgerEntryId ? { ...entry, amount } : entry)))
+      }
+      if (!userId) return
+      const supabase = getSupabaseBrowserClient()
+      supabase.from('partnership_payment_cycles').update({ expected_amount: amount }).eq('id', cycleId).then(() => {})
+      if (cycle.ledgerEntryId) {
+        supabase.from('ledger').update({ amount }).eq('id', cycle.ledgerEntryId).then(() => {})
+      }
+    },
+    [partnershipPaymentCycles, userId],
+  )
+
   /** Reverts a specific cycle's confirmation (by id) — deletes its ledger entry and sets it back to unconfirmed — for correcting a mis-click, on any cycle. */
   const unconfirmPartnershipCycle = useCallback(
     (cycleId: string) => {
@@ -1103,6 +1131,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       undoLastPartnershipPayment,
       confirmPartnershipCycle,
       unconfirmPartnershipCycle,
+      updatePartnershipCycleAmount,
       backfillPastPartnershipCycles,
     }),
     [
@@ -1143,6 +1172,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       undoLastPartnershipPayment,
       confirmPartnershipCycle,
       unconfirmPartnershipCycle,
+      updatePartnershipCycleAmount,
       backfillPastPartnershipCycles,
     ],
   )
