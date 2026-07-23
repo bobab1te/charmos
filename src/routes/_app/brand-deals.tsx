@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { ArchiveRestore, Pencil, Plus, Trash2, X, Check } from 'lucide-react'
+import { SparkleAccent } from '#/components/charm/sparkle-accent'
 import { Input } from '#/components/ui/input'
 import { Button } from '#/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
@@ -132,7 +133,12 @@ function BrandsGrid() {
   const dealCountByBrand = (brandId: string) => deals.filter((d) => d.brandId === brandId).length
 
   if (brands.length === 0) {
-    return <p className="text-sm text-[var(--charm-ink-soft)]">No brands yet. Add a deal to create your first one.</p>
+    return (
+      <p className="flex items-center gap-1.5 text-sm text-[var(--charm-ink-soft)]">
+        <SparkleAccent />
+        No brands yet. Add a deal to create your first one.
+      </p>
+    )
   }
 
   return (

@@ -4,6 +4,7 @@ import type { KeyboardEvent } from 'react'
 import { DndContext, DragOverlay, PointerSensor, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { NotebookPen, Plus } from 'lucide-react'
+import { SparkleAccent } from '#/components/charm/sparkle-accent'
 import { ScrapbookCalendar } from '#/components/scrapbook/scrapbook-calendar'
 import { DraggableIdeaCard, IdeaCardContent } from '#/components/scrapbook/idea-card'
 import { IdeaDetailModal } from '#/components/scrapbook/idea-detail-modal'
@@ -37,7 +38,8 @@ function UnscheduledList({
       )}
     >
       {ideas.length === 0 ? (
-        <p className="p-2 text-sm text-[var(--charm-ink-soft)]">
+        <p className="flex items-center gap-1.5 p-2 text-sm text-[var(--charm-ink-soft)]">
+          <SparkleAccent />
           No unscheduled ideas. Add one above, or drag one back here to unschedule it.
         </p>
       ) : (
