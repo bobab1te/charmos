@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { Hash, Search, Sparkles } from 'lucide-react'
 import { CloudShape } from './decorative-shapes'
@@ -39,11 +40,37 @@ const STICKERS: Array<Sticker> = [
 
 const CORNER_HANDLES = ['-top-1.5 -left-1.5', '-top-1.5 -right-1.5', '-bottom-1.5 -left-1.5', '-bottom-1.5 -right-1.5']
 
-/** Purely decorative — the moodboard-inspired sticker collage + dashed "selection box" framing the login card. */
+/** Size of the cursor-following selection box, in px. */
+const BOX_SIZE = { width: 200, height: 120 }
+
+/** Purely decorative — the moodboard-inspired sticker collage + dashed "selection box" that
+ * trails the cursor around the login screen. */
 export function LoginDecor() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [boxPos, setBoxPos] = useState<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    function handleMouseMove(e: MouseEvent) {
+      const rect = containerRef.current?.getBoundingClientRect()
+      if (!rect) return
+      setBoxPos({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [])
+
   return (
-    <div className="pointer-events-none absolute inset-0 hidden overflow-visible xl:block" aria-hidden="true">
-      <div className="absolute left-[4%] top-[10%] h-[68%] w-[80%] rounded-2xl border-2 border-dashed border-[var(--charm-ink-soft)]/35">
+    <div ref={containerRef} className="pointer-events-none absolute inset-0 hidden overflow-visible xl:block" aria-hidden="true">
+      <div
+        className="absolute rounded-2xl border-2 border-dashed border-[var(--charm-ink-soft)]/35 transition-[left,top] duration-300 ease-out"
+        style={{
+          left: boxPos ? boxPos.x - BOX_SIZE.width / 2 : '4%',
+          top: boxPos ? boxPos.y - BOX_SIZE.height / 2 : '10%',
+          width: BOX_SIZE.width,
+          height: BOX_SIZE.height,
+          opacity: boxPos ? 1 : 0,
+        }}
+      >
         {CORNER_HANDLES.map((pos) => (
           <span
             key={pos}
