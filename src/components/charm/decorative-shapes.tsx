@@ -1,4 +1,4 @@
-// Scattered blurred clouds/diamonds used behind page content for the CharmOS
+// Scattered blurred clouds/diamonds/flowers used behind page content for the CharmOS
 // mesh-gradient aesthetic. Purely decorative — non-interactive.
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
@@ -7,7 +7,7 @@ import type { CSSProperties } from 'react'
 export type ShapeIntensity = 'full' | 'toned-down' | 'minimal'
 
 interface Shape {
-  kind: 'diamond' | 'cloud'
+  kind: 'diamond' | 'cloud' | 'flower'
   top?: string
   left?: string
   right?: string
@@ -29,6 +29,11 @@ const DEFAULT_SHAPES: Array<Shape> = [
   { kind: 'diamond', top: '58%', right: '4%', size: 120, color: 'var(--charm-lavender-deep)', opacity: 0.3, blur: 1, rotate: 12, driftX: -10, driftDuration: 19 },
   { kind: 'cloud', top: '38%', left: '2%', size: 160, color: '#ffffff', opacity: 0.75, blur: 2, glow: true, driftX: 16, driftDuration: 17 },
   { kind: 'cloud', bottom: '18%', right: '8%', size: 190, color: 'var(--accent)', opacity: 0.32, blur: 2, driftX: -14, driftDuration: 13 },
+  // Abstract "glassy" flowers: white/very-transparent-pastel fill + a faint white edge stroke
+  // (rendered per-petal in FlowerShape) standing in for true backdrop-blur glassmorphism, which
+  // wouldn't read as glass here — there's nothing but the page background behind this layer.
+  { kind: 'flower', top: '12%', right: '22%', size: 130, color: '#ffffff', opacity: 0.22, blur: 1, glow: true, driftX: 10, driftDuration: 21 },
+  { kind: 'flower', bottom: '6%', left: '28%', size: 150, color: 'var(--charm-pink)', opacity: 0.2, blur: 1, driftX: -12, driftDuration: 16 },
 ]
 
 /** Lower-opacity, fewer-shapes variants for data-dense views — same shapes, toned down rather than a different set to keep things simple. */
@@ -38,25 +43,32 @@ const INTENSITY_SETTINGS: Record<ShapeIntensity, { shapes: Array<Shape>; opacity
   minimal: { shapes: DEFAULT_SHAPES.slice(0, 2), opacityScale: 0.5, animate: false },
 }
 
-interface Twinkle {
+/** A small pulsing/glowing accent — a dot, a tiny diamond, or a tiny star, cycled by index. */
+interface Glimmer {
   left: string
   top: string
   size: number
   delay: number
   duration: number
+  shape: 'dot' | 'diamond' | 'star'
 }
 
-const TWINKLE_COUNT: Record<ShapeIntensity, number> = { full: 10, 'toned-down': 6, minimal: 3 }
+const GLIMMER_COUNT: Record<ShapeIntensity, number> = { full: 12, 'toned-down': 7, minimal: 3 }
+const GLIMMER_SHAPES: Array<Glimmer['shape']> = ['dot', 'diamond', 'star']
 
 /** Deterministic (not Math.random) so server and client render the same layout — avoids a hydration mismatch. */
-function generateTwinkles(count: number): Array<Twinkle> {
-  return Array.from({ length: count }, (_, i) => ({
-    left: `${(i * 29 + 7) % 96}%`,
-    top: `${(i * 53 + 13) % 92}%`,
-    size: 2 + (i % 3),
-    delay: (i * 0.6) % 3.5,
-    duration: 2.6 + (i % 3) * 0.6,
-  }))
+function generateGlimmers(count: number): Array<Glimmer> {
+  return Array.from({ length: count }, (_, i) => {
+    const shape = GLIMMER_SHAPES[i % GLIMMER_SHAPES.length]
+    return {
+      left: `${(i * 29 + 7) % 96}%`,
+      top: `${(i * 53 + 13) % 92}%`,
+      size: shape === 'dot' ? 2 + (i % 3) : 10 + (i % 3) * 3,
+      delay: (i * 0.6) % 3.5,
+      duration: 2.6 + (i % 3) * 0.6,
+      shape,
+    }
+  })
 }
 
 function DiamondShape({ size, color }: { size: number; color: string }) {
@@ -66,6 +78,14 @@ function DiamondShape({ size, color }: { size: number; color: string }) {
         d="M50 0 C54 34 66 46 100 50 C66 54 54 66 50 100 C46 66 34 54 0 50 C34 46 46 34 50 0 Z"
         fill={color}
       />
+    </svg>
+  )
+}
+
+function StarShape({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+      <path d="M50 2 L61 37 L98 37 L68 59 L79 95 L50 73 L21 95 L32 59 L2 37 L39 37 Z" fill={color} />
     </svg>
   )
 }
@@ -81,12 +101,47 @@ export function CloudShape({ size, color }: { size: number; color: string }) {
   )
 }
 
+/** Abstract flower: 6 overlapping petal circles + a center circle, each with a faint white edge
+ * to suggest a translucent glass petal rather than a flat-filled blob. */
+function FlowerShape({ size, color }: { size: number; color: string }) {
+  const cx = size / 2
+  const cy = size / 2
+  const orbit = size * 0.26
+  const petalR = size * 0.26
+  const centerR = size * 0.16
+  const petals = Array.from({ length: 6 }, (_, i) => {
+    const angle = (i / 6) * Math.PI * 2 - Math.PI / 2
+    return { x: cx + Math.cos(angle) * orbit, y: cy + Math.sin(angle) * orbit }
+  })
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none">
+      {petals.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={petalR} fill={color} stroke="white" strokeOpacity={0.5} strokeWidth={1} />
+      ))}
+      <circle cx={cx} cy={cy} r={centerR} fill={color} stroke="white" strokeOpacity={0.5} strokeWidth={1} />
+    </svg>
+  )
+}
+
 function renderShape(shape: Shape) {
   switch (shape.kind) {
     case 'diamond':
       return <DiamondShape size={shape.size} color={shape.color} />
     case 'cloud':
       return <CloudShape size={shape.size} color={shape.color} />
+    case 'flower':
+      return <FlowerShape size={shape.size} color={shape.color} />
+  }
+}
+
+function renderGlimmerShape(shape: Glimmer['shape'], size: number) {
+  switch (shape) {
+    case 'diamond':
+      return <DiamondShape size={size} color="#ffffff" />
+    case 'star':
+      return <StarShape size={size} color="#ffffff" />
+    case 'dot':
+      return null
   }
 }
 
@@ -108,7 +163,7 @@ export function DecorativeShapes({ intensity = 'full' }: { intensity?: ShapeInte
   const allowAmbientMotion = useAllowAmbientMotion()
   const { shapes, opacityScale, animate } = INTENSITY_SETTINGS[intensity]
   const shouldAnimate = animate && allowAmbientMotion && !prefersReducedMotion
-  const twinkles = useMemo(() => generateTwinkles(TWINKLE_COUNT[intensity]), [intensity])
+  const glimmers = useMemo(() => generateGlimmers(GLIMMER_COUNT[intensity]), [intensity])
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
@@ -146,23 +201,32 @@ export function DecorativeShapes({ intensity = 'full' }: { intensity?: ShapeInte
         )
       })}
 
-      {twinkles.map((t, i) =>
-        shouldAnimate ? (
+      {glimmers.map((g, i) => {
+        const isDot = g.shape === 'dot'
+        const className = isDot ? 'absolute rounded-full bg-white' : 'absolute'
+        const style: CSSProperties = { left: g.left, top: g.top, width: g.size, height: g.size }
+        const content = renderGlimmerShape(g.shape, g.size)
+
+        if (!shouldAnimate) {
+          return (
+            <div key={`glimmer-${i}`} className={className} style={{ ...style, opacity: 0.5 }}>
+              {content}
+            </div>
+          )
+        }
+
+        return (
           <motion.div
-            key={`twinkle-${i}`}
-            className="absolute rounded-full bg-white"
-            style={{ left: t.left, top: t.top, width: t.size, height: t.size }}
+            key={`glimmer-${i}`}
+            className={className}
+            style={style}
             animate={{ opacity: [0.15, 0.95, 0.15], scale: [0.8, 1.2, 0.8] }}
-            transition={{ duration: t.duration, repeat: Infinity, ease: 'easeInOut', delay: t.delay }}
-          />
-        ) : (
-          <div
-            key={`twinkle-${i}`}
-            className="absolute rounded-full bg-white"
-            style={{ left: t.left, top: t.top, width: t.size, height: t.size, opacity: 0.5 }}
-          />
-        ),
-      )}
+            transition={{ duration: g.duration, repeat: Infinity, ease: 'easeInOut', delay: g.delay }}
+          >
+            {content}
+          </motion.div>
+        )
+      })}
     </div>
   )
 }
