@@ -34,7 +34,7 @@ export function WidgetCard({
       exit={{ opacity: 0, y: -8, scale: 0.98 }}
       transition={{ type: 'spring', stiffness: 260, damping: 26 }}
       className={cn(
-        'charm-glass relative flex flex-col rounded-2xl p-5 transition-shadow duration-150 ease-out hover:shadow-lg',
+        'charm-glass relative flex h-full flex-col rounded-2xl p-5 transition-shadow duration-150 ease-out hover:shadow-lg',
         className,
       )}
     >

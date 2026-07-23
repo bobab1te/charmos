@@ -1,8 +1,11 @@
+import { format } from 'date-fns'
 import { Link } from '@tanstack/react-router'
 import { ArrowUpRight, Briefcase } from 'lucide-react'
 import { WidgetCard } from '#/components/charm/widget-card'
 import { useCharmStore } from '#/lib/charm-store'
-import type { DealStage } from '#/lib/types'
+import { useCurrency } from '#/lib/currency-context'
+import { nextDeliverable } from '#/lib/derived'
+import type { BrandDeal, DealStage } from '#/lib/types'
 
 const COLUMNS: Array<{ id: DealStage; label: string }> = [
   { id: 'negotiating', label: 'Negotiating' },
@@ -10,6 +13,27 @@ const COLUMNS: Array<{ id: DealStage; label: string }> = [
   { id: 'live', label: 'Live' },
   { id: 'completed', label: 'Completed' },
 ]
+
+const VISIBLE_PER_COLUMN = 4
+
+function DealRow({ deal, brandName }: { deal: BrandDeal; brandName: string }) {
+  const { convert, displayCurrency } = useCurrency()
+  const next = nextDeliverable(deal)
+  const detail = next
+    ? `${format(new Date(next.dueDate), 'MMM d')} · ${next.type}`
+    : new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: displayCurrency,
+        maximumFractionDigits: 0,
+      }).format(convert(deal.compensationAmount, deal.compensationCurrency))
+
+  return (
+    <li className="rounded-lg px-1.5 py-1 transition-colors duration-150 ease-out hover:bg-white/40">
+      <p className="truncate text-xs font-medium text-[var(--charm-ink)]">{brandName}</p>
+      <p className="truncate text-[11px] text-[var(--charm-ink-soft)]">{detail}</p>
+    </li>
+  )
+}
 
 export function PipelineSummary({ onHide }: { onHide: () => void }) {
   const { deals, brandById } = useCharmStore()
@@ -30,30 +54,35 @@ export function PipelineSummary({ onHide }: { onHide: () => void }) {
         </Link>
       }
     >
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        {dealsByStage.map((col) => (
-          <div key={col.id} className="rounded-xl border border-dashed border-white/40 p-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--charm-ink-soft)]">
-                {col.label}
-              </span>
-              <span className="rounded-full bg-white/50 px-1.5 py-0.5 text-[11px] font-medium text-[var(--charm-ink-soft)]">
-                {col.deals.length}
-              </span>
-            </div>
-            <ul className="mt-1.5 flex flex-col gap-1">
-              {col.deals.length === 0 ? (
-                <li className="text-xs text-[var(--charm-ink-soft)]">—</li>
+      <div className="grid h-full grid-cols-2 gap-3 sm:grid-cols-4">
+        {dealsByStage.map((col) => {
+          const visible = col.deals.slice(0, VISIBLE_PER_COLUMN)
+          const overflow = col.deals.length - visible.length
+          return (
+            <div key={col.id} className="flex min-h-[220px] flex-col rounded-xl border border-dashed border-white/40 p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--charm-ink-soft)]">
+                  {col.label}
+                </span>
+                <span className="rounded-full bg-white/50 px-1.5 py-0.5 text-[11px] font-medium text-[var(--charm-ink-soft)]">
+                  {col.deals.length}
+                </span>
+              </div>
+              {visible.length === 0 ? (
+                <p className="mt-2 text-xs text-[var(--charm-ink-soft)]">No deals yet</p>
               ) : (
-                col.deals.slice(0, 2).map((deal) => (
-                  <li key={deal.id} className="truncate text-xs text-[var(--charm-ink)]">
-                    {brandName(deal.brandId)}
-                  </li>
-                ))
+                <ul className="mt-1.5 flex flex-col gap-0.5">
+                  {visible.map((deal) => (
+                    <DealRow key={deal.id} deal={deal} brandName={brandName(deal.brandId)} />
+                  ))}
+                </ul>
               )}
-            </ul>
-          </div>
-        ))}
+              {overflow > 0 && (
+                <p className="mt-auto pt-1.5 text-[11px] font-medium text-[var(--charm-ink-soft)]">+{overflow} more</p>
+              )}
+            </div>
+          )
+        })}
       </div>
     </WidgetCard>
   )
