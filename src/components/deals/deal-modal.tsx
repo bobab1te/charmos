@@ -39,6 +39,8 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
 
   const [rawText, setRawText] = useState(() => readDraft<string>(`${draftKey}:rawText`) ?? '')
   const [stagedAssets, setStagedAssets] = useState<Array<StagedAsset>>([])
+  // Not draft-persisted, same as stagedAssets — a raw File can't survive a full unmount.
+  const [brandLogoFile, setBrandLogoFile] = useState<File | null>(null)
   const [parsing, setParsing] = useState(false)
   const [parseError, setParseError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(() => readDraft<boolean>(`${draftKey}:showForm`) ?? isEditing)
@@ -79,6 +81,7 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
     if (!justOpened && !dealSwitched) return
 
     setSaveError(null)
+    setBrandLogoFile(null)
     if (dealId) {
       const deal = deals.find((d) => d.id === dealId)
       const brand = deal ? brandById(deal.brandId) : undefined
@@ -132,7 +135,7 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
     setSubmitting(true)
     setSaveError(null)
     try {
-      await saveDeal(values, dealId)
+      await saveDeal(values, dealId, brandLogoFile ?? undefined)
       clearDealDraft()
       onOpenChange(false)
     } catch (err) {
@@ -225,6 +228,8 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
               completedAt={completedAt}
               submitting={submitting}
               deleting={deleting}
+              brandLogoFile={brandLogoFile}
+              onBrandLogoFileChange={setBrandLogoFile}
             />
           </>
         )}

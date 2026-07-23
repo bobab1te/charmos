@@ -4,6 +4,7 @@ import { Archive, Bell, Trash2 } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '#/components/ui/popover'
 import { Button } from '#/components/ui/button'
 import { DealModal } from '#/components/deals/deal-modal'
+import { BrandAvatar } from '#/components/deals/brand-avatar'
 import { useCharmStore } from '#/lib/charm-store'
 import { isDealDueSoon, isDealGhosted, isDealStaleCompleted, nextDeliverable, urgencyForDate } from '#/lib/derived'
 import { useToast } from '#/lib/toast-context'
@@ -19,7 +20,7 @@ function GhostedRow({
   brandName: string
   onOpen: (dealId: string) => void
 }) {
-  const { archiveDeal, deleteDeal } = useCharmStore()
+  const { archiveDeal, deleteDeal, brandById } = useCharmStore()
   const { showUndoToast } = useToast()
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const daysQuiet = differenceInCalendarDays(new Date(), new Date(deal.stageUpdatedAt))
@@ -52,9 +53,12 @@ function GhostedRow({
 
   return (
     <div className="flex flex-col gap-1.5 rounded-xl bg-white/50 p-2.5">
-      <button type="button" onClick={() => onOpen(deal.id)} className="text-left">
-        <p className="text-sm font-medium text-[var(--charm-ink)]">{brandName}</p>
-        <p className="text-xs text-[var(--charm-ink-soft)]">No update in {daysQuiet} days — possibly ghosted</p>
+      <button type="button" onClick={() => onOpen(deal.id)} className="flex items-center gap-2 text-left">
+        <BrandAvatar name={brandName} logoUrl={brandById(deal.brandId)?.logoUrl} className="size-6 shrink-0 text-xs" />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-[var(--charm-ink)]">{brandName}</p>
+          <p className="text-xs text-[var(--charm-ink-soft)]">No update in {daysQuiet} days — possibly ghosted</p>
+        </div>
       </button>
       <div className="flex justify-end gap-1.5">
         <Button type="button" variant="outline" size="sm" onClick={() => archiveDeal(deal.id)} className="gap-1">
@@ -83,16 +87,19 @@ function StaleCompletedRow({
   brandName: string
   onOpen: (dealId: string) => void
 }) {
-  const { archiveDeal } = useCharmStore()
+  const { archiveDeal, brandById } = useCharmStore()
   const daysSince = differenceInCalendarDays(new Date(), new Date(deal.stageUpdatedAt))
 
   return (
     <div className="flex items-center justify-between gap-2 rounded-xl bg-white/50 p-2.5">
-      <button type="button" onClick={() => onOpen(deal.id)} className="min-w-0 flex-1 text-left">
-        <p className="truncate text-sm font-medium text-[var(--charm-ink)]">{brandName}</p>
-        <p className="text-xs text-[var(--charm-ink-soft)]">
-          Completed on {format(new Date(deal.stageUpdatedAt), 'MMM d, yyyy')} ({daysSince} days ago)
-        </p>
+      <button type="button" onClick={() => onOpen(deal.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+        <BrandAvatar name={brandName} logoUrl={brandById(deal.brandId)?.logoUrl} className="size-6 shrink-0 text-xs" />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-[var(--charm-ink)]">{brandName}</p>
+          <p className="text-xs text-[var(--charm-ink-soft)]">
+            Completed on {format(new Date(deal.stageUpdatedAt), 'MMM d, yyyy')} ({daysSince} days ago)
+          </p>
+        </div>
       </button>
       <Button type="button" variant="outline" size="sm" onClick={() => archiveDeal(deal.id)} className="shrink-0 gap-1">
         <Archive className="size-3.5" /> Archive?
@@ -173,6 +180,11 @@ export function NotificationBell() {
                               'size-1.5 rounded-full',
                               next && urgencyForDate(next.dueDate) === 'red' ? 'bg-[var(--urgency-red)]' : 'bg-[var(--urgency-orange)]',
                             )}
+                          />
+                          <BrandAvatar
+                            name={brandName(deal.brandId)}
+                            logoUrl={brandById(deal.brandId)?.logoUrl}
+                            className="size-5 shrink-0 text-[10px]"
                           />
                           <p className="text-sm font-medium text-[var(--charm-ink)]">{brandName(deal.brandId)}</p>
                         </div>

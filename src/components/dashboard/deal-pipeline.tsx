@@ -19,6 +19,7 @@ import { Button } from '#/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import { DealModal } from '#/components/deals/deal-modal'
 import { BulkImportModal } from '#/components/deals/bulk-import-modal'
+import { BrandAvatar } from '#/components/deals/brand-avatar'
 import { GiftedLabel, isGiftedAmount } from '#/components/deals/gifted-label'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
@@ -121,6 +122,7 @@ function DealCardInner({
   onColorChange?: (color: string | null) => void
   onNotesChange?: (dealId: string, notes: string) => void
 }) {
+  const { brandById } = useCharmStore()
   const next = nextDeliverable(deal)
   const color = deal.color ?? defaultCardColor(deal.id)
   const textColor = resolveTextColor(color)
@@ -136,7 +138,10 @@ function DealCardInner({
       style={{ background: `color-mix(in oklab, ${color} 82%, var(--surface-strong))`, color: textColor }}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold">{brandName}</p>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <BrandAvatar name={brandName} logoUrl={brandById(deal.brandId)?.logoUrl} className="size-5 text-[10px]" />
+          <p className="truncate text-sm font-semibold">{brandName}</p>
+        </div>
         <div className="flex shrink-0 items-center gap-1.5">
           {isUnpaid && (
             <Tooltip>

@@ -68,8 +68,10 @@ interface CharmStoreValue {
   addLedgerEntry: (entry: Omit<LedgerEntry, 'id'>) => void
   brandById: (id: string) => Brand | undefined
   dealById: (id: string) => BrandDeal | undefined
+  /** Uploads a brand's logo to Storage and updates its logo_url — for editing a logo directly (see saveDeal/savePartnership for the create/edit-form path). */
+  uploadBrandLogo: (brandId: string, file: File) => Promise<void>
   /** Finds-or-creates the brand by (case-insensitive) name, then creates or updates the deal. Returns the deal id. */
-  saveDeal: (form: DealFormValues, existingDealId?: string) => Promise<string>
+  saveDeal: (form: DealFormValues, existingDealId?: string, brandLogoFile?: File) => Promise<string>
   /** Finds-or-creates brands (deduped case-insensitively, one insert for all new ones) and inserts all deals in a single batch — for the bulk import review flow. Returns how many deals were created. */
   bulkCreateDeals: (rows: Array<BulkImportRow>) => Promise<number>
   /** Returns an undo callback — see deleteDeal's own doc comment for the deferred-delete/undo-toast pattern. */
@@ -81,7 +83,7 @@ interface CharmStoreValue {
   deleteBrand: (brandId: string) => Promise<boolean>
   partnershipById: (id: string) => Partnership | undefined
   /** Finds-or-creates the brand by (case-insensitive) name, then creates or updates the partnership. Returns the partnership id. */
-  savePartnership: (form: PartnershipFormValues, existingId?: string) => Promise<string>
+  savePartnership: (form: PartnershipFormValues, existingId?: string, brandLogoFile?: File) => Promise<string>
   /** Pass null to clear the override and fall back to the deterministic default color. */
   updatePartnershipColor: (partnershipId: string, color: string | null) => void
   /** Returns an undo callback — see deletePartnership's own doc comment for the deferred-delete/undo-toast pattern. */
@@ -464,8 +466,40 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
   const brandById = useCallback((id: string) => brands.find((b) => b.id === id), [brands])
   const dealById = useCallback((id: string) => deals.find((d) => d.id === id), [deals])
 
+  /**
+   * Uploads a brand's logo to Storage and updates its logo_url — called by saveDeal and
+   * savePartnership right after resolving/creating the brand, so it works uniformly whether the
+   * brand already existed or was just created (no separate "brand doesn't exist yet" case to
+   * handle - by the time this runs, brandId is always real).
+   */
+  const uploadBrandLogo = useCallback(
+    async (brandId: string, file: File) => {
+      if (!userId) return
+      const supabase = getSupabaseBrowserClient()
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
+      const path = `${userId}/${brandId}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('brand-logos')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (uploadError) return
+      const { data: urlData } = supabase.storage.from('brand-logos').getPublicUrl(path)
+      // Cache-bust so replacing a logo at the same path shows immediately instead of a stale cached image.
+      const logoUrl = `${urlData.publicUrl}?v=${Date.now()}`
+      const { data, error } = await supabase
+        .from('brands')
+        .update({ logo_url: logoUrl })
+        .eq('id', brandId)
+        .select('*')
+        .single()
+      if (error || !data) return
+      const updated = brandFromRow(data)
+      setBrands((prev) => prev.map((b) => (b.id === brandId ? updated : b)))
+    },
+    [userId],
+  )
+
   const saveDeal = useCallback(
-    async (form: DealFormValues, existingDealId?: string): Promise<string> => {
+    async (form: DealFormValues, existingDealId?: string, brandLogoFile?: File): Promise<string> => {
       if (!userId) throw new Error('Not signed in')
       const supabase = getSupabaseBrowserClient()
       const now = new Date().toISOString()
@@ -502,6 +536,8 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         brandId = data.id
         setBrands((prev) => [brandFromRow(data), ...prev])
       }
+
+      if (brandLogoFile) await uploadBrandLogo(brandId, brandLogoFile)
 
       const deliverables = form.deliverables
         .filter((d) => d.type.trim())
@@ -580,7 +616,8 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       return created.id
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- syncDealLedgerEntry is defined
-    // below but shares saveDeal's userId/ledger deps, so it's always fresh when this is.
+    // below but shares saveDeal's userId/ledger deps, so it's always fresh when this is;
+    // uploadBrandLogo only depends on userId, already listed.
     [userId, brands, deals, ledger],
   )
 
@@ -779,7 +816,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
   const partnershipById = useCallback((id: string) => partnerships.find((p) => p.id === id), [partnerships])
 
   const savePartnership = useCallback(
-    async (form: PartnershipFormValues, existingId?: string): Promise<string> => {
+    async (form: PartnershipFormValues, existingId?: string, brandLogoFile?: File): Promise<string> => {
       if (!userId) throw new Error('Not signed in')
       const supabase = getSupabaseBrowserClient()
       const trimmedName = form.brandName.trim()
@@ -798,6 +835,8 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         brandId = data.id
         setBrands((prev) => [brandFromRow(data), ...prev])
       }
+
+      if (brandLogoFile) await uploadBrandLogo(brandId, brandLogoFile)
 
       const contentFormats = splitList(form.contentFormats)
 
@@ -840,7 +879,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       setPartnerships((prev) => [created, ...prev])
       return created.id
     },
-    [userId, brands],
+    [userId, brands, uploadBrandLogo],
   )
 
   const updatePartnershipColor = useCallback(
@@ -1193,6 +1232,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       addLedgerEntry,
       brandById,
       dealById,
+      uploadBrandLogo,
       saveDeal,
       bulkCreateDeals,
       deleteDeal,
@@ -1234,6 +1274,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       addLedgerEntry,
       brandById,
       dealById,
+      uploadBrandLogo,
       saveDeal,
       bulkCreateDeals,
       deleteDeal,

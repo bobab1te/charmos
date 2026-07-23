@@ -27,6 +27,8 @@ export function PartnershipModal({ open, onOpenChange, partnershipId }: Partners
   const [deleting, setDeleting] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [missingFields, setMissingFields] = useState<Array<string>>([])
+  // Not draft-persisted — same as DealModal's brandLogoFile, a raw File can't survive a full unmount.
+  const [brandLogoFile, setBrandLogoFile] = useState<File | null>(null)
   const [values, setValues] = useState<PartnershipFormValues>(() => {
     const draft = readDraft<PartnershipFormValues>(`${draftKey}:values`)
     if (draft) return draft
@@ -52,6 +54,7 @@ export function PartnershipModal({ open, onOpenChange, partnershipId }: Partners
 
     setSaveError(null)
     setMissingFields([])
+    setBrandLogoFile(null)
     if (partnershipId) {
       const partnership = partnerships.find((p) => p.id === partnershipId)
       const brand = partnership ? brandById(partnership.brandId) : undefined
@@ -80,7 +83,7 @@ export function PartnershipModal({ open, onOpenChange, partnershipId }: Partners
     setSubmitting(true)
     setSaveError(null)
     try {
-      await savePartnership(values, partnershipId)
+      await savePartnership(values, partnershipId, brandLogoFile ?? undefined)
       clearPartnershipDraft()
       onOpenChange(false)
     } catch (err) {
@@ -133,6 +136,8 @@ export function PartnershipModal({ open, onOpenChange, partnershipId }: Partners
           submitting={submitting}
           deleting={deleting}
           partnershipId={partnershipId}
+          brandLogoFile={brandLogoFile}
+          onBrandLogoFileChange={setBrandLogoFile}
         />
       </DialogContent>
     </Dialog>

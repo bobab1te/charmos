@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { Link } from '@tanstack/react-router'
 import { ArrowUpRight, Briefcase } from 'lucide-react'
 import { WidgetCard } from '#/components/charm/widget-card'
+import { BrandAvatar } from '#/components/deals/brand-avatar'
 import { GiftedLabel, isGiftedAmount } from '#/components/deals/gifted-label'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
@@ -17,7 +18,7 @@ const COLUMNS: Array<{ id: DealStage; label: string }> = [
 
 const VISIBLE_PER_COLUMN = 4
 
-function DealRow({ deal, brandName }: { deal: BrandDeal; brandName: string }) {
+function DealRow({ deal, brandName, logoUrl }: { deal: BrandDeal; brandName: string; logoUrl?: string }) {
   const { convert, displayCurrency } = useCurrency()
   const next = nextDeliverable(deal)
   const detail = next
@@ -31,13 +32,16 @@ function DealRow({ deal, brandName }: { deal: BrandDeal; brandName: string }) {
         }).format(convert(deal.compensationAmount, deal.compensationCurrency))
 
   return (
-    <li className="rounded-lg px-1.5 py-1 transition-colors duration-150 ease-out hover:bg-white/40">
-      <p className="truncate text-xs font-medium text-[var(--charm-ink)]">{brandName}</p>
-      {detail ? (
-        <p className="truncate text-[11px] text-[var(--charm-ink-soft)]">{detail}</p>
-      ) : (
-        <GiftedLabel className="text-[11px] text-[var(--charm-ink-soft)]" />
-      )}
+    <li className="flex items-center gap-1.5 rounded-lg px-1.5 py-1 transition-colors duration-150 ease-out hover:bg-white/40">
+      <BrandAvatar name={brandName} logoUrl={logoUrl} className="size-5 shrink-0 text-[10px]" />
+      <div className="min-w-0">
+        <p className="truncate text-xs font-medium text-[var(--charm-ink)]">{brandName}</p>
+        {detail ? (
+          <p className="truncate text-[11px] text-[var(--charm-ink-soft)]">{detail}</p>
+        ) : (
+          <GiftedLabel className="text-[11px] text-[var(--charm-ink-soft)]" />
+        )}
+      </div>
     </li>
   )
 }
@@ -80,7 +84,12 @@ export function PipelineSummary({ onHide }: { onHide: () => void }) {
               ) : (
                 <ul className="mt-1.5 flex flex-col gap-0.5">
                   {visible.map((deal) => (
-                    <DealRow key={deal.id} deal={deal} brandName={brandName(deal.brandId)} />
+                    <DealRow
+                      key={deal.id}
+                      deal={deal}
+                      brandName={brandName(deal.brandId)}
+                      logoUrl={brandById(deal.brandId)?.logoUrl}
+                    />
                   ))}
                 </ul>
               )}

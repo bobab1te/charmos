@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
+import { BrandLogoUpload } from '#/components/deals/brand-logo-upload'
 import { GiftedLabel, isGiftedAmount } from '#/components/deals/gifted-label'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
@@ -53,6 +54,8 @@ interface DealFormProps {
   completedAt?: string
   submitting?: boolean
   deleting?: boolean
+  brandLogoFile: File | null
+  onBrandLogoFileChange: (file: File | null) => void
 }
 
 export function DealForm({
@@ -65,8 +68,11 @@ export function DealForm({
   completedAt,
   submitting,
   deleting,
+  brandLogoFile,
+  onBrandLogoFileChange,
 }: DealFormProps) {
   const { brands } = useCharmStore()
+  const matchingBrand = brands.find((b) => b.name.toLowerCase() === values.brandName.trim().toLowerCase())
   const { displayCurrency, convert } = useCurrency()
   const [brandListId] = useState(() => `brand-suggestions-${Math.random().toString(36).slice(2)}`)
 
@@ -138,6 +144,14 @@ export function DealForm({
                     <option key={b.id} value={b.name} />
                   ))}
                 </datalist>
+              </div>
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <BrandLogoUpload
+                  brandName={values.brandName.trim()}
+                  existingLogoUrl={matchingBrand?.logoUrl}
+                  file={brandLogoFile}
+                  onFileChange={onBrandLogoFileChange}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="brandContactName">Contact name</Label>

@@ -10,6 +10,8 @@ export interface Brand {
   contactName?: string
   contactEmail?: string
   createdAt: string
+  /** Uploaded brand logo/icon URL — shown wherever the brand name appears alone (deal cards, partnership cards, etc). */
+  logoUrl?: string
 }
 
 export interface Deliverable {

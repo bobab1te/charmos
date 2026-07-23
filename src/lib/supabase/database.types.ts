@@ -45,6 +45,7 @@ export interface Database {
           contact_name: string | null
           contact_email: string | null
           created_at: string
+          logo_url: string | null
         }
         Insert: {
           id?: string
@@ -53,6 +54,7 @@ export interface Database {
           contact_name?: string | null
           contact_email?: string | null
           created_at?: string
+          logo_url?: string | null
         }
         Update: Partial<Database['public']['Tables']['brands']['Insert']>
         Relationships: []

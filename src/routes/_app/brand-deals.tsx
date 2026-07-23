@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { DealPipeline } from '#/components/dashboard/deal-pipeline'
 import { PartnershipCard } from '#/components/partnerships/partnership-card'
 import { PartnershipModal } from '#/components/partnerships/partnership-modal'
+import { BrandAvatar } from '#/components/deals/brand-avatar'
+import { BrandLogoUpload } from '#/components/deals/brand-logo-upload'
 import { GiftedLabel, isGiftedAmount } from '#/components/deals/gifted-label'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
@@ -29,12 +31,16 @@ export const Route = createFileRoute('/_app/brand-deals')({
 })
 
 function BrandCard({ brand, dealCount }: { brand: Brand; dealCount: number }) {
-  const { updateBrand, deleteBrand } = useCharmStore()
+  const { updateBrand, deleteBrand, uploadBrandLogo } = useCharmStore()
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(brand.name)
   const [contactName, setContactName] = useState(brand.contactName ?? '')
   const [contactEmail, setContactEmail] = useState(brand.contactEmail ?? '')
   const [blockedMessage, setBlockedMessage] = useState<string | null>(null)
+
+  async function handleLogoFile(file: File | null) {
+    if (file) await uploadBrandLogo(brand.id, file)
+  }
 
   function save() {
     updateBrand(brand.id, {
@@ -62,6 +68,7 @@ function BrandCard({ brand, dealCount }: { brand: Brand; dealCount: number }) {
   if (editing) {
     return (
       <div className="charm-glass flex flex-col gap-2.5 rounded-2xl p-4">
+        <BrandLogoUpload brandName={brand.name} existingLogoUrl={brand.logoUrl} file={null} onFileChange={handleLogoFile} />
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Brand name" />
         <Input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Contact name" />
         <Input value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="Contact email" />
@@ -85,10 +92,13 @@ function BrandCard({ brand, dealCount }: { brand: Brand; dealCount: number }) {
   return (
     <div className="charm-glass flex flex-col gap-2 rounded-2xl p-4 transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="font-display text-base font-semibold text-[var(--charm-ink)]">{brand.name}</p>
-          {brand.contactName && <p className="text-sm text-[var(--charm-ink-soft)]">{brand.contactName}</p>}
-          {brand.contactEmail && <p className="text-xs text-[var(--charm-ink-soft)]">{brand.contactEmail}</p>}
+        <div className="flex items-center gap-2.5">
+          <BrandAvatar name={brand.name} logoUrl={brand.logoUrl} className="size-9 shrink-0 text-sm" />
+          <div>
+            <p className="font-display text-base font-semibold text-[var(--charm-ink)]">{brand.name}</p>
+            {brand.contactName && <p className="text-sm text-[var(--charm-ink-soft)]">{brand.contactName}</p>}
+            {brand.contactEmail && <p className="text-xs text-[var(--charm-ink-soft)]">{brand.contactEmail}</p>}
+          </div>
         </div>
         <span className="shrink-0 rounded-full bg-white/50 px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
           {dealCount} deal{dealCount === 1 ? '' : 's'}
@@ -135,7 +145,7 @@ function BrandsGrid() {
 }
 
 function ArchivedDealCard({ deal, brandName }: { deal: BrandDeal; brandName: string }) {
-  const { unarchiveDeal, deleteDeal } = useCharmStore()
+  const { unarchiveDeal, deleteDeal, brandById } = useCharmStore()
   const { showUndoToast } = useToast()
   const { displayCurrency, convert } = useCurrency()
   const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -176,9 +186,12 @@ function ArchivedDealCard({ deal, brandName }: { deal: BrandDeal; brandName: str
   return (
     <div className="charm-glass flex flex-col gap-2 rounded-2xl p-4 opacity-80 transition duration-150 ease-out hover:opacity-100">
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="font-display text-base font-semibold text-[var(--charm-ink)]">{brandName}</p>
-          <p className="text-xs text-[var(--charm-ink-soft)] capitalize">Archived from: {deal.stage}</p>
+        <div className="flex items-center gap-2">
+          <BrandAvatar name={brandName} logoUrl={brandById(deal.brandId)?.logoUrl} className="size-7 shrink-0 text-xs" />
+          <div>
+            <p className="font-display text-base font-semibold text-[var(--charm-ink)]">{brandName}</p>
+            <p className="text-xs text-[var(--charm-ink-soft)] capitalize">Archived from: {deal.stage}</p>
+          </div>
         </div>
         <span className="shrink-0 rounded-full bg-white/50 px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
           {isGiftedAmount(deal.compensationAmount) ? (

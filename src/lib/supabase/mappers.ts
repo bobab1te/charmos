@@ -32,6 +32,7 @@ export function brandFromRow(row: BrandRow): Brand {
     contactName: row.contact_name ?? undefined,
     contactEmail: row.contact_email ?? undefined,
     createdAt: row.created_at,
+    logoUrl: row.logo_url ?? undefined,
   }
 }
 

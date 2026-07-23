@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { format } from 'date-fns'
 import { AlertTriangle, CircleDollarSign, Plus, Repeat2, Undo2 } from 'lucide-react'
 import { WidgetColorPicker } from '#/components/charm/widget-color-picker'
+import { BrandAvatar } from '#/components/deals/brand-avatar'
 import { Button } from '#/components/ui/button'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
@@ -33,6 +34,7 @@ export function PartnershipCard({
   onOpen: (id: string) => void
 }) {
   const {
+    brandById,
     partnershipDeliverables,
     logPartnershipDeliverable,
     undoLastPartnershipDeliverable,
@@ -91,9 +93,16 @@ export function PartnershipCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 text-left">
-          <p className="truncate font-display text-base font-semibold" style={{ color: textColor }}>
-            {brandName}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <BrandAvatar
+              name={brandName}
+              logoUrl={brandById(partnership.brandId)?.logoUrl}
+              className="size-6 shrink-0 text-xs"
+            />
+            <p className="truncate font-display text-base font-semibold" style={{ color: textColor }}>
+              {brandName}
+            </p>
+          </div>
           <span className="mt-1 flex flex-wrap items-center gap-1.5">
             <span className={cn('inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize', STATUS_STYLES[partnership.status])}>
               {partnership.status}

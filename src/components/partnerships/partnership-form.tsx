@@ -5,6 +5,7 @@ import { Label } from '#/components/ui/label'
 import { Textarea } from '#/components/ui/textarea'
 import { Button } from '#/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/components/ui/select'
+import { BrandLogoUpload } from '#/components/deals/brand-logo-upload'
 import { useCharmStore } from '#/lib/charm-store'
 import { SUPPORTED_CURRENCIES } from '#/lib/currencies'
 import { todayDateOnly } from '#/lib/date-only'
@@ -55,6 +56,8 @@ interface PartnershipFormProps {
   deleting?: boolean
   /** Set when editing an existing partnership — shows its Payment History (past + current cycles) below Payment structure. Omitted for a brand-new partnership, since there's no id to look up cycles by yet. */
   partnershipId?: string
+  brandLogoFile: File | null
+  onBrandLogoFileChange: (file: File | null) => void
 }
 
 export function PartnershipForm({
@@ -66,8 +69,11 @@ export function PartnershipForm({
   submitting,
   deleting,
   partnershipId,
+  brandLogoFile,
+  onBrandLogoFileChange,
 }: PartnershipFormProps) {
   const { brands } = useCharmStore()
+  const matchingBrand = brands.find((b) => b.name.toLowerCase() === values.brandName.trim().toLowerCase())
   const [brandListId] = useState(() => `partnership-brand-suggestions-${Math.random().toString(36).slice(2)}`)
   const [formatListId] = useState(() => `partnership-format-suggestions-${Math.random().toString(36).slice(2)}`)
 
@@ -113,6 +119,14 @@ export function PartnershipForm({
                 <option key={b.id} value={b.name} />
               ))}
             </datalist>
+          </div>
+          <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <BrandLogoUpload
+              brandName={values.brandName.trim()}
+              existingLogoUrl={matchingBrand?.logoUrl}
+              file={brandLogoFile}
+              onFileChange={onBrandLogoFileChange}
+            />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="partnerStartDate">Start date</Label>
