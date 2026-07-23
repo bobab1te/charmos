@@ -1,7 +1,7 @@
 // Scattered blurred clouds/diamonds used behind page content for the CharmOS
 // mesh-gradient aesthetic. Purely decorative — non-interactive.
 import { motion, useReducedMotion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 
 export type ShapeIntensity = 'full' | 'toned-down' | 'minimal'
@@ -36,6 +36,27 @@ const INTENSITY_SETTINGS: Record<ShapeIntensity, { shapes: Array<Shape>; opacity
   full: { shapes: DEFAULT_SHAPES, opacityScale: 1, animate: true },
   'toned-down': { shapes: DEFAULT_SHAPES, opacityScale: 0.6, animate: true },
   minimal: { shapes: DEFAULT_SHAPES.slice(0, 2), opacityScale: 0.5, animate: false },
+}
+
+interface Twinkle {
+  left: string
+  top: string
+  size: number
+  delay: number
+  duration: number
+}
+
+const TWINKLE_COUNT: Record<ShapeIntensity, number> = { full: 10, 'toned-down': 6, minimal: 3 }
+
+/** Deterministic (not Math.random) so server and client render the same layout — avoids a hydration mismatch. */
+function generateTwinkles(count: number): Array<Twinkle> {
+  return Array.from({ length: count }, (_, i) => ({
+    left: `${(i * 29 + 7) % 96}%`,
+    top: `${(i * 53 + 13) % 92}%`,
+    size: 2 + (i % 3),
+    delay: (i * 0.6) % 3.5,
+    duration: 2.6 + (i % 3) * 0.6,
+  }))
 }
 
 function DiamondShape({ size, color }: { size: number; color: string }) {
@@ -87,6 +108,7 @@ export function DecorativeShapes({ intensity = 'full' }: { intensity?: ShapeInte
   const allowAmbientMotion = useAllowAmbientMotion()
   const { shapes, opacityScale, animate } = INTENSITY_SETTINGS[intensity]
   const shouldAnimate = animate && allowAmbientMotion && !prefersReducedMotion
+  const twinkles = useMemo(() => generateTwinkles(TWINKLE_COUNT[intensity]), [intensity])
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
@@ -123,6 +145,24 @@ export function DecorativeShapes({ intensity = 'full' }: { intensity?: ShapeInte
           </motion.div>
         )
       })}
+
+      {twinkles.map((t, i) =>
+        shouldAnimate ? (
+          <motion.div
+            key={`twinkle-${i}`}
+            className="absolute rounded-full bg-white"
+            style={{ left: t.left, top: t.top, width: t.size, height: t.size }}
+            animate={{ opacity: [0.15, 0.95, 0.15], scale: [0.8, 1.2, 0.8] }}
+            transition={{ duration: t.duration, repeat: Infinity, ease: 'easeInOut', delay: t.delay }}
+          />
+        ) : (
+          <div
+            key={`twinkle-${i}`}
+            className="absolute rounded-full bg-white"
+            style={{ left: t.left, top: t.top, width: t.size, height: t.size, opacity: 0.5 }}
+          />
+        ),
+      )}
     </div>
   )
 }
