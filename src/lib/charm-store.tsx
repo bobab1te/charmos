@@ -280,13 +280,13 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
 
   const assignIdeaDate = useCallback(
     (ideaId: string, date: string) => {
-      let nextStatus: IdeaPost['status'] | undefined
+      // Computed from `ideas` up front, not inside the setIdeas updater below: that updater
+      // runs whenever React processes the queued update, which is after this function has
+      // already returned — reading it back out here would always see the pre-call `undefined`.
+      const currentStatus = ideas.find((idea) => idea.id === ideaId)?.status
+      const nextStatus = currentStatus === 'idea' ? 'scheduled' : currentStatus
       setIdeas((prev) =>
-        prev.map((idea) => {
-          if (idea.id !== ideaId) return idea
-          nextStatus = idea.status === 'idea' ? 'scheduled' : idea.status
-          return { ...idea, scheduledDate: date, status: nextStatus }
-        }),
+        prev.map((idea) => (idea.id === ideaId ? { ...idea, scheduledDate: date, status: nextStatus ?? idea.status } : idea)),
       )
       if (!userId) return
       getSupabaseBrowserClient()
@@ -297,7 +297,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
           if (error) console.error('Failed to save idea schedule date:', error)
         })
     },
-    [userId],
+    [userId, ideas],
   )
 
   const addIdea = useCallback(
@@ -344,13 +344,12 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
 
   const unassignIdeaDate = useCallback(
     (ideaId: string) => {
-      let nextStatus: IdeaPost['status'] | undefined
+      // See assignIdeaDate above for why this is computed up front rather than inside the
+      // setIdeas updater.
+      const currentStatus = ideas.find((idea) => idea.id === ideaId)?.status
+      const nextStatus = currentStatus === 'scheduled' ? 'idea' : currentStatus
       setIdeas((prev) =>
-        prev.map((idea) => {
-          if (idea.id !== ideaId) return idea
-          nextStatus = idea.status === 'scheduled' ? 'idea' : idea.status
-          return { ...idea, scheduledDate: null, status: nextStatus }
-        }),
+        prev.map((idea) => (idea.id === ideaId ? { ...idea, scheduledDate: null, status: nextStatus ?? idea.status } : idea)),
       )
       if (!userId) return
       getSupabaseBrowserClient()
@@ -361,7 +360,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
           if (error) console.error('Failed to unschedule idea:', error)
         })
     },
-    [userId],
+    [userId, ideas],
   )
 
   const updateIdeaColor = useCallback(
