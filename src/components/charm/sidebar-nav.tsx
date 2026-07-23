@@ -8,10 +8,10 @@ import {
   LogOut,
   NotebookPen,
   Settings as SettingsIcon,
-  Sparkles,
   Wallet,
 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
+import { Logo } from '#/components/charm/logo'
 import { NotificationBell } from '#/components/charm/notification-bell'
 import { useSidebarCollapsed } from '#/lib/use-sidebar'
 import { getSupabaseBrowserClient } from '#/lib/supabase/browser-client'
@@ -51,9 +51,7 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
     >
       <div className="mb-4 flex items-center justify-between gap-2 px-1">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-foreground)]">
-            <Sparkles className="size-4" />
-          </span>
+          <Logo className="size-8" />
           {!collapsed && (
             <span className="truncate font-display text-base font-semibold text-[var(--charm-ink)]">CharmOS</span>
           )}

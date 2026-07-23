@@ -2,12 +2,13 @@ import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { z } from 'zod'
-import { Loader2, Sparkles } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { Button } from '#/components/ui/button'
 import { LoginDecor } from '#/components/charm/login-decor'
+import { Logo } from '#/components/charm/logo'
 import { getSupabaseBrowserClient } from '#/lib/supabase/browser-client'
 import { getCurrentUserAndProfile } from '#/server/auth'
 
@@ -106,9 +107,7 @@ function LoginPage() {
       <LoginDecor />
       <div className="charm-glass relative z-10 w-full max-w-md rounded-3xl p-8">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <span className="flex size-10 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-foreground)]">
-            <Sparkles className="size-5" />
-          </span>
+          <Logo className="size-14" />
           <h1 className="font-display-bold text-2xl font-semibold text-[var(--charm-ink)]">Welcome to CharmOS</h1>
           <p className="text-sm text-[var(--charm-ink-soft)]">Your brand deals, ideas, and earnings — all synced.</p>
         </div>
