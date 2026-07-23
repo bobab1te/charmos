@@ -97,6 +97,32 @@ export function computeCurrentRetainerCycleWindow(
   return undefined
 }
 
+/**
+ * Every retainer cycle window from the partnership's startDate through the one containing
+ * `now`, inclusive — for backfilling history when a partnership is entered into the app
+ * well after it actually started. Uses the *current* cadence/amount for the whole span
+ * (there's no historical cadence log), same as any other unconfirmed cycle; a cycle that's
+ * already been confirmed keeps whatever it was actually confirmed with, since backfill only
+ * fills in gaps and never touches an existing row (see backfillPastPartnershipCycles).
+ */
+export function computeAllRetainerCycleWindows(partnership: Partnership, now = new Date()): Array<RetainerCycleWindow> {
+  if (partnership.paymentType !== 'retainer' || !partnership.retainerCadence) return []
+  const start = new Date(partnership.startDate)
+  if (start > now) return []
+
+  const windows: Array<RetainerCycleWindow> = []
+  let cycleStart = start
+  let guard = 0
+  while (guard < 1000) {
+    const cycleEnd = stepRetainerCadence(partnership.retainerCadence, cycleStart)
+    windows.push({ start: cycleStart, end: cycleEnd })
+    if (now < cycleEnd) break
+    cycleStart = cycleEnd
+    guard += 1
+  }
+  return windows
+}
+
 /** Whether a persisted cycle's stored period exactly matches a computed window — the basis for "is there already a cycle for this period" checks. */
 export function cycleMatchesWindow(
   cycle: { periodStart: string; periodEnd: string },

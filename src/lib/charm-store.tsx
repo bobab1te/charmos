@@ -12,7 +12,12 @@ import {
 } from './supabase/mappers'
 import { splitList } from './deal-form-utils'
 import { dateOnlyToISOString } from './date-only'
-import { computeCurrentRetainerCycleWindow, cycleMatchesWindow, isPartnershipPausedOn } from './partnership-derived'
+import {
+  computeAllRetainerCycleWindows,
+  computeCurrentRetainerCycleWindow,
+  cycleMatchesWindow,
+  isPartnershipPausedOn,
+} from './partnership-derived'
 import type { BulkImportRow } from './bulk-import-utils'
 import type {
   Brand,
@@ -87,6 +92,12 @@ interface CharmStoreValue {
   markPartnershipCyclePaid: (partnershipId: string) => void
   /** Reverts the current cycle's confirmation (deletes its ledger entry, sets it back to unconfirmed) — for correcting mis-clicks, not for un-confirming old history. */
   undoLastPartnershipPayment: (partnershipId: string) => void
+  /** Confirms a specific cycle by id as paid — works on any cycle, including backfilled historical ones (see the Payment History list). */
+  confirmPartnershipCycle: (cycleId: string) => Promise<void>
+  /** Reverts a specific cycle's confirmation by id — the general counterpart to undoLastPartnershipPayment's "current cycle only" shortcut. */
+  unconfirmPartnershipCycle: (cycleId: string) => void
+  /** Fills in any missing past cycles between the partnership's start date and now, for a partnership added to the app well after it actually started. Never touches an existing (confirmed or unconfirmed) cycle. */
+  backfillPastPartnershipCycles: (partnershipId: string) => Promise<void>
 }
 
 const CharmStoreContext = createContext<CharmStoreValue | null>(null)
@@ -883,16 +894,16 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
   )
 
   /**
-   * Confirms the current retainer cycle as paid — creates its ledger entry (the only thing
-   * that makes retainer revenue count toward totals) and locks the cycle row. Generates the
-   * current cycle first if it doesn't exist yet, so this works even on the very first click.
+   * Confirms a specific cycle (by id) as paid — creates its ledger entry (the only thing
+   * that makes retainer revenue count toward totals) and locks the row. Works on any cycle,
+   * not just the current one — including backfilled historical cycles.
    */
-  const markPartnershipCyclePaid = useCallback(
-    async (partnershipId: string) => {
+  const confirmPartnershipCycle = useCallback(
+    async (cycleId: string) => {
       if (!userId) return
-      const cycle = await ensurePartnershipCycle(partnershipId)
+      const cycle = partnershipPaymentCycles.find((c) => c.id === cycleId)
       if (!cycle || cycle.status === 'confirmed') return
-      const partnership = partnerships.find((p) => p.id === partnershipId)
+      const partnership = partnerships.find((p) => p.id === cycle.partnershipId)
       if (!partnership) return
       const brand = brandById(partnership.brandId)
       const date = new Date().toISOString()
@@ -907,7 +918,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
           currency: cycle.currency,
           date,
           description: `${brand?.name ?? 'Unknown brand'} — retainer payment`,
-          partnership_id: partnershipId,
+          partnership_id: partnership.id,
           brand_id: partnership.brandId,
         })
         .select('*')
@@ -926,20 +937,14 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       const confirmed = partnershipPaymentCycleFromRow(cycleData)
       setPartnershipPaymentCycles((prev) => prev.map((c) => (c.id === cycle.id ? confirmed : c)))
     },
-    [userId, partnerships, brandById, ensurePartnershipCycle],
+    [userId, partnerships, partnershipPaymentCycles, brandById],
   )
 
-  /** Reverts the current cycle's confirmation — deletes its ledger entry and sets it back to unconfirmed — for correcting a mis-click. Only ever acts on the current period's cycle, never older confirmed history. */
-  const undoLastPartnershipPayment = useCallback(
-    (partnershipId: string) => {
-      const partnership = partnerships.find((p) => p.id === partnershipId)
-      if (!partnership) return
-      const window = computeCurrentRetainerCycleWindow(partnership, new Date())
-      if (!window) return
-      const cycle = partnershipPaymentCycles.find(
-        (c) => c.partnershipId === partnershipId && c.status === 'confirmed' && cycleMatchesWindow(c, window),
-      )
-      if (!cycle) return
+  /** Reverts a specific cycle's confirmation (by id) — deletes its ledger entry and sets it back to unconfirmed — for correcting a mis-click, on any cycle. */
+  const unconfirmPartnershipCycle = useCallback(
+    (cycleId: string) => {
+      const cycle = partnershipPaymentCycles.find((c) => c.id === cycleId)
+      if (!cycle || cycle.status !== 'confirmed') return
 
       setPartnershipPaymentCycles((prev) =>
         prev.map((c) =>
@@ -959,7 +964,79 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         supabase.from('ledger').delete().eq('id', cycle.ledgerEntryId).then(() => {})
       }
     },
-    [partnerships, partnershipPaymentCycles, userId],
+    [partnershipPaymentCycles, userId],
+  )
+
+  /** Confirms the *current* retainer cycle — generates it first if it doesn't exist yet, so this works even on the very first click. */
+  const markPartnershipCyclePaid = useCallback(
+    async (partnershipId: string) => {
+      const cycle = await ensurePartnershipCycle(partnershipId)
+      if (!cycle) return
+      await confirmPartnershipCycle(cycle.id)
+    },
+    [ensurePartnershipCycle, confirmPartnershipCycle],
+  )
+
+  /** Reverts the *current* cycle's confirmation — for correcting a mis-click on today's cycle specifically. To undo an older confirmed cycle, use unconfirmPartnershipCycle directly (see the Payment History list). */
+  const undoLastPartnershipPayment = useCallback(
+    (partnershipId: string) => {
+      const partnership = partnerships.find((p) => p.id === partnershipId)
+      if (!partnership) return
+      const window = computeCurrentRetainerCycleWindow(partnership, new Date())
+      if (!window) return
+      const cycle = partnershipPaymentCycles.find(
+        (c) => c.partnershipId === partnershipId && c.status === 'confirmed' && cycleMatchesWindow(c, window),
+      )
+      if (!cycle) return
+      unconfirmPartnershipCycle(cycle.id)
+    },
+    [partnerships, partnershipPaymentCycles, unconfirmPartnershipCycle],
+  )
+
+  /**
+   * Fills in any missing *past* cycles between the partnership's startDate and now — for a
+   * partnership entered into the app well after it actually started, so there's something to
+   * confirm/mark paid for the months already elapsed. Never touches an existing row (confirmed
+   * or not), only inserts cycles for windows that don't have one yet, and skips any window
+   * that was paused at its start. Deliberately separate from ensurePartnershipCycle: that one
+   * also has to handle "the current window's terms just changed" — backfilled past windows
+   * are already-elapsed history, not something still being edited.
+   */
+  const backfillPastPartnershipCycles = useCallback(
+    async (partnershipId: string) => {
+      if (!userId) return
+      const partnership = partnerships.find((p) => p.id === partnershipId)
+      if (!partnership || partnership.paymentType !== 'retainer' || !partnership.retainerAmount) return
+      const now = new Date()
+      const allWindows = computeAllRetainerCycleWindows(partnership, now)
+      if (allWindows.length <= 1) return
+      const pastWindows = allWindows.slice(0, -1)
+
+      const existing = partnershipPaymentCycles.filter((c) => c.partnershipId === partnershipId)
+      const missing = pastWindows.filter(
+        (w) => !existing.some((c) => cycleMatchesWindow(c, w)) && !isPartnershipPausedOn(partnership, w.start),
+      )
+      if (missing.length === 0) return
+
+      const supabase = getSupabaseBrowserClient()
+      const { data, error } = await supabase
+        .from('partnership_payment_cycles')
+        .insert(
+          missing.map((w) => ({
+            user_id: userId,
+            partnership_id: partnershipId,
+            period_start: w.start.toISOString(),
+            period_end: w.end.toISOString(),
+            expected_amount: partnership.retainerAmount as number,
+            currency: partnership.currency,
+          })),
+        )
+        .select('*')
+      if (error || !data) return
+      const created = data.map(partnershipPaymentCycleFromRow)
+      setPartnershipPaymentCycles((prev) => [...created, ...prev])
+    },
+    [userId, partnerships, partnershipPaymentCycles],
   )
 
   const value = useMemo(
@@ -997,6 +1074,9 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       ensurePartnershipCycle,
       markPartnershipCyclePaid,
       undoLastPartnershipPayment,
+      confirmPartnershipCycle,
+      unconfirmPartnershipCycle,
+      backfillPastPartnershipCycles,
     }),
     [
       brands,
@@ -1032,6 +1112,9 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       ensurePartnershipCycle,
       markPartnershipCyclePaid,
       undoLastPartnershipPayment,
+      confirmPartnershipCycle,
+      unconfirmPartnershipCycle,
+      backfillPastPartnershipCycles,
     ],
   )
 

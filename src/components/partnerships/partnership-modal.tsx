@@ -132,6 +132,7 @@ export function PartnershipModal({ open, onOpenChange, partnershipId }: Partners
           onDelete={isEditing ? handleDelete : undefined}
           submitting={submitting}
           deleting={deleting}
+          partnershipId={partnershipId}
         />
       </DialogContent>
     </Dialog>

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#
 import { useCharmStore } from '#/lib/charm-store'
 import { SUPPORTED_CURRENCIES } from '#/lib/currencies'
 import { todayDateOnly } from '#/lib/date-only'
+import { PartnershipCycleHistory } from './partnership-cycle-history'
 import type { DeliverableCadence, PartnershipFormValues, PartnershipStatus, PaymentType, RetainerCadence } from '#/lib/types'
 
 const PAYMENT_TYPES: Array<{ value: PaymentType; label: string }> = [
@@ -52,6 +53,8 @@ interface PartnershipFormProps {
   onDelete?: () => void
   submitting?: boolean
   deleting?: boolean
+  /** Set when editing an existing partnership — shows its Payment History (past + current cycles) below Payment structure. Omitted for a brand-new partnership, since there's no id to look up cycles by yet. */
+  partnershipId?: string
 }
 
 export function PartnershipForm({
@@ -62,6 +65,7 @@ export function PartnershipForm({
   onDelete,
   submitting,
   deleting,
+  partnershipId,
 }: PartnershipFormProps) {
   const { brands } = useCharmStore()
   const [brandListId] = useState(() => `partnership-brand-suggestions-${Math.random().toString(36).slice(2)}`)
@@ -273,6 +277,12 @@ export function PartnershipForm({
           </div>
         </div>
       </Section>
+
+      {partnershipId && values.paymentType === 'retainer' && (
+        <Section title="Payment history">
+          <PartnershipCycleHistory partnershipId={partnershipId} />
+        </Section>
+      )}
 
       <Section title="Deliverable requirements">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
