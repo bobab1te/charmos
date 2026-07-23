@@ -40,8 +40,8 @@ const STICKERS: Array<Sticker> = [
 
 const CORNER_HANDLES = ['-top-1.5 -left-1.5', '-top-1.5 -right-1.5', '-bottom-1.5 -left-1.5', '-bottom-1.5 -right-1.5']
 
-/** Size of the cursor-following selection box, in px. */
-const BOX_SIZE = { width: 200, height: 120 }
+/** Size of the cursor-following selection box, in px — 60% bigger than its original 200x120. */
+const BOX_SIZE = { width: 320, height: 192 }
 
 /** Purely decorative — the moodboard-inspired sticker collage + dashed "selection box" that
  * trails the cursor around the login screen. */
