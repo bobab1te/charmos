@@ -42,6 +42,8 @@
   --surface-strong: rgba(255, 255, 255, 0.72);
   --surface-border: rgba(255, 255, 255, 0.6);
   --surface-shadow: rgba(120, 80, 130, 0.14);
+  --surface-solid: rgba(255, 255, 255, 0.94);
+  --surface-solid-strong: rgba(255, 255, 255, 0.98);
 
   --bg-base: #fbf3f6;
 
@@ -86,6 +88,8 @@
   --surface-strong: rgba(36, 24, 44, 0.74);
   --surface-border: rgba(255, 255, 255, 0.08);
   --surface-shadow: rgba(0, 0, 0, 0.35);
+  --surface-solid: rgba(36, 24, 44, 0.96);
+  --surface-solid-strong: rgba(36, 24, 44, 0.99);
 
   --bg-base: #1a1220;
 
@@ -220,6 +224,30 @@ body {
 }
 
 .dark .charm-glass {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 20px 44px var(--surface-shadow),
+    0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+/*
+ * Same frosted look as .charm-glass, but near-opaque instead of translucent —
+ * for surfaces like the deal detail dialog that need to stay legible no matter
+ * what widget color happens to be behind them, rather than the deliberately
+ * see-through dashboard card treatment.
+ */
+.charm-glass-solid {
+  background: linear-gradient(165deg, var(--surface-solid-strong), var(--surface-solid));
+  border: 1px solid var(--surface-border);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 20px 44px var(--surface-shadow),
+    0 4px 14px rgba(58, 46, 66, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.dark .charm-glass-solid {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.06) inset,
     0 20px 44px var(--surface-shadow),

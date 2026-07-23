@@ -45,13 +45,17 @@ export function isDealDueSoon(deal: BrandDeal, now = new Date()): boolean {
 }
 
 /**
- * Whether a deal looks possibly ghosted: no stage change (the only "last
- * update" signal the data model tracks) in 7+ days, and it's still in an
- * active, non-terminal stage.
+ * Whether a deal looks possibly ghosted: only ever applies while the deal is
+ * in the "negotiating" stage (a brand gone quiet in any other stage isn't
+ * "ghosting" — there's no reply pending), and only once 8+ days have passed
+ * since the last stage change, the only "last update"/brand-response signal
+ * the data model tracks. Moving out of "negotiating" clears the flag
+ * automatically since this is computed fresh from current stage, not a
+ * separate persisted flag.
  */
 export function isDealGhosted(deal: BrandDeal, now = new Date()): boolean {
-  if (deal.archived || deal.stage === 'completed') return false
-  return differenceInCalendarDays(now, new Date(deal.stageUpdatedAt)) >= 7
+  if (deal.archived || deal.stage !== 'negotiating') return false
+  return differenceInCalendarDays(now, new Date(deal.stageUpdatedAt)) >= 8
 }
 
 /** Whether a completed deal has been sitting for 30+ days and is worth prompting the user to archive. */
@@ -132,7 +136,7 @@ export interface DashboardMetrics {
   earningsThisMonth: number
   activeDeals: number
   dueThisWeek: number
-  /** Stale negotiations (7+ days quiet) plus unpaid deals — see unpaidCount for the unpaid-only subset. */
+  /** Stale negotiations (8+ days quiet) plus unpaid deals — see unpaidCount for the unpaid-only subset. */
   needsFollowUp: number
   unpaidCount: number
 }

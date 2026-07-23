@@ -167,7 +167,7 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-      <DialogContent className="charm-glass max-h-[85vh] overflow-y-auto border-0 sm:max-w-2xl">
+      <DialogContent className="charm-glass-solid max-h-[85vh] overflow-y-auto border-0 sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="font-display">{isEditing ? 'Edit deal' : 'New brand deal'}</DialogTitle>
           <DialogDescription>
