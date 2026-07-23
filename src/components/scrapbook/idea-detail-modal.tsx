@@ -7,6 +7,7 @@ import { Textarea } from '#/components/ui/textarea'
 import { Button } from '#/components/ui/button'
 import { Switch } from '#/components/ui/switch'
 import { useCharmStore } from '#/lib/charm-store'
+import { useToast } from '#/lib/toast-context'
 
 interface IdeaDetailModalProps {
   ideaId: string | null
@@ -15,6 +16,7 @@ interface IdeaDetailModalProps {
 
 export function IdeaDetailModal({ ideaId, onOpenChange }: IdeaDetailModalProps) {
   const { ideas, updateIdea, deleteIdea, unassignIdeaDate } = useCharmStore()
+  const { showUndoToast } = useToast()
   const idea = ideaId ? ideas.find((i) => i.id === ideaId) : undefined
 
   const [title, setTitle] = useState('')
@@ -58,7 +60,8 @@ export function IdeaDetailModal({ ideaId, onOpenChange }: IdeaDetailModalProps) 
   function handleDelete() {
     if (!idea) return
     setDeleting(true)
-    deleteIdea(idea.id)
+    const undo = deleteIdea(idea.id)
+    showUndoToast('Idea deleted', undo)
     onOpenChange(false)
   }
 

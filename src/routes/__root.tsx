@@ -15,6 +15,7 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import { TooltipProvider } from '../components/ui/tooltip'
 import { CharmStoreProvider } from '../lib/charm-store'
 import { ThemeProvider } from '../lib/theme-context'
+import { ToastProvider } from '../lib/toast-context'
 
 import appCss from '../styles.css?url'
 
@@ -59,7 +60,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <div className="charm-grain" aria-hidden="true" />
         <ThemeProvider>
           <TooltipProvider delayDuration={200}>
-            <CharmStoreProvider>{children}</CharmStoreProvider>
+            <ToastProvider>
+              <CharmStoreProvider>{children}</CharmStoreProvider>
+            </ToastProvider>
           </TooltipProvider>
         </ThemeProvider>
         <TanStackDevtools

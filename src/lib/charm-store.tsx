@@ -1,6 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { getSupabaseBrowserClient, isSupabaseConfigured } from './supabase/browser-client'
+import { UNDO_WINDOW_MS } from './toast-context'
 import {
   brandFromRow,
   dealFromRow,
@@ -62,7 +63,8 @@ interface CharmStoreValue {
     ideaId: string,
     updates: Partial<Pick<IdeaPost, 'title' | 'hook' | 'description' | 'referenceLinks' | 'series' | 'platforms'>>,
   ) => void
-  deleteIdea: (ideaId: string) => void
+  /** Returns an undo callback — see deleteIdea's own doc comment for the deferred-delete/undo-toast pattern. */
+  deleteIdea: (ideaId: string) => () => void
   addLedgerEntry: (entry: Omit<LedgerEntry, 'id'>) => void
   brandById: (id: string) => Brand | undefined
   dealById: (id: string) => BrandDeal | undefined
@@ -70,7 +72,8 @@ interface CharmStoreValue {
   saveDeal: (form: DealFormValues, existingDealId?: string) => Promise<string>
   /** Finds-or-creates brands (deduped case-insensitively, one insert for all new ones) and inserts all deals in a single batch — for the bulk import review flow. Returns how many deals were created. */
   bulkCreateDeals: (rows: Array<BulkImportRow>) => Promise<number>
-  deleteDeal: (dealId: string) => Promise<void>
+  /** Returns an undo callback — see deleteDeal's own doc comment for the deferred-delete/undo-toast pattern. */
+  deleteDeal: (dealId: string) => () => void
   archiveDeal: (dealId: string) => void
   unarchiveDeal: (dealId: string) => void
   updateBrand: (brandId: string, updates: Partial<Pick<Brand, 'name' | 'contactName' | 'contactEmail'>>) => void
@@ -81,7 +84,8 @@ interface CharmStoreValue {
   savePartnership: (form: PartnershipFormValues, existingId?: string) => Promise<string>
   /** Pass null to clear the override and fall back to the deterministic default color. */
   updatePartnershipColor: (partnershipId: string, color: string | null) => void
-  deletePartnership: (partnershipId: string) => Promise<void>
+  /** Returns an undo callback — see deletePartnership's own doc comment for the deferred-delete/undo-toast pattern. */
+  deletePartnership: (partnershipId: string) => () => void
   logPartnershipDeliverable: (partnershipId: string) => void
   /** Removes the most recently logged deliverable for this partnership, if any — for correcting mis-clicks. */
   undoLastPartnershipDeliverable: (partnershipId: string) => void
@@ -138,6 +142,13 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
   const [partnerships, setPartnerships] = useState<Array<Partnership>>([])
   const [partnershipDeliverables, setPartnershipDeliverables] = useState<Array<PartnershipDeliverableLog>>([])
   const [partnershipPaymentCycles, setPartnershipPaymentCycles] = useState<Array<PartnershipPaymentCycle>>([])
+
+  // Deferred-delete timers for the undo-toast flow: deleteIdea/deleteDeal/deletePartnership hide
+  // the item immediately but don't actually delete it from Supabase until this fires, so undo
+  // (returned from each delete call) just has to cancel the timer and restore local state.
+  const pendingIdeaDeletes = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+  const pendingDealDeletes = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+  const pendingPartnershipDeletes = useRef(new Map<string, ReturnType<typeof setTimeout>>())
 
   // This provider lives at the app root and never unmounts across client-side
   // navigation, so it must react to login/logout rather than only checking once.
@@ -393,13 +404,32 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
     [userId],
   )
 
+  /**
+   * Hides the idea immediately, but doesn't actually delete it from Supabase for
+   * UNDO_WINDOW_MS - returns an undo callback that cancels that pending delete and restores the
+   * idea if called in time.
+   */
   const deleteIdea = useCallback(
-    (ideaId: string) => {
-      setIdeas((prev) => prev.filter((idea) => idea.id !== ideaId))
-      if (!userId) return
-      getSupabaseBrowserClient().from('ideas').delete().eq('id', ideaId).then(() => {})
+    (ideaId: string): (() => void) => {
+      const idea = ideas.find((i) => i.id === ideaId)
+      setIdeas((prev) => prev.filter((i) => i.id !== ideaId))
+
+      const timer = setTimeout(() => {
+        pendingIdeaDeletes.current.delete(ideaId)
+        if (!userId) return
+        getSupabaseBrowserClient().from('ideas').delete().eq('id', ideaId).then(() => {})
+      }, UNDO_WINDOW_MS)
+      pendingIdeaDeletes.current.set(ideaId, timer)
+
+      return () => {
+        const pending = pendingIdeaDeletes.current.get(ideaId)
+        if (!pending) return
+        clearTimeout(pending)
+        pendingIdeaDeletes.current.delete(ideaId)
+        if (idea) setIdeas((prev) => (prev.some((i) => i.id === idea.id) ? prev : [idea, ...prev]))
+      }
     },
-    [userId],
+    [ideas, userId],
   )
 
   const addLedgerEntry = useCallback(
@@ -672,13 +702,33 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
     [userId, brands],
   )
 
+  /**
+   * Hides the deal immediately, but doesn't actually delete it from Supabase for
+   * UNDO_WINDOW_MS - returns an undo callback that cancels that pending delete and restores the
+   * deal if called in time. Separate from archiveDeal, which is permanent-in-the-sense-of-not-
+   * time-limited and has its own restore path (unarchiveDeal).
+   */
   const deleteDeal = useCallback(
-    async (dealId: string) => {
+    (dealId: string): (() => void) => {
+      const deal = deals.find((d) => d.id === dealId)
       setDeals((prev) => prev.filter((d) => d.id !== dealId))
-      if (!userId) return
-      await getSupabaseBrowserClient().from('deals').delete().eq('id', dealId)
+
+      const timer = setTimeout(() => {
+        pendingDealDeletes.current.delete(dealId)
+        if (!userId) return
+        getSupabaseBrowserClient().from('deals').delete().eq('id', dealId).then(() => {})
+      }, UNDO_WINDOW_MS)
+      pendingDealDeletes.current.set(dealId, timer)
+
+      return () => {
+        const pending = pendingDealDeletes.current.get(dealId)
+        if (!pending) return
+        clearTimeout(pending)
+        pendingDealDeletes.current.delete(dealId)
+        if (deal) setDeals((prev) => (prev.some((d) => d.id === deal.id) ? prev : [deal, ...prev]))
+      }
     },
-    [userId],
+    [deals, userId],
   )
 
   const archiveDeal = useCallback(
@@ -800,15 +850,43 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
     [userId],
   )
 
+  /**
+   * Hides the partnership (and its deliverable logs and payment cycles) immediately, but doesn't
+   * actually delete it from Supabase for UNDO_WINDOW_MS - returns an undo callback that cancels
+   * that pending delete and restores all three if called in time. Only the partnerships row
+   * itself needs an explicit delete when the timer fires; deliverables and payment cycles cascade
+   * with it in the database.
+   */
   const deletePartnership = useCallback(
-    async (partnershipId: string) => {
+    (partnershipId: string): (() => void) => {
+      const partnership = partnerships.find((p) => p.id === partnershipId)
+      const deliverables = partnershipDeliverables.filter((d) => d.partnershipId === partnershipId)
+      const cycles = partnershipPaymentCycles.filter((c) => c.partnershipId === partnershipId)
+
       setPartnerships((prev) => prev.filter((p) => p.id !== partnershipId))
       setPartnershipDeliverables((prev) => prev.filter((d) => d.partnershipId !== partnershipId))
       setPartnershipPaymentCycles((prev) => prev.filter((c) => c.partnershipId !== partnershipId))
-      if (!userId) return
-      await getSupabaseBrowserClient().from('partnerships').delete().eq('id', partnershipId)
+
+      const timer = setTimeout(() => {
+        pendingPartnershipDeletes.current.delete(partnershipId)
+        if (!userId) return
+        getSupabaseBrowserClient().from('partnerships').delete().eq('id', partnershipId).then(() => {})
+      }, UNDO_WINDOW_MS)
+      pendingPartnershipDeletes.current.set(partnershipId, timer)
+
+      return () => {
+        const pending = pendingPartnershipDeletes.current.get(partnershipId)
+        if (!pending) return
+        clearTimeout(pending)
+        pendingPartnershipDeletes.current.delete(partnershipId)
+        if (partnership) {
+          setPartnerships((prev) => (prev.some((p) => p.id === partnership.id) ? prev : [partnership, ...prev]))
+        }
+        setPartnershipDeliverables((prev) => [...deliverables, ...prev])
+        setPartnershipPaymentCycles((prev) => [...cycles, ...prev])
+      }
     },
-    [userId],
+    [partnerships, partnershipDeliverables, partnershipPaymentCycles, userId],
   )
 
   const logPartnershipDeliverable = useCallback(

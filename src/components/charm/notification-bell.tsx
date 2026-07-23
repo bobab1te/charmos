@@ -6,6 +6,7 @@ import { Button } from '#/components/ui/button'
 import { DealModal } from '#/components/deals/deal-modal'
 import { useCharmStore } from '#/lib/charm-store'
 import { isDealDueSoon, isDealGhosted, isDealStaleCompleted, nextDeliverable, urgencyForDate } from '#/lib/derived'
+import { useToast } from '#/lib/toast-context'
 import { cn } from '#/lib/utils'
 import type { BrandDeal } from '#/lib/types'
 
@@ -19,8 +20,14 @@ function GhostedRow({
   onOpen: (dealId: string) => void
 }) {
   const { archiveDeal, deleteDeal } = useCharmStore()
+  const { showUndoToast } = useToast()
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const daysQuiet = differenceInCalendarDays(new Date(), new Date(deal.stageUpdatedAt))
+
+  function handleDelete() {
+    const undo = deleteDeal(deal.id)
+    showUndoToast(`Deal with ${brandName} deleted`, undo)
+  }
 
   if (confirmingDelete) {
     return (
@@ -33,7 +40,7 @@ function GhostedRow({
           <Button
             type="button"
             size="sm"
-            onClick={() => deleteDeal(deal.id)}
+            onClick={handleDelete}
             className="bg-destructive text-white hover:bg-destructive/90"
           >
             Confirm delete

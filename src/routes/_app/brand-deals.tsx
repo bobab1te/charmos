@@ -11,6 +11,7 @@ import { PartnershipModal } from '#/components/partnerships/partnership-modal'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
 import { readDraft, writeDraft } from '#/lib/form-draft'
+import { useToast } from '#/lib/toast-context'
 import type { Brand, BrandDeal } from '#/lib/types'
 
 export const Route = createFileRoute('/_app/brand-deals')({
@@ -134,6 +135,7 @@ function BrandsGrid() {
 
 function ArchivedDealCard({ deal, brandName }: { deal: BrandDeal; brandName: string }) {
   const { unarchiveDeal, deleteDeal } = useCharmStore()
+  const { showUndoToast } = useToast()
   const { displayCurrency, convert } = useCurrency()
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const currency = new Intl.NumberFormat('en-US', {
@@ -143,11 +145,16 @@ function ArchivedDealCard({ deal, brandName }: { deal: BrandDeal; brandName: str
   })
   const showsConverted = deal.compensationCurrency !== displayCurrency
 
+  function handleDelete() {
+    const undo = deleteDeal(deal.id)
+    showUndoToast(`Deal with ${brandName} deleted`, undo)
+  }
+
   if (confirmingDelete) {
     return (
       <div className="charm-glass flex flex-col gap-2.5 rounded-2xl p-4">
         <p className="text-sm font-medium text-[var(--charm-ink)]">Delete this deal permanently?</p>
-        <p className="text-xs text-[var(--charm-ink-soft)]">This can't be undone.</p>
+        <p className="text-xs text-[var(--charm-ink-soft)]">You'll have a few seconds to undo after confirming.</p>
         <div className="flex justify-end gap-2 pt-1">
           <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
             Cancel
@@ -155,7 +162,7 @@ function ArchivedDealCard({ deal, brandName }: { deal: BrandDeal; brandName: str
           <Button
             type="button"
             size="sm"
-            onClick={() => deleteDeal(deal.id)}
+            onClick={handleDelete}
             className="bg-destructive text-white hover:bg-destructive/90"
           >
             Confirm delete

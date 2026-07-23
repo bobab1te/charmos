@@ -4,6 +4,7 @@ import { PartnershipForm } from './partnership-form'
 import { useCharmStore } from '#/lib/charm-store'
 import { emptyPartnershipForm, partnershipFormMissingFields, partnershipToFormValues } from '#/lib/partnership-form-utils'
 import { clearDraft, readDraft, writeDraft } from '#/lib/form-draft'
+import { useToast } from '#/lib/toast-context'
 import type { PartnershipFormValues } from '#/lib/types'
 
 interface PartnershipModalProps {
@@ -15,6 +16,7 @@ interface PartnershipModalProps {
 
 export function PartnershipModal({ open, onOpenChange, partnershipId }: PartnershipModalProps) {
   const { partnerships, brandById, savePartnership, deletePartnership } = useCharmStore()
+  const { showUndoToast } = useToast()
   const isEditing = Boolean(partnershipId)
 
   // See DealModal for why this is keyed/persisted rather than plain useState — same
@@ -88,19 +90,17 @@ export function PartnershipModal({ open, onOpenChange, partnershipId }: Partners
     }
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!partnershipId) return
     setDeleting(true)
     setSaveError(null)
-    try {
-      await deletePartnership(partnershipId)
-      clearPartnershipDraft()
-      onOpenChange(false)
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Something went wrong deleting that partnership.')
-    } finally {
-      setDeleting(false)
-    }
+    const partnership = partnerships.find((p) => p.id === partnershipId)
+    const brandName = partnership ? brandById(partnership.brandId)?.name : undefined
+    const undo = deletePartnership(partnershipId)
+    showUndoToast(brandName ? `Partnership with ${brandName} deleted` : 'Partnership deleted', undo)
+    clearPartnershipDraft()
+    onOpenChange(false)
+    setDeleting(false)
   }
 
   return (

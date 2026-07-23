@@ -14,6 +14,7 @@ import type { DealParsePayload, StagedAsset } from './deal-parse-input'
 import { useCharmStore } from '#/lib/charm-store'
 import { dealToFormValues, emptyDealForm, formValuesMissingFields, parsedDealToFormValues } from '#/lib/deal-form-utils'
 import { clearDraft, readDraft, writeDraft } from '#/lib/form-draft'
+import { useToast } from '#/lib/toast-context'
 import { parseDealText } from '#/server/parse-deal'
 import type { DealFormValues } from '#/lib/types'
 
@@ -26,6 +27,7 @@ interface DealModalProps {
 
 export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
   const { deals, brandById, saveDeal, deleteDeal, archiveDeal } = useCharmStore()
+  const { showUndoToast } = useToast()
   const isEditing = Boolean(dealId)
 
   // Keyed per-deal (or "new") so an in-progress draft survives a full unmount — navigating to
@@ -140,19 +142,17 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
     }
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!dealId) return
     setDeleting(true)
     setSaveError(null)
-    try {
-      await deleteDeal(dealId)
-      clearDealDraft()
-      onOpenChange(false)
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Something went wrong deleting that deal.')
-    } finally {
-      setDeleting(false)
-    }
+    const deal = deals.find((d) => d.id === dealId)
+    const brandName = deal ? brandById(deal.brandId)?.name : undefined
+    const undo = deleteDeal(dealId)
+    showUndoToast(brandName ? `Deal with ${brandName} deleted` : 'Deal deleted', undo)
+    clearDealDraft()
+    onOpenChange(false)
+    setDeleting(false)
   }
 
   function handleArchive() {
