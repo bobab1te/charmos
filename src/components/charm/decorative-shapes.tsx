@@ -247,7 +247,7 @@ export function CloudShape({ size, color }: { size: number; color: string }) {
 
 /** Abstract flower: 6 overlapping petal circles + a center circle, each with a faint white edge
  * to suggest a translucent glass petal rather than a flat-filled blob. */
-function FlowerShape({ size, color }: { size: number; color: string }) {
+export function FlowerShape({ size, color }: { size: number; color: string }) {
   const cx = size / 2
   const cy = size / 2
   const orbit = size * 0.26
