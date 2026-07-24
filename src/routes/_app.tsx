@@ -1,22 +1,21 @@
 import { createFileRoute, Outlet, redirect, useLocation } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { DecorativeShapes } from '#/components/charm/decorative-shapes'
-import type { ShapeIntensity } from '#/components/charm/decorative-shapes'
+import type { PageKey } from '#/components/charm/decorative-shapes'
 import { SidebarNav } from '#/components/charm/sidebar-nav'
 import { getCurrentUserAndProfile } from '#/server/auth'
 import { useThemeContext } from '#/lib/theme-context'
 import { CurrencyProvider } from '#/lib/currency-context'
 
-/**
- * Finances is the one view where number-accuracy is the whole point, so it gets the least
- * background motion; the dashboard is the "hero" view and gets the full treatment; everything
- * else (deal pipeline/partnerships, scrapbook, settings, analytics) is data-adjacent but not as
- * number-dense, so it gets a toned-down middle ground.
- */
-function intensityForPath(pathname: string): ShapeIntensity {
-  if (pathname.startsWith('/dashboard')) return 'full'
-  if (pathname.startsWith('/finances')) return 'minimal'
-  return 'toned-down'
+/** Each page gets its own fixed decorative arrangement — see PAGE_CONFIGS in decorative-shapes.tsx. */
+function pageKeyForPath(pathname: string): PageKey {
+  if (pathname.startsWith('/dashboard')) return 'dashboard'
+  if (pathname.startsWith('/brand-deals')) return 'pipeline'
+  if (pathname.startsWith('/scrapbook')) return 'scrapbook'
+  if (pathname.startsWith('/finances')) return 'finances'
+  if (pathname.startsWith('/settings')) return 'settings'
+  if (pathname.startsWith('/analytics')) return 'analytics'
+  return 'default'
 }
 
 export const Route = createFileRoute('/_app')({
@@ -48,7 +47,7 @@ function AppLayout() {
       <div className="flex min-h-screen">
         <SidebarNav profile={profile} avatarUrl={user.avatarUrl} />
         <div className="relative min-h-screen flex-1 overflow-x-hidden">
-          <DecorativeShapes intensity={intensityForPath(pathname)} />
+          <DecorativeShapes page={pageKeyForPath(pathname)} />
           <Outlet />
         </div>
       </div>
