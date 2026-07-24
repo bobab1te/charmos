@@ -47,21 +47,27 @@ interface PageConfig {
   animate: boolean
 }
 
+const PALETTE = ['#ffffff', 'var(--charm-pink)', 'var(--charm-yellow)']
+
 const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
   // Richest page — sits below the dashboard's own ParallaxHero, so shapes lean toward the
   // middle/lower page rather than crowding the area the hero already covers.
   dashboard: {
     shapes: [
-      { kind: 'diamond', top: '4%', left: '6%', size: 90, color: '#ffffff', opacity: 0.7, blur: 1, rotate: -8, glow: true, driftX: 12, driftDuration: 15 },
-      { kind: 'diamond', top: '58%', right: '4%', size: 120, color: 'var(--charm-blue)', opacity: 0.4, blur: 1, rotate: 12, glow: true, driftX: -10, driftDuration: 19 },
-      { kind: 'cloud', top: '30%', left: '3%', size: 150, color: '#ffffff', opacity: 0.75, blur: 2, glow: true, driftX: 16, driftDuration: 17 },
-      { kind: 'cloud', top: '44%', right: '5%', size: 130, color: 'var(--charm-blue)', opacity: 0.4, blur: 2, glow: true, driftX: -14, driftDuration: 13 },
-      { kind: 'cloud', bottom: '10%', left: '20%', size: 170, color: '#ffffff', opacity: 0.7, blur: 2, glow: true, driftX: 14, driftDuration: 20 },
-      { kind: 'cloud', bottom: '22%', right: '14%', size: 140, color: 'var(--charm-pink)', opacity: 0.42, blur: 2, glow: true, driftX: -12, driftDuration: 14 },
-      { kind: 'flower', top: '20%', right: '30%', size: 90, color: '#ffffff', opacity: 0.24, blur: 1, glow: true, driftX: 9, driftDuration: 22 },
-      { kind: 'flower', bottom: '14%', left: '42%', size: 110, color: 'var(--charm-pink)', opacity: 0.22, blur: 1, driftX: -11, driftDuration: 18 },
-      { kind: 'flower', top: '60%', left: '10%', size: 80, color: 'var(--charm-lavender)', opacity: 0.22, blur: 1, driftX: 8, driftDuration: 24 },
-      { kind: 'flower', bottom: '32%', right: '6%', size: 100, color: '#ffffff', opacity: 0.24, blur: 1, glow: true, driftX: -9, driftDuration: 19 },
+      { kind: 'diamond', top: '4%', left: '6%', size: 90, color: PALETTE[0], opacity: 0.7, blur: 1, rotate: -8, glow: true, driftX: 12, driftDuration: 15 },
+      { kind: 'diamond', top: '58%', right: '4%', size: 120, color: PALETTE[1], opacity: 0.4, blur: 1, rotate: 12, glow: true, driftX: -10, driftDuration: 19 },
+      { kind: 'cloud', top: '30%', left: '3%', size: 150, color: PALETTE[2], opacity: 0.75, blur: 2, glow: true, driftX: 16, driftDuration: 17 },
+      { kind: 'cloud', top: '44%', right: '5%', size: 130, color: PALETTE[0], opacity: 0.5, blur: 2, glow: true, driftX: -14, driftDuration: 13 },
+      { kind: 'cloud', bottom: '10%', left: '20%', size: 170, color: PALETTE[1], opacity: 0.42, blur: 2, glow: true, driftX: 14, driftDuration: 20 },
+      { kind: 'cloud', bottom: '22%', right: '14%', size: 140, color: PALETTE[2], opacity: 0.45, blur: 2, glow: true, driftX: -12, driftDuration: 14 },
+      { kind: 'cloud', top: '8%', right: '46%', size: 100, color: PALETTE[0], opacity: 0.6, blur: 2, glow: true, driftX: 11, driftDuration: 16 },
+      { kind: 'cloud', bottom: '4%', left: '6%', size: 90, color: PALETTE[1], opacity: 0.4, blur: 2, glow: true, driftX: -10, driftDuration: 18 },
+      { kind: 'flower', top: '20%', right: '30%', size: 90, color: PALETTE[2], opacity: 0.24, blur: 1, glow: true, driftX: 9, driftDuration: 22 },
+      { kind: 'flower', bottom: '14%', left: '42%', size: 110, color: PALETTE[0], opacity: 0.24, blur: 1, glow: true, driftX: -11, driftDuration: 18 },
+      { kind: 'flower', top: '60%', left: '10%', size: 80, color: PALETTE[1], opacity: 0.22, blur: 1, glow: true, driftX: 8, driftDuration: 24 },
+      { kind: 'flower', bottom: '32%', right: '6%', size: 100, color: PALETTE[2], opacity: 0.24, blur: 1, glow: true, driftX: -9, driftDuration: 19 },
+      { kind: 'flower', top: '42%', left: '26%', size: 70, color: PALETTE[0], opacity: 0.2, blur: 1, glow: true, driftX: 8, driftDuration: 21 },
+      { kind: 'flower', bottom: '46%', right: '34%', size: 85, color: PALETTE[1], opacity: 0.22, blur: 1, glow: true, driftX: -8, driftDuration: 17 },
     ],
     stars: [
       { top: '10%', left: '18%', size: 20, delay: 0, duration: 3 },
@@ -79,13 +85,17 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
   },
   pipeline: {
     shapes: [
-      { kind: 'diamond', top: '6%', right: '10%', size: 95, color: '#ffffff', opacity: 0.6, blur: 1, rotate: 6, glow: true, driftX: -11, driftDuration: 18 },
-      { kind: 'cloud', top: '6%', right: '8%', size: 130, color: '#ffffff', opacity: 0.65, blur: 2, glow: true, driftX: 12, driftDuration: 16 },
-      { kind: 'cloud', bottom: '16%', left: '4%', size: 150, color: 'var(--charm-blue)', opacity: 0.4, blur: 2, glow: true, driftX: -13, driftDuration: 20 },
-      { kind: 'cloud', top: '50%', right: '2%', size: 110, color: '#ffffff', opacity: 0.5, blur: 2, glow: true, driftX: 10, driftDuration: 15 },
-      { kind: 'flower', top: '14%', left: '30%', size: 100, color: 'var(--charm-lavender)', opacity: 0.2, blur: 1, driftX: -9, driftDuration: 21 },
-      { kind: 'flower', bottom: '8%', right: '26%', size: 85, color: '#ffffff', opacity: 0.24, blur: 1, glow: true, driftX: 10, driftDuration: 17 },
-      { kind: 'flower', top: '70%', right: '44%', size: 95, color: 'var(--charm-pink)', opacity: 0.2, blur: 1, driftX: -8, driftDuration: 23 },
+      { kind: 'diamond', top: '6%', right: '10%', size: 95, color: PALETTE[0], opacity: 0.6, blur: 1, rotate: 6, glow: true, driftX: -11, driftDuration: 18 },
+      { kind: 'cloud', top: '6%', right: '8%', size: 130, color: PALETTE[1], opacity: 0.45, blur: 2, glow: true, driftX: 12, driftDuration: 16 },
+      { kind: 'cloud', bottom: '16%', left: '4%', size: 150, color: PALETTE[2], opacity: 0.45, blur: 2, glow: true, driftX: -13, driftDuration: 20 },
+      { kind: 'cloud', top: '50%', right: '2%', size: 110, color: PALETTE[0], opacity: 0.5, blur: 2, glow: true, driftX: 10, driftDuration: 15 },
+      { kind: 'cloud', top: '34%', left: '2%', size: 95, color: PALETTE[1], opacity: 0.4, blur: 2, glow: true, driftX: 11, driftDuration: 19 },
+      { kind: 'cloud', bottom: '6%', right: '40%', size: 105, color: PALETTE[2], opacity: 0.45, blur: 2, glow: true, driftX: -10, driftDuration: 17 },
+      { kind: 'flower', top: '14%', left: '30%', size: 100, color: PALETTE[0], opacity: 0.22, blur: 1, glow: true, driftX: -9, driftDuration: 21 },
+      { kind: 'flower', bottom: '8%', right: '26%', size: 85, color: PALETTE[1], opacity: 0.24, blur: 1, glow: true, driftX: 10, driftDuration: 17 },
+      { kind: 'flower', top: '70%', right: '44%', size: 95, color: PALETTE[2], opacity: 0.22, blur: 1, glow: true, driftX: -8, driftDuration: 23 },
+      { kind: 'flower', top: '50%', left: '14%', size: 65, color: PALETTE[0], opacity: 0.2, blur: 1, glow: true, driftX: 8, driftDuration: 20 },
+      { kind: 'flower', bottom: '28%', left: '46%', size: 75, color: PALETTE[1], opacity: 0.22, blur: 1, glow: true, driftX: -8, driftDuration: 16 },
     ],
     stars: [
       { top: '20%', left: '10%', size: 22, delay: 0, duration: 3 },
@@ -101,13 +111,17 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
   },
   scrapbook: {
     shapes: [
-      { kind: 'diamond', bottom: '30%', left: '8%', size: 90, color: 'var(--charm-pink)', opacity: 0.4, blur: 1, rotate: -10, glow: true, driftX: 11, driftDuration: 17 },
-      { kind: 'cloud', top: '8%', left: '6%', size: 140, color: '#ffffff', opacity: 0.7, blur: 2, glow: true, driftX: 13, driftDuration: 18 },
-      { kind: 'cloud', bottom: '20%', right: '6%', size: 160, color: 'var(--charm-pink)', opacity: 0.4, blur: 2, glow: true, driftX: -15, driftDuration: 14 },
-      { kind: 'cloud', top: '56%', left: '2%', size: 120, color: '#ffffff', opacity: 0.55, blur: 2, glow: true, driftX: 12, driftDuration: 21 },
-      { kind: 'flower', top: '24%', right: '16%', size: 110, color: 'var(--charm-pink)', opacity: 0.24, blur: 1, driftX: -10, driftDuration: 19 },
-      { kind: 'flower', bottom: '10%', left: '34%', size: 90, color: '#ffffff', opacity: 0.24, blur: 1, glow: true, driftX: 9, driftDuration: 22 },
-      { kind: 'flower', top: '66%', right: '36%', size: 100, color: 'var(--charm-lavender)', opacity: 0.2, blur: 1, driftX: -8, driftDuration: 16 },
+      { kind: 'diamond', bottom: '30%', left: '8%', size: 90, color: PALETTE[0], opacity: 0.4, blur: 1, rotate: -10, glow: true, driftX: 11, driftDuration: 17 },
+      { kind: 'cloud', top: '8%', left: '6%', size: 140, color: PALETTE[1], opacity: 0.45, blur: 2, glow: true, driftX: 13, driftDuration: 18 },
+      { kind: 'cloud', bottom: '20%', right: '6%', size: 160, color: PALETTE[2], opacity: 0.45, blur: 2, glow: true, driftX: -15, driftDuration: 14 },
+      { kind: 'cloud', top: '56%', left: '2%', size: 120, color: PALETTE[0], opacity: 0.55, blur: 2, glow: true, driftX: 12, driftDuration: 21 },
+      { kind: 'cloud', top: '36%', right: '30%', size: 90, color: PALETTE[1], opacity: 0.4, blur: 2, glow: true, driftX: -10, driftDuration: 15 },
+      { kind: 'cloud', bottom: '42%', left: '46%', size: 100, color: PALETTE[2], opacity: 0.42, blur: 2, glow: true, driftX: 10, driftDuration: 19 },
+      { kind: 'flower', top: '24%', right: '16%', size: 110, color: PALETTE[0], opacity: 0.24, blur: 1, glow: true, driftX: -10, driftDuration: 19 },
+      { kind: 'flower', bottom: '10%', left: '34%', size: 90, color: PALETTE[1], opacity: 0.22, blur: 1, glow: true, driftX: 9, driftDuration: 22 },
+      { kind: 'flower', top: '66%', right: '36%', size: 100, color: PALETTE[2], opacity: 0.22, blur: 1, glow: true, driftX: -8, driftDuration: 16 },
+      { kind: 'flower', top: '10%', left: '46%', size: 65, color: PALETTE[0], opacity: 0.2, blur: 1, glow: true, driftX: 8, driftDuration: 18 },
+      { kind: 'flower', bottom: '4%', right: '10%', size: 75, color: PALETTE[1], opacity: 0.22, blur: 1, glow: true, driftX: -8, driftDuration: 20 },
     ],
     stars: [
       { top: '18%', left: '22%', size: 24, delay: 0, duration: 2.9 },
@@ -124,10 +138,12 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
   // The one view where number-accuracy is the point — fewest, dimmest shapes and no motion at all.
   finances: {
     shapes: [
-      { kind: 'diamond', top: '4%', left: '6%', size: 70, color: '#ffffff', opacity: 0.4, blur: 1, rotate: -8, glow: true, driftX: 0, driftDuration: 1 },
-      { kind: 'cloud', top: '8%', left: '4%', size: 110, color: '#ffffff', opacity: 0.4, blur: 2, glow: true, driftX: 0, driftDuration: 1 },
-      { kind: 'cloud', bottom: '14%', right: '6%', size: 100, color: 'var(--charm-blue)', opacity: 0.3, blur: 2, driftX: 0, driftDuration: 1 },
-      { kind: 'flower', bottom: '20%', left: '46%', size: 70, color: '#ffffff', opacity: 0.16, blur: 1, driftX: 0, driftDuration: 1 },
+      { kind: 'diamond', top: '4%', left: '6%', size: 70, color: PALETTE[0], opacity: 0.4, blur: 1, rotate: -8, glow: true, driftX: 0, driftDuration: 1 },
+      { kind: 'cloud', top: '8%', left: '4%', size: 110, color: PALETTE[1], opacity: 0.36, blur: 2, glow: true, driftX: 0, driftDuration: 1 },
+      { kind: 'cloud', bottom: '14%', right: '6%', size: 100, color: PALETTE[2], opacity: 0.36, blur: 2, glow: true, driftX: 0, driftDuration: 1 },
+      { kind: 'cloud', top: '10%', right: '42%', size: 80, color: PALETTE[0], opacity: 0.3, blur: 2, glow: true, driftX: 0, driftDuration: 1 },
+      { kind: 'flower', bottom: '20%', left: '46%', size: 70, color: PALETTE[1], opacity: 0.18, blur: 1, glow: true, driftX: 0, driftDuration: 1 },
+      { kind: 'flower', top: '44%', left: '8%', size: 60, color: PALETTE[2], opacity: 0.16, blur: 1, glow: true, driftX: 0, driftDuration: 1 },
     ],
     stars: [
       { top: '50%', left: '10%', size: 16, delay: 0, duration: 3 },
@@ -139,10 +155,14 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
   },
   settings: {
     shapes: [
-      { kind: 'cloud', top: '10%', right: '10%', size: 120, color: '#ffffff', opacity: 0.55, blur: 2, glow: true, driftX: 11, driftDuration: 18 },
-      { kind: 'cloud', bottom: '12%', left: '8%', size: 130, color: 'var(--charm-lavender)', opacity: 0.36, blur: 2, glow: true, driftX: -12, driftDuration: 15 },
-      { kind: 'flower', top: '40%', left: '20%', size: 90, color: 'var(--charm-pink)', opacity: 0.22, blur: 1, driftX: 9, driftDuration: 20 },
-      { kind: 'flower', bottom: '30%', right: '28%', size: 85, color: '#ffffff', opacity: 0.24, blur: 1, glow: true, driftX: -9, driftDuration: 17 },
+      { kind: 'cloud', top: '10%', right: '10%', size: 120, color: PALETTE[0], opacity: 0.55, blur: 2, glow: true, driftX: 11, driftDuration: 18 },
+      { kind: 'cloud', bottom: '12%', left: '8%', size: 130, color: PALETTE[1], opacity: 0.42, blur: 2, glow: true, driftX: -12, driftDuration: 15 },
+      { kind: 'cloud', top: '46%', right: '36%', size: 90, color: PALETTE[2], opacity: 0.4, blur: 2, glow: true, driftX: 10, driftDuration: 19 },
+      { kind: 'cloud', bottom: '6%', left: '44%', size: 80, color: PALETTE[0], opacity: 0.36, blur: 2, glow: true, driftX: -9, driftDuration: 16 },
+      { kind: 'flower', top: '40%', left: '20%', size: 90, color: PALETTE[1], opacity: 0.22, blur: 1, glow: true, driftX: 9, driftDuration: 20 },
+      { kind: 'flower', bottom: '30%', right: '28%', size: 85, color: PALETTE[2], opacity: 0.24, blur: 1, glow: true, driftX: -9, driftDuration: 17 },
+      { kind: 'flower', top: '14%', left: '44%', size: 65, color: PALETTE[0], opacity: 0.2, blur: 1, glow: true, driftX: 8, driftDuration: 21 },
+      { kind: 'flower', bottom: '44%', right: '8%', size: 70, color: PALETTE[1], opacity: 0.22, blur: 1, glow: true, driftX: -8, driftDuration: 18 },
     ],
     stars: [
       { top: '16%', left: '16%', size: 20, delay: 0, duration: 3.2 },
@@ -156,10 +176,14 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
   },
   analytics: {
     shapes: [
-      { kind: 'cloud', top: '6%', left: '10%', size: 125, color: 'var(--charm-blue)', opacity: 0.4, blur: 2, glow: true, driftX: 12, driftDuration: 16 },
-      { kind: 'cloud', bottom: '8%', right: '8%', size: 140, color: '#ffffff', opacity: 0.6, blur: 2, glow: true, driftX: -13, driftDuration: 19 },
-      { kind: 'flower', top: '58%', right: '14%', size: 95, color: '#ffffff', opacity: 0.24, blur: 1, glow: true, driftX: 8, driftDuration: 21 },
-      { kind: 'flower', bottom: '16%', left: '34%', size: 80, color: 'var(--charm-lavender)', opacity: 0.2, blur: 1, driftX: -10, driftDuration: 18 },
+      { kind: 'cloud', top: '6%', left: '10%', size: 125, color: PALETTE[0], opacity: 0.55, blur: 2, glow: true, driftX: 12, driftDuration: 16 },
+      { kind: 'cloud', bottom: '8%', right: '8%', size: 140, color: PALETTE[1], opacity: 0.45, blur: 2, glow: true, driftX: -13, driftDuration: 19 },
+      { kind: 'cloud', top: '30%', right: '36%', size: 90, color: PALETTE[2], opacity: 0.4, blur: 2, glow: true, driftX: 10, driftDuration: 17 },
+      { kind: 'cloud', bottom: '36%', left: '6%', size: 80, color: PALETTE[0], opacity: 0.36, blur: 2, glow: true, driftX: -9, driftDuration: 15 },
+      { kind: 'flower', top: '58%', right: '14%', size: 95, color: PALETTE[1], opacity: 0.24, blur: 1, glow: true, driftX: 8, driftDuration: 21 },
+      { kind: 'flower', bottom: '16%', left: '34%', size: 80, color: PALETTE[2], opacity: 0.22, blur: 1, glow: true, driftX: -10, driftDuration: 18 },
+      { kind: 'flower', top: '10%', left: '40%', size: 65, color: PALETTE[0], opacity: 0.2, blur: 1, glow: true, driftX: 8, driftDuration: 20 },
+      { kind: 'flower', bottom: '50%', right: '40%', size: 70, color: PALETTE[1], opacity: 0.22, blur: 1, glow: true, driftX: -8, driftDuration: 16 },
     ],
     stars: [
       { top: '24%', left: '12%', size: 22, delay: 0, duration: 3 },
@@ -173,9 +197,11 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
   },
   default: {
     shapes: [
-      { kind: 'cloud', top: '8%', left: '6%', size: 120, color: '#ffffff', opacity: 0.55, blur: 2, glow: true, driftX: 10, driftDuration: 17 },
-      { kind: 'cloud', bottom: '10%', right: '8%', size: 130, color: 'var(--charm-blue)', opacity: 0.36, blur: 2, glow: true, driftX: -11, driftDuration: 20 },
-      { kind: 'flower', top: '46%', right: '20%', size: 90, color: 'var(--charm-pink)', opacity: 0.2, blur: 1, driftX: 9, driftDuration: 19 },
+      { kind: 'cloud', top: '8%', left: '6%', size: 120, color: PALETTE[0], opacity: 0.55, blur: 2, glow: true, driftX: 10, driftDuration: 17 },
+      { kind: 'cloud', bottom: '10%', right: '8%', size: 130, color: PALETTE[1], opacity: 0.42, blur: 2, glow: true, driftX: -11, driftDuration: 20 },
+      { kind: 'cloud', top: '40%', left: '34%', size: 85, color: PALETTE[2], opacity: 0.4, blur: 2, glow: true, driftX: 9, driftDuration: 15 },
+      { kind: 'flower', top: '46%', right: '20%', size: 90, color: PALETTE[0], opacity: 0.22, blur: 1, glow: true, driftX: 9, driftDuration: 19 },
+      { kind: 'flower', bottom: '14%', left: '10%', size: 70, color: PALETTE[1], opacity: 0.2, blur: 1, glow: true, driftX: -8, driftDuration: 18 },
     ],
     stars: [
       { top: '18%', left: '20%', size: 20, delay: 0, duration: 3 },
