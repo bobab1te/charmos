@@ -26,7 +26,7 @@ import { useCurrency } from '#/lib/currency-context'
 import { isDealUnpaidAlert, nextDeliverable, urgencyForDate } from '#/lib/derived'
 import { readDraft, writeDraft } from '#/lib/form-draft'
 import { cn } from '#/lib/utils'
-import { defaultCardColor, resolveTextColor } from '#/lib/widget-colors'
+import { defaultCardColor, glassBackground, resolveTextColor } from '#/lib/widget-colors'
 import type { BrandDeal, DealStage } from '#/lib/types'
 
 const COLUMNS: Array<{ id: DealStage; label: string }> = [
@@ -135,7 +135,7 @@ function DealCardInner({
     <div
       onClick={onOpen ? () => onOpen(deal.id) : undefined}
       className="charm-glass cursor-grab rounded-xl p-3 transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] active:cursor-grabbing"
-      style={{ background: `color-mix(in oklab, ${color} 82%, var(--surface-strong))`, color: textColor }}
+      style={{ background: glassBackground(color), color: textColor }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">

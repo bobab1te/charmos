@@ -4,7 +4,10 @@ import { WIDGET_COLOR_PALETTE } from '#/lib/widget-colors'
 /**
  * Shared color-override picker for any colorable widget card (deal, idea, partnership, ...) —
  * one palette, one interaction, everywhere a card supports a custom color. Every trigger stops
- * propagation since it's always nested inside a clickable/draggable card.
+ * propagation since it's always nested inside a clickable/draggable card. PopoverContent stops
+ * `click` too, not just `pointerdown` - Radix renders it in a portal, but React's synthetic
+ * events still bubble along the *component* tree, not the DOM tree, so a swatch click would
+ * otherwise reach the card's onClick and open it right after picking a color.
  */
 export function WidgetColorPicker({
   color,
@@ -27,7 +30,12 @@ export function WidgetColorPicker({
           style={{ background: color }}
         />
       </PopoverTrigger>
-      <PopoverContent onPointerDown={(e) => e.stopPropagation()} align="end" className="w-auto p-3">
+      <PopoverContent
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        align="end"
+        className="w-auto p-3"
+      >
         <div className="flex flex-wrap gap-2">
           {WIDGET_COLOR_PALETTE.map((swatch) => (
             <button

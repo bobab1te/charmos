@@ -254,6 +254,27 @@ body {
     0 4px 14px rgba(0, 0, 0, 0.2);
 }
 
+/*
+ * Same shadow language as .charm-glass, deliberately without backdrop-filter, its own background,
+ * or a border — for spots where .charm-glass's blur would repeat dozens of times at once (the
+ * scrapbook calendar's day cells, and the compact idea cards inside them) and genuinely cost
+ * something on lower-end mobile GPUs. Composes on top of whatever background/border the element
+ * already manages itself (e.g. the calendar day cell's own border-color state for drag-hover)
+ * rather than supplying its own, which would fight with Tailwind's utility classes for the same
+ * property.
+ */
+.charm-glass-lite {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 4px 10px var(--surface-shadow);
+}
+
+.dark .charm-glass-lite {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 4px 10px var(--surface-shadow);
+}
+
 .display-title {
   font-family: var(--font-display);
 }

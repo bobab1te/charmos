@@ -11,7 +11,7 @@ import { IdeaDetailModal } from '#/components/scrapbook/idea-detail-modal'
 import { useCharmStore } from '#/lib/charm-store'
 import { dateOnlyToISOString } from '#/lib/date-only'
 import { cn } from '#/lib/utils'
-import { defaultCardColor, resolveTextColor } from '#/lib/widget-colors'
+import { defaultCardColor, glassBackground, resolveTextColor } from '#/lib/widget-colors'
 import type { IdeaPost } from '#/lib/types'
 
 export const Route = createFileRoute('/_app/scrapbook')({ component: ScrapbookPage })
@@ -160,8 +160,8 @@ function ScrapbookPage() {
                   const color = activeIdea.color ?? defaultCardColor(activeIdea.id)
                   return (
                     <div
-                      className="w-56 rounded-xl shadow-lg"
-                      style={{ background: `color-mix(in oklab, ${color} 82%, var(--surface-strong))` }}
+                      className="charm-glass w-56 rounded-xl"
+                      style={{ background: glassBackground(color) }}
                     >
                       <IdeaCardContent idea={activeIdea} textColor={resolveTextColor(color)} />
                     </div>

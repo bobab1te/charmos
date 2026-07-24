@@ -6,7 +6,7 @@ import { ArrowUpRight, Lightbulb, Plus } from 'lucide-react'
 import { WidgetCard } from '#/components/charm/widget-card'
 import { useCharmStore } from '#/lib/charm-store'
 import { cn } from '#/lib/utils'
-import { defaultCardColor, resolveTextColor } from '#/lib/widget-colors'
+import { defaultCardColor, glassBackground, resolveTextColor } from '#/lib/widget-colors'
 
 const NOTE_TILTS = ['-rotate-2', 'rotate-1', '-rotate-1']
 
@@ -84,10 +84,10 @@ export function UnassignedIdeas({ onHide }: { onHide: () => void }) {
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 22 }}
                   className={cn(
-                    'w-full max-w-[220px] rounded-xl p-3 shadow-sm transition-shadow duration-150 ease-out hover:shadow-md',
+                    'charm-glass w-full max-w-[220px] rounded-xl p-3 transition-shadow duration-150 ease-out hover:shadow-md',
                     NOTE_TILTS[i % NOTE_TILTS.length],
                   )}
-                  style={{ background: `color-mix(in oklab, ${color} 82%, var(--surface-strong))` }}
+                  style={{ background: glassBackground(color) }}
                 >
                   <p className="text-sm font-medium" style={{ color: textColor }}>
                     {idea.title}

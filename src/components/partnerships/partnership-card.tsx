@@ -15,8 +15,11 @@ import {
   isPartnershipRenewalDueSoon,
 } from '#/lib/partnership-derived'
 import { cn } from '#/lib/utils'
-import { defaultCardColor, resolveTextColor } from '#/lib/widget-colors'
+import { glassBackground, resolveTextColor } from '#/lib/widget-colors'
 import type { Partnership } from '#/lib/types'
+
+/** Partnerships default to white (not the deterministic per-item palette color deals/ideas use) — still overridable via the same picker. */
+const DEFAULT_PARTNERSHIP_COLOR = '#ffffff'
 
 const STATUS_STYLES: Record<Partnership['status'], string> = {
   active: 'bg-[var(--urgency-green)]/15 text-[var(--urgency-green)]',
@@ -50,7 +53,7 @@ export function PartnershipCard({
     currency: partnership.currency,
     maximumFractionDigits: 0,
   })
-  const color = partnership.color ?? defaultCardColor(partnership.id)
+  const color = partnership.color ?? DEFAULT_PARTNERSHIP_COLOR
   const textColor = resolveTextColor(color)
   const softTextColor = textColor === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(26,18,32,0.65)'
 
@@ -89,7 +92,7 @@ export function PartnershipCard({
     <div
       onClick={() => onOpen(partnership.id)}
       className="charm-glass flex cursor-pointer flex-col gap-3 rounded-2xl p-4 transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
-      style={{ background: `color-mix(in oklab, ${color} 82%, var(--surface-strong))` }}
+      style={{ background: glassBackground(color) }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 text-left">

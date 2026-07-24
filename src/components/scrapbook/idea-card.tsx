@@ -4,7 +4,7 @@ import { Repeat2 } from 'lucide-react'
 import { WidgetColorPicker } from '#/components/charm/widget-color-picker'
 import { useCharmStore } from '#/lib/charm-store'
 import { cn } from '#/lib/utils'
-import { defaultCardColor, resolveTextColor } from '#/lib/widget-colors'
+import { defaultCardColor, glassBackground, resolveTextColor } from '#/lib/widget-colors'
 import type { IdeaPost } from '#/lib/types'
 
 export function IdeaCardContent({
@@ -72,10 +72,14 @@ export function DraggableIdeaCard({ idea, onOpen, compact, rotateClass }: Dragga
       style={{
         transform: CSS.Translate.toString(transform),
         opacity: isDragging ? 0.35 : 1,
-        background: `color-mix(in oklab, ${color} 82%, var(--surface-strong))`,
+        background: glassBackground(color),
       }}
       className={cn(
-        'cursor-grab rounded-xl shadow-sm transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing',
+        // charm-glass-lite (not full charm-glass) even for the non-compact idea bank list: unlike
+        // deals/partnerships, this list has no cap on how many cards render at once, so it's the
+        // one card type where backdrop-blur's cost is genuinely open-ended rather than bounded by
+        // a handful of dashboard widgets or kanban columns.
+        'charm-glass-lite cursor-grab rounded-xl transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing',
         rotateClass,
       )}
     >

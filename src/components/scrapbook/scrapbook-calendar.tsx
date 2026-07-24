@@ -39,8 +39,11 @@ function CalendarDay({
     <div
       ref={setNodeRef}
       className={cn(
-        'flex min-h-[86px] flex-col gap-1 rounded-lg border border-transparent p-1.5 transition-colors duration-150 ease-out',
-        inMonth ? 'bg-white/30' : 'bg-white/10 opacity-50',
+        // charm-glass-lite (not full charm-glass): a month grid renders up to 42 of these at
+        // once, and that many simultaneous backdrop-filter regions is a real mobile perf cost -
+        // see idea-card.tsx's DraggableIdeaCard for the same trade-off on its compact cards.
+        'charm-glass-lite flex min-h-[86px] flex-col gap-1 rounded-lg border border-transparent p-1.5 transition-colors duration-150 ease-out',
+        inMonth ? 'bg-white/40' : 'bg-white/15 opacity-50',
         isOver && 'border-[var(--accent)] bg-[var(--accent)]/10',
       )}
     >

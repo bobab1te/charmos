@@ -17,12 +17,13 @@ export interface WidgetColorSwatch {
  * original values, kept for now.
  *
  * Every swatch gets an explicit dark-text override rather than relying on the generic luminance
- * heuristic below: the card background is actually `color-mix(in oklab, swatch 82%,
- * var(--surface-strong))`, and --surface-strong is a dark plum in dark mode — mixing that in
- * drags every one of these pastels' effective luminance under the heuristic's 0.5 cutoff, which
- * would pick white text (checked by rendering the real color-mix result in both themes: dark
- * text measures 6.4–9.6:1 contrast in dark mode and 10.4–14.8:1 in light mode, vs. white's
- * 1.9–2.9:1 in dark mode — white is never right for this palette in either theme).
+ * heuristic below: the card background is actually glassBackground(swatch) (see below), and
+ * --surface-strong is a dark plum in dark mode — mixing that in drags every one of these
+ * pastels' effective luminance under the heuristic's 0.5 cutoff, which would pick white text
+ * (checked by replicating the real color-mix math in both themes: dark text measures 5.6–10.3:1
+ * contrast in dark mode and 10.9–18.2:1 in light mode at the current 76% tint — re-verified after
+ * lowering the tint from 82% to let the glassmorphism blur show through; white is never right for
+ * this palette in either theme).
  */
 export const WIDGET_COLOR_PALETTE: Array<WidgetColorSwatch> = [
   { id: 'pale-pink', label: 'Pale Pink', value: '#ffe1e6', textColor: '#1a1220' },
@@ -34,6 +35,22 @@ export const WIDGET_COLOR_PALETTE: Array<WidgetColorSwatch> = [
   { id: 'peach', label: 'Peach', value: '#f2c9a8', textColor: '#1a1220' },
   { id: 'butter', label: 'Butter', value: '#f2e3a8', textColor: '#1a1220' },
 ]
+
+/**
+ * How much of a widget's color shows through its glassmorphism tint — the rest blends with
+ * --surface-strong so the card's backdrop-blur has something visible to show through. One
+ * constant (not a literal re-typed in every component) so every colorable widget uses exactly
+ * the same recipe. Lowered from an earlier 82% specifically to make the blur-through visible;
+ * re-verified against the whole palette at 76% before landing on it (see the palette's own
+ * comment above for the resulting contrast numbers) — going much lower starts eating into
+ * contrast margin on the darker swatches (dusty-blue, sage) in dark mode.
+ */
+export const GLASS_TINT_PERCENT = 76
+
+/** The actual background for any colorable glass widget — deal/idea/partnership cards, kept as one function so the tint percentage and mix method can't drift between components. */
+export function glassBackground(color: string): string {
+  return `color-mix(in oklab, ${color} ${GLASS_TINT_PERCENT}%, var(--surface-strong))`
+}
 
 /**
  * Deterministic per-item default, cycling through the palette by a hash of the
