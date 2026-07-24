@@ -175,10 +175,16 @@ body {
   z-index: -2;
   pointer-events: none;
   background-color: var(--bg-base);
-  /* Back to the original light pastel corners (the deep-toned vignette version read as too
-   * dark) — just a few points more saturated than the very first version, for a touch more
-   * presence without losing the light, airy quality. */
+  /* Light pastel corners (same as the original), plus a second layer of deeper versions of
+   * those same hues anchored right at the four true corners (0/100 rather than the light
+   * glow's 8-12% inset) and blurred inward via their own gradient falloff — a color-matched
+   * depth accent at the edges themselves, rather than a flat dark overlay on top of everything
+   * (tried that, read as too dark - this keeps the middle light and only deepens the corners). */
   background-image:
+    radial-gradient(42% 38% at 0% 0%, color-mix(in oklab, var(--charm-pink-deep) 55%, transparent), transparent 72%),
+    radial-gradient(46% 42% at 100% 0%, color-mix(in oklab, var(--charm-lavender-deep) 50%, transparent), transparent 72%),
+    radial-gradient(40% 38% at 100% 100%, color-mix(in oklab, var(--charm-blue-deep) 48%, transparent), transparent 72%),
+    radial-gradient(48% 44% at 0% 100%, color-mix(in oklab, var(--charm-pink-deep) 46%, transparent), transparent 72%),
     radial-gradient(38% 32% at 8% 12%, color-mix(in oklab, var(--charm-pink) 88%, transparent), transparent),
     radial-gradient(42% 38% at 88% 8%, color-mix(in oklab, var(--charm-lavender) 84%, transparent), transparent),
     radial-gradient(36% 34% at 92% 62%, color-mix(in oklab, var(--charm-blue) 82%, transparent), transparent),
@@ -189,6 +195,10 @@ body {
 
 .dark .charm-mesh {
   background-image:
+    radial-gradient(42% 38% at 0% 0%, color-mix(in oklab, var(--charm-lavender-deep) 55%, black), transparent 72%),
+    radial-gradient(46% 42% at 100% 0%, color-mix(in oklab, var(--charm-pink-deep) 50%, black), transparent 72%),
+    radial-gradient(40% 38% at 100% 100%, color-mix(in oklab, var(--charm-blue-deep) 48%, black), transparent 72%),
+    radial-gradient(48% 44% at 0% 100%, color-mix(in oklab, var(--charm-pink-deep) 45%, black), transparent 72%),
     radial-gradient(38% 32% at 8% 12%, color-mix(in oklab, var(--charm-lavender-deep) 36%, transparent), transparent),
     radial-gradient(42% 38% at 88% 8%, color-mix(in oklab, var(--charm-pink-deep) 30%, transparent), transparent),
     radial-gradient(36% 34% at 92% 62%, color-mix(in oklab, var(--charm-blue-deep) 28%, transparent), transparent),
