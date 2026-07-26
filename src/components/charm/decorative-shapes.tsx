@@ -96,6 +96,8 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { top: '85%', left: '14%', size: 30, delay: 0.4, duration: 3 },
       { top: '28%', right: '10%', size: 24, delay: 1.8, duration: 2.9 },
       { top: '92%', left: '18%', size: 18, delay: 2.5, duration: 3.2 },
+      { top: '75%', right: '4%', size: 16, delay: 0.2, duration: 3.1 },
+      { bottom: '18%', left: '4%', size: 20, delay: 1.1, duration: 2.9 },
     ],
     dotCount: 7,
     animate: true,
@@ -122,6 +124,8 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { top: '78%', left: '14%', size: 26, delay: 0.9, duration: 3.6 },
       { bottom: '6%', right: '16%', size: 22, delay: 2.3, duration: 3 },
       { top: '68%', left: '12%', size: 28, delay: 1.6, duration: 2.8 },
+      { bottom: '30%', left: '4%', size: 18, delay: 0.3, duration: 3 },
+      { top: '58%', right: '4%', size: 20, delay: 1.5, duration: 3.3 },
     ],
     dotCount: 7,
     animate: true,
@@ -161,6 +165,8 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { top: '60%', left: '8%', size: 18, delay: 1.4, duration: 3.4 },
       { top: '72%', right: '10%', size: 26, delay: 2, duration: 3 },
       { bottom: '8%', left: '16%', size: 20, delay: 0.9, duration: 3.3 },
+      { top: '38%', left: '4%', size: 18, delay: 0.4, duration: 3.1 },
+      { bottom: '46%', right: '4%', size: 20, delay: 1.2, duration: 2.8 },
     ],
     dotCount: 5,
     animate: true,
@@ -182,6 +188,8 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { top: '54%', left: '4%', size: 28, delay: 1.3, duration: 2.8 },
       { top: '44%', right: '6%', size: 20, delay: 1.9, duration: 3.1 },
       { bottom: '10%', left: '16%', size: 24, delay: 0.9, duration: 3.5 },
+      { top: '66%', left: '4%', size: 18, delay: 0.5, duration: 3 },
+      { bottom: '28%', right: '4%', size: 20, delay: 1.4, duration: 3.2 },
     ],
     dotCount: 5,
     animate: true,
@@ -198,6 +206,8 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { top: '18%', left: '12%', size: 20, delay: 0, duration: 3 },
       { top: '70%', right: '14%', size: 24, delay: 0.8, duration: 3.2 },
       { top: '40%', left: '6%', size: 18, delay: 1.5, duration: 2.9 },
+      { bottom: '40%', left: '4%', size: 18, delay: 0.3, duration: 3 },
+      { top: '54%', right: '4%', size: 20, delay: 1.1, duration: 2.9 },
     ],
     dotCount: 5,
     animate: true,
@@ -342,12 +352,13 @@ export function DecorativeShapes({ page = 'default' }: { page?: PageKey }) {
           bottom: s.bottom,
           width: s.size,
           height: s.size,
-          filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.9)) drop-shadow(0 0 11px rgba(255,255,255,0.5))',
+          filter:
+            'drop-shadow(0 0 7px rgba(255,255,255,1)) drop-shadow(0 0 16px rgba(255,255,255,0.75)) drop-shadow(0 0 28px rgba(255,255,255,0.4))',
         }
 
         if (!shouldAnimate) {
           return (
-            <div key={`star-${i}`} className="absolute" style={{ ...style, opacity: 0.55 }}>
+            <div key={`star-${i}`} className="absolute" style={{ ...style, opacity: 0.8 }}>
               <DiamondShape size={s.size} color="#ffffff" />
             </div>
           )
@@ -358,7 +369,7 @@ export function DecorativeShapes({ page = 'default' }: { page?: PageKey }) {
             key={`star-${i}`}
             className="absolute"
             style={style}
-            animate={{ opacity: [0.2, 1, 0.2], scale: [0.85, 1.15, 0.85] }}
+            animate={{ opacity: [0.35, 1, 0.35], scale: [0.8, 1.3, 0.8] }}
             transition={{ duration: s.duration, repeat: Infinity, ease: 'easeInOut', delay: s.delay }}
           >
             <DiamondShape size={s.size} color="#ffffff" />
