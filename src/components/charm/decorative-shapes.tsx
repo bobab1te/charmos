@@ -70,8 +70,12 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { top: '48%', right: '6%', size: 22, delay: 1.6, duration: 3.1 },
       { bottom: '10%', left: '16%', size: 20, delay: 2.2, duration: 2.6 },
       { bottom: '8%', right: '14%', size: 20, delay: 1.9, duration: 2.9 },
+      { top: '30%', left: '3%', size: 16, delay: 0.3, duration: 3.2 },
+      { top: '32%', right: '3%', size: 18, delay: 1.3, duration: 2.7 },
+      { bottom: '38%', left: '8%', size: 20, delay: 2.5, duration: 3 },
+      { bottom: '36%', right: '9%', size: 16, delay: 0.8, duration: 3.4 },
     ],
-    dotCount: 9,
+    dotCount: 14,
     animate: true,
   },
   pipeline: {
@@ -218,7 +222,9 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
  * hydration mismatch. Biased toward the four edges (via `edge`/`inset`) rather than spread
  * uniformly across the page, so the "sparkle" texture reads as a border rather than dots
  * scattered over the content area. */
-function generateDots(count: number): Array<{ left: string; top: string; size: number; delay: number; duration: number }> {
+function generateDots(
+  count: number,
+): Array<{ left: string; top: string; size: number; delay: number; duration: number; driftX: number; driftY: number }> {
   return Array.from({ length: count }, (_, i) => {
     const edge = i % 4 // 0 top, 1 right, 2 bottom, 3 left
     const along = `${(i * 37 + 11) % 100}%`
@@ -237,6 +243,8 @@ function generateDots(count: number): Array<{ left: string; top: string; size: n
       size: 2 + (i % 3),
       delay: (i * 0.6) % 3.5,
       duration: 2.6 + (i % 3) * 0.6,
+      driftX: ((i * 7) % 5) - 2,
+      driftY: ((i * 11) % 5) - 2,
     }
   })
 }
@@ -405,7 +413,7 @@ export function DecorativeShapes({ page = 'default' }: { page?: PageKey }) {
             key={`dot-${i}`}
             className="absolute rounded-full bg-white"
             style={{ left: d.left, top: d.top, width: d.size, height: d.size }}
-            animate={{ opacity: [0.15, 0.95, 0.15], scale: [0.8, 1.2, 0.8] }}
+            animate={{ opacity: [0.15, 0.95, 0.15], scale: [0.8, 1.2, 0.8], x: [0, d.driftX, 0], y: [0, d.driftY, 0] }}
             transition={{ duration: d.duration, repeat: Infinity, ease: 'easeInOut', delay: d.delay }}
           />
         ) : (
