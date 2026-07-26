@@ -71,7 +71,7 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { bottom: '10%', left: '16%', size: 20, delay: 2.2, duration: 2.6 },
       { bottom: '8%', right: '14%', size: 20, delay: 1.9, duration: 2.9 },
     ],
-    dotCount: 6,
+    dotCount: 9,
     animate: true,
   },
   pipeline: {
@@ -99,7 +99,7 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { top: '75%', right: '4%', size: 16, delay: 0.2, duration: 3.1 },
       { bottom: '18%', left: '4%', size: 20, delay: 1.1, duration: 2.9 },
     ],
-    dotCount: 7,
+    dotCount: 10,
     animate: true,
   },
   scrapbook: {
@@ -127,7 +127,7 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { bottom: '30%', left: '4%', size: 18, delay: 0.3, duration: 3 },
       { top: '58%', right: '4%', size: 20, delay: 1.5, duration: 3.3 },
     ],
-    dotCount: 7,
+    dotCount: 10,
     animate: true,
   },
   // The one view where number-accuracy is the point — fewest, dimmest shapes and no motion at all.
@@ -168,7 +168,7 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { top: '38%', left: '4%', size: 18, delay: 0.4, duration: 3.1 },
       { bottom: '46%', right: '4%', size: 20, delay: 1.2, duration: 2.8 },
     ],
-    dotCount: 5,
+    dotCount: 8,
     animate: true,
   },
   analytics: {
@@ -191,7 +191,7 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { top: '66%', left: '4%', size: 18, delay: 0.5, duration: 3 },
       { bottom: '28%', right: '4%', size: 20, delay: 1.4, duration: 3.2 },
     ],
-    dotCount: 5,
+    dotCount: 8,
     animate: true,
   },
   default: {
@@ -209,21 +209,43 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { bottom: '40%', left: '4%', size: 18, delay: 0.3, duration: 3 },
       { top: '54%', right: '4%', size: 20, delay: 1.1, duration: 2.9 },
     ],
-    dotCount: 5,
+    dotCount: 8,
     animate: true,
   },
 }
 
-/** Deterministic (not Math.random) so server and client render the same layout — avoids a hydration mismatch. */
+/** Deterministic (not Math.random) so server and client render the same layout — avoids a
+ * hydration mismatch. Biased toward the four edges (via `edge`/`inset`) rather than spread
+ * uniformly across the page, so the "sparkle" texture reads as a border rather than dots
+ * scattered over the content area. */
 function generateDots(count: number): Array<{ left: string; top: string; size: number; delay: number; duration: number }> {
-  return Array.from({ length: count }, (_, i) => ({
-    left: `${(i * 29 + 7) % 96}%`,
-    top: `${(i * 53 + 13) % 92}%`,
-    size: 2 + (i % 3),
-    delay: (i * 0.6) % 3.5,
-    duration: 2.6 + (i % 3) * 0.6,
-  }))
+  return Array.from({ length: count }, (_, i) => {
+    const edge = i % 4 // 0 top, 1 right, 2 bottom, 3 left
+    const along = `${(i * 37 + 11) % 100}%`
+    const inset = `${(i * 13 + 5) % 12}%`
+    const insetFar = `${100 - ((i * 13 + 5) % 12)}%`
+    const position =
+      edge === 0
+        ? { left: along, top: inset }
+        : edge === 1
+          ? { left: insetFar, top: along }
+          : edge === 2
+            ? { left: along, top: insetFar }
+            : { left: inset, top: along }
+    return {
+      ...position,
+      size: 2 + (i % 3),
+      delay: (i * 0.6) % 3.5,
+      duration: 2.6 + (i % 3) * 0.6,
+    }
+  })
 }
+
+/** Applied to every shape's authored opacity so the ambient clouds/diamonds/flowers read more
+ * clearly against the page without having to hand-tune ~50 individual opacity values — capped so
+ * the already-boldest shapes don't get distracting. */
+const SHAPE_OPACITY_BOOST = 1.35
+const SHAPE_OPACITY_CAP = 0.92
 
 /** A subtle white edge on every shape's fill — the "slightly glassmorphism" touch. True
  * backdrop-blur glassmorphism (frosting whatever's behind an element) doesn't apply to a layer
@@ -316,9 +338,9 @@ export function DecorativeShapes({ page = 'default' }: { page?: PageKey }) {
           left: shape.left,
           right: shape.right,
           bottom: shape.bottom,
-          opacity: shape.opacity,
+          opacity: Math.min(shape.opacity * SHAPE_OPACITY_BOOST, SHAPE_OPACITY_CAP),
           filter: shape.glow
-            ? `blur(${shape.blur}px) drop-shadow(0 4px 14px rgba(58, 46, 66, 0.12))`
+            ? `blur(${shape.blur}px) drop-shadow(0 4px 16px rgba(58, 46, 66, 0.16))`
             : `blur(${shape.blur}px)`,
         }
         const rotate = shape.rotate ? `rotate(${shape.rotate}deg)` : undefined
