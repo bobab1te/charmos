@@ -200,10 +200,10 @@ body {
   animation-delay: var(--delay, 0s);
 }
 
-.charm-mesh .charm-blob-1 { width: 72%; height: 72%; top: -18%; right: -14%; background: #eec190; opacity: 0.85; --dur: 22s; }
-.charm-mesh .charm-blob-2 { width: 66%; height: 66%; top: 4%; left: -18%; background: #e9a8c0; opacity: 0.8; --dur: 26s; --delay: -8s; }
-.charm-mesh .charm-blob-3 { width: 50%; height: 50%; bottom: -14%; left: 26%; background: #c79fd0; opacity: 0.62; --dur: 19s; --delay: -14s; }
-.charm-mesh .charm-blob-4 { width: 36%; height: 36%; bottom: 10%; right: 14%; background: #f0d488; opacity: 0.55; --dur: 23s; --delay: -4s; }
+.charm-mesh .charm-blob-1 { width: 72%; height: 72%; top: -18%; right: -14%; background: #eec190; opacity: 0.5; --dur: 22s; }
+.charm-mesh .charm-blob-2 { width: 66%; height: 66%; top: 4%; left: -18%; background: #e9a8c0; opacity: 0.46; --dur: 26s; --delay: -8s; }
+.charm-mesh .charm-blob-3 { width: 50%; height: 50%; bottom: -14%; left: 26%; background: #c79fd0; opacity: 0.36; --dur: 19s; --delay: -14s; }
+.charm-mesh .charm-blob-4 { width: 36%; height: 36%; bottom: 10%; right: 14%; background: #f0d488; opacity: 0.32; --dur: 23s; --delay: -4s; }
 
 @keyframes charm-mesh-drift {
   0%, 100% { transform: translate(0, 0) scale(1); }
