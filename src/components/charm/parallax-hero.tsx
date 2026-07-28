@@ -30,6 +30,106 @@ function CloudLayer({ depth, mx, my, className, style }: { depth: number; mx: Mo
   )
 }
 
+/** A single flat "M" gull-wing silhouette — cheap to draw many of, reads as a bird at a glance
+ * without needing real wing detail at this size. */
+function Bird({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size * 0.5} viewBox="0 0 40 20" fill="none">
+      <path
+        d="M2 14C8 4 14 4 20 12C26 4 32 4 38 14"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        fill="none"
+      />
+    </svg>
+  )
+}
+
+/** Birds cross the hero left-to-right at varying heights/speeds/sizes, wings bobbing via a
+ * quick vertical wiggle layered on top of the horizontal drift — day scene only. */
+function BirdFlock() {
+  const birds = [
+    { top: '22%', size: 16, duration: 13, delay: 0 },
+    { top: '34%', size: 12, duration: 17, delay: 2.5 },
+    { top: '16%', size: 10, duration: 15, delay: 6 },
+    { top: '40%', size: 14, duration: 19, delay: 4 },
+  ]
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden text-[#7a5a68]/50">
+      {birds.map((b, i) => (
+        <motion.div
+          key={i}
+          className="absolute left-0"
+          style={{ top: b.top }}
+          animate={{ x: ['-10%', '110%'] }}
+          transition={{ duration: b.duration, repeat: Infinity, ease: 'linear', delay: b.delay }}
+        >
+          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}>
+            <Bird size={b.size} />
+          </motion.div>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
+/** A few small constellations — 4-5 stars each linked by faint straight lines, twinkling
+ * independently — scattered among the plain star field for the night scene. */
+function Constellations() {
+  const groups = [
+    {
+      points: [
+        [8, 20],
+        [22, 12],
+        [36, 22],
+        [48, 10],
+      ],
+      top: '10%',
+      left: '6%',
+      scale: 1,
+    },
+    {
+      points: [
+        [0, 10],
+        [16, 4],
+        [26, 16],
+        [14, 26],
+      ],
+      top: '38%',
+      left: '62%',
+      scale: 0.9,
+    },
+  ]
+  return (
+    <div className="pointer-events-none absolute inset-0">
+      {groups.map((g, gi) => {
+        const w = Math.max(...g.points.map((p) => p[0])) + 10
+        const h = Math.max(...g.points.map((p) => p[1])) + 10
+        const path = g.points.map((p) => p.join(',')).join(' ')
+        return (
+          <div key={gi} className="absolute" style={{ top: g.top, left: g.left, transform: `scale(${g.scale})` }}>
+            <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none">
+              <polyline points={path} stroke="white" strokeOpacity="0.35" strokeWidth="1" />
+              {g.points.map(([x, y], pi) => (
+                <motion.circle
+                  key={pi}
+                  cx={x}
+                  cy={y}
+                  r={1.6}
+                  fill="white"
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 2.6 + (pi % 3) * 0.4, repeat: Infinity, ease: 'easeInOut', delay: pi * 0.4 + gi }}
+                />
+              ))}
+            </svg>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export function ParallaxHero({ displayName }: { displayName: string }) {
   const hour = useHour()
   const isDay = getIsDaytime(hour)
@@ -69,9 +169,12 @@ export function ParallaxHero({ displayName }: { displayName: string }) {
       onPointerLeave={handlePointerLeave}
       className={
         'relative w-full overflow-hidden rounded-3xl h-[280px] sm:h-[320px] transition-colors duration-700 ' +
+        // Recolored to the same families as the page background (rose/amber blob light,
+        // navy/plum diagonal dark) so the hero card reads as part of the page, not a separate
+        // panel dropped on top of it.
         (isDay
-          ? 'bg-[linear-gradient(160deg,#fff3e0_0%,#ffe1e6_45%,#e3d4fb_100%)]'
-          : 'bg-[linear-gradient(160deg,#191231_0%,#2a1c47_45%,#1a1230_100%)]')
+          ? 'bg-[linear-gradient(160deg,#fdf6f1_0%,#f6dfc4_40%,#eec9a8_70%,#e6b3c2_100%)]'
+          : 'bg-[linear-gradient(160deg,#131936_0%,#2c2650_45%,#5b4488_100%)]')
       }
     >
       {/* radiant sun / moon */}
@@ -128,7 +231,10 @@ export function ParallaxHero({ displayName }: { displayName: string }) {
       </div>
 
       {isDay ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white/50 to-transparent" />
+        <>
+          <BirdFlock />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white/50 to-transparent" />
+        </>
       ) : (
         <div className="pointer-events-none absolute inset-0">
           {[...Array(24)].map((_, i) => (
@@ -142,6 +248,7 @@ export function ParallaxHero({ displayName }: { displayName: string }) {
               }}
             />
           ))}
+          <Constellations />
         </div>
       )}
 
