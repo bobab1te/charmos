@@ -30,50 +30,6 @@ function CloudLayer({ depth, mx, my, className, style }: { depth: number; mx: Mo
   )
 }
 
-/** A single flat "M" gull-wing silhouette — cheap to draw many of, reads as a bird at a glance
- * without needing real wing detail at this size. */
-function Bird({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size * 0.5} viewBox="0 0 40 20" fill="none">
-      <path
-        d="M2 14C8 4 14 4 20 12C26 4 32 4 38 14"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        fill="none"
-      />
-    </svg>
-  )
-}
-
-/** Birds cross the hero left-to-right at varying heights/speeds/sizes, wings bobbing via a
- * quick vertical wiggle layered on top of the horizontal drift — day scene only. */
-function BirdFlock() {
-  const birds = [
-    { top: '22%', size: 16, duration: 13, delay: 0 },
-    { top: '34%', size: 12, duration: 17, delay: 2.5 },
-    { top: '16%', size: 10, duration: 15, delay: 6 },
-    { top: '40%', size: 14, duration: 19, delay: 4 },
-  ]
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden text-[#7a5a68]/50">
-      {birds.map((b, i) => (
-        <motion.div
-          key={i}
-          className="absolute left-0"
-          style={{ top: b.top }}
-          animate={{ x: ['-10%', '110%'] }}
-          transition={{ duration: b.duration, repeat: Infinity, ease: 'linear', delay: b.delay }}
-        >
-          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}>
-            <Bird size={b.size} />
-          </motion.div>
-        </motion.div>
-      ))}
-    </div>
-  )
-}
-
 /** A few small constellations — 4-5 stars each linked by faint straight lines, twinkling
  * independently — scattered among the plain star field for the night scene. */
 function Constellations() {
@@ -231,10 +187,7 @@ export function ParallaxHero({ displayName }: { displayName: string }) {
       </div>
 
       {isDay ? (
-        <>
-          <BirdFlock />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white/50 to-transparent" />
-        </>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white/50 to-transparent" />
       ) : (
         <div className="pointer-events-none absolute inset-0">
           {[...Array(24)].map((_, i) => (
