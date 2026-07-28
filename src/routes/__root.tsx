@@ -75,7 +75,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <div className="charm-mesh" aria-hidden="true" />
+        <div className="charm-mesh" aria-hidden="true">
+          <div className="charm-blob charm-blob-1" />
+          <div className="charm-blob charm-blob-2" />
+          <div className="charm-blob charm-blob-3" />
+          <div className="charm-blob charm-blob-4" />
+        </div>
         <div className="charm-grain" aria-hidden="true" />
         <ThemeProvider>
           <TooltipProvider delayDuration={200}>

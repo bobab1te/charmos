@@ -184,19 +184,41 @@ body {
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  /* One smooth diagonal ombre per theme (warm rose-to-amber / navy-to-plum) — replaced the
-   * earlier multi-corner pastel blob mesh, which read as too "bubbly"/childish. Approved via
-   * mockup before landing (see charmos-background-revamp-mockup). */
-  background-image: linear-gradient(
-    150deg,
-    var(--charm-ombre-light-1) 0%,
-    var(--charm-ombre-light-2) 38%,
-    var(--charm-ombre-light-3) 70%,
-    var(--charm-ombre-light-4) 100%
-  );
+  overflow: hidden;
+  /* Light mode: soft blurred blobs of the same rose/amber/plum family, gently drifting for an
+   * "abstract movement of colour" rather than a flat diagonal — approved as "Version B" (colors
+   * turned up so they read clearly, not washed out) over mockup "Version A". Dark mode is
+   * untouched — kept exactly as the flat diagonal ombre already live, per explicit request. */
+  background-color: #fdf6f1;
+}
+
+.charm-mesh .charm-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  animation: charm-mesh-drift var(--dur, 22s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+.charm-mesh .charm-blob-1 { width: 72%; height: 72%; top: -18%; right: -14%; background: #eec190; opacity: 0.85; --dur: 22s; }
+.charm-mesh .charm-blob-2 { width: 66%; height: 66%; top: 4%; left: -18%; background: #e9a8c0; opacity: 0.8; --dur: 26s; --delay: -8s; }
+.charm-mesh .charm-blob-3 { width: 50%; height: 50%; bottom: -14%; left: 26%; background: #c79fd0; opacity: 0.62; --dur: 19s; --delay: -14s; }
+.charm-mesh .charm-blob-4 { width: 36%; height: 36%; bottom: 10%; right: 14%; background: #f0d488; opacity: 0.55; --dur: 23s; --delay: -4s; }
+
+@keyframes charm-mesh-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(4%, -3%) scale(1.06); }
+  66% { transform: translate(-3%, 4%) scale(0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .charm-mesh .charm-blob {
+    animation: none;
+  }
 }
 
 .dark .charm-mesh {
+  background-color: var(--charm-ombre-dark-1);
   background-image: linear-gradient(
     165deg,
     var(--charm-ombre-dark-1) 0%,
@@ -204,6 +226,10 @@ body {
     var(--charm-ombre-dark-3) 78%,
     var(--charm-ombre-dark-4) 100%
   );
+}
+
+.dark .charm-mesh .charm-blob {
+  display: none;
 }
 
 /* subtle grain/noise texture, overlaid above the mesh */
