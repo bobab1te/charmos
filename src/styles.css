@@ -34,6 +34,16 @@
   --charm-ink: #3a2e42;
   --charm-ink-soft: #6b5b73;
 
+  /* Background ombre — warm rose-to-amber (light) / navy-to-plum (dark), see .charm-mesh */
+  --charm-ombre-light-1: #eda6bf;
+  --charm-ombre-light-2: #eeb69f;
+  --charm-ombre-light-3: #eec98d;
+  --charm-ombre-light-4: #f5deac;
+  --charm-ombre-dark-1: #131936;
+  --charm-ombre-dark-2: #2c2650;
+  --charm-ombre-dark-3: #5b4488;
+  --charm-ombre-dark-4: #9a86c9;
+
   --accent: #e8608f;
   --accent-soft: #f6a8c4;
   --accent-foreground: #fff8fb;
@@ -174,36 +184,26 @@ body {
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background-color: var(--bg-base);
-  /* Light pastel corners (same as the original), plus a second layer of deeper versions of
-   * those same hues anchored right at the four true corners (0/100 rather than the light
-   * glow's 8-12% inset) and blurred inward via their own gradient falloff — a color-matched
-   * depth accent at the edges themselves, rather than a flat dark overlay on top of everything
-   * (tried that, read as too dark - this keeps the middle light and only deepens the corners). */
-  background-image:
-    radial-gradient(42% 38% at 0% 0%, color-mix(in oklab, var(--charm-pink-deep) 55%, transparent), transparent 72%),
-    radial-gradient(46% 42% at 100% 0%, color-mix(in oklab, var(--charm-lavender-deep) 50%, transparent), transparent 72%),
-    radial-gradient(40% 38% at 100% 100%, color-mix(in oklab, var(--charm-blue-deep) 48%, transparent), transparent 72%),
-    radial-gradient(48% 44% at 0% 100%, color-mix(in oklab, var(--charm-pink-deep) 46%, transparent), transparent 72%),
-    radial-gradient(38% 32% at 8% 12%, color-mix(in oklab, var(--charm-pink) 88%, transparent), transparent),
-    radial-gradient(42% 38% at 88% 8%, color-mix(in oklab, var(--charm-lavender) 84%, transparent), transparent),
-    radial-gradient(36% 34% at 92% 62%, color-mix(in oklab, var(--charm-blue) 82%, transparent), transparent),
-    radial-gradient(44% 40% at 12% 88%, color-mix(in oklab, var(--charm-yellow) 74%, transparent), transparent),
-    radial-gradient(50% 45% at 50% 50%, color-mix(in oklab, var(--charm-pink-deep) 36%, transparent), transparent);
-  filter: saturate(1.08);
+  /* One smooth diagonal ombre per theme (warm rose-to-amber / navy-to-plum) — replaced the
+   * earlier multi-corner pastel blob mesh, which read as too "bubbly"/childish. Approved via
+   * mockup before landing (see charmos-background-revamp-mockup). */
+  background-image: linear-gradient(
+    150deg,
+    var(--charm-ombre-light-1) 0%,
+    var(--charm-ombre-light-2) 38%,
+    var(--charm-ombre-light-3) 70%,
+    var(--charm-ombre-light-4) 100%
+  );
 }
 
 .dark .charm-mesh {
-  background-image:
-    radial-gradient(42% 38% at 0% 0%, color-mix(in oklab, var(--charm-lavender-deep) 55%, black), transparent 72%),
-    radial-gradient(46% 42% at 100% 0%, color-mix(in oklab, var(--charm-pink-deep) 50%, black), transparent 72%),
-    radial-gradient(40% 38% at 100% 100%, color-mix(in oklab, var(--charm-blue-deep) 48%, black), transparent 72%),
-    radial-gradient(48% 44% at 0% 100%, color-mix(in oklab, var(--charm-pink-deep) 45%, black), transparent 72%),
-    radial-gradient(38% 32% at 8% 12%, color-mix(in oklab, var(--charm-lavender-deep) 36%, transparent), transparent),
-    radial-gradient(42% 38% at 88% 8%, color-mix(in oklab, var(--charm-pink-deep) 30%, transparent), transparent),
-    radial-gradient(36% 34% at 92% 62%, color-mix(in oklab, var(--charm-blue-deep) 28%, transparent), transparent),
-    radial-gradient(44% 40% at 12% 88%, color-mix(in oklab, var(--charm-yellow) 17%, transparent), transparent),
-    radial-gradient(50% 45% at 50% 50%, color-mix(in oklab, var(--charm-pink-deep) 16%, transparent), transparent);
+  background-image: linear-gradient(
+    165deg,
+    var(--charm-ombre-dark-1) 0%,
+    var(--charm-ombre-dark-2) 45%,
+    var(--charm-ombre-dark-3) 78%,
+    var(--charm-ombre-dark-4) 100%
+  );
 }
 
 /* subtle grain/noise texture, overlaid above the mesh */
