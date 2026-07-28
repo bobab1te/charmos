@@ -1,5 +1,5 @@
 import { addDays, subDays } from 'date-fns'
-import type { Brand, BrandDeal, IdeaPost, LedgerEntry } from './types'
+import type { Brand, BrandDeal, IdeaPost, LedgerEntry, Partnership, PartnershipDeliverableLog } from './types'
 
 const now = new Date()
 const iso = (d: Date) => d.toISOString()
@@ -11,6 +11,9 @@ export const mockBrands: Array<Brand> = [
   { id: 'brand-4', name: 'Aurora Beauty', contactName: 'Sana Iqbal', contactEmail: 'sana@aurorabeauty.com', createdAt: iso(subDays(now, 200)) },
   { id: 'brand-5', name: 'PulseFit Gear', contactName: 'Jordan Blake', contactEmail: 'jordan@pulsefitgear.com', createdAt: iso(subDays(now, 45)) },
   { id: 'brand-6', name: 'Loomi Home', contactName: 'Ken Osei', contactEmail: 'ken@loomihome.com', createdAt: iso(subDays(now, 30)) },
+  { id: 'brand-7', name: 'Verve Wellness', contactName: 'Priya Nair', contactEmail: 'partners@verve.co', createdAt: iso(subDays(now, 180)) },
+  { id: 'brand-8', name: 'Kindred Coffee Co.', contactName: 'Marcus Webb', contactEmail: 'marcus@kindredcoffee.com', createdAt: iso(subDays(now, 60)) },
+  { id: 'brand-9', name: 'Terra Naturals', contactName: 'Elena Brooks', contactEmail: 'elena@terranaturals.com', createdAt: iso(subDays(now, 18)) },
 ]
 
 export const mockDeals: Array<BrandDeal> = [
@@ -147,6 +150,55 @@ export const mockDeals: Array<BrandDeal> = [
     stageUpdatedAt: iso(subDays(now, 26)),
     archived: false,
   },
+  {
+    id: 'deal-9',
+    brandId: 'brand-9',
+    stage: 'confirmed',
+    deliverables: [
+      { id: 'del-10', type: '1 Instagram Reel', dueDate: iso(addDays(now, 9)), done: false },
+    ],
+    compensationAmount: 0,
+    compensationCurrency: 'USD',
+    compensationType: 'gifted',
+    contentRequirements: { hashtags: ['#TerraNaturals', '#gifted'], accountsToTag: ['@terranaturals'], clipsToUse: [] },
+    paid: false,
+    createdAt: iso(subDays(now, 6)),
+    stageUpdatedAt: iso(subDays(now, 2)),
+    archived: false,
+  },
+  {
+    id: 'deal-10',
+    brandId: 'brand-3',
+    stage: 'negotiating',
+    deliverables: [
+      { id: 'del-11', type: '1 TikTok video + affiliate link', dueDate: iso(addDays(now, 16)), done: false },
+    ],
+    compensationAmount: 300,
+    compensationCurrency: 'USD',
+    compensationType: 'commission',
+    notes: 'Commission-based — 15% of tracked sales via affiliate code.',
+    contentRequirements: { hashtags: ['#BrightBites', '#ad'], accountsToTag: ['@brightbitessnacks'], clipsToUse: [] },
+    paid: false,
+    createdAt: iso(subDays(now, 5)),
+    stageUpdatedAt: iso(subDays(now, 5)),
+    archived: false,
+  },
+  {
+    id: 'deal-11',
+    brandId: 'brand-1',
+    stage: 'completed',
+    deliverables: [
+      { id: 'del-12', type: '1 TikTok video', dueDate: iso(subDays(now, 8)), done: true },
+    ],
+    compensationAmount: 600,
+    compensationCurrency: 'USD',
+    compensationType: 'paid',
+    paid: false,
+    notes: 'Content is live — payment invoice sent, following up next week.',
+    createdAt: iso(subDays(now, 35)),
+    stageUpdatedAt: iso(subDays(now, 6)),
+    archived: false,
+  },
 ]
 
 export const mockIdeas: Array<IdeaPost> = [
@@ -201,12 +253,103 @@ export const mockIdeas: Array<IdeaPost> = [
     referenceLinks: [],
     createdAt: iso(subDays(now, 9)),
   },
+  {
+    id: 'idea-6',
+    title: 'Morning wellness routine, Verve edition',
+    hook: 'What my monthly Verve UGC batch actually looks like behind the scenes',
+    description: 'Series entry for the Verve retainer — filmed in one batch, posted weekly.',
+    platforms: ['instagram', 'tiktok'],
+    status: 'scheduled',
+    scheduledDate: iso(addDays(now, 4)),
+    referenceLinks: [],
+    series: 'Verve monthly batch',
+    createdAt: iso(subDays(now, 4)),
+  },
+  {
+    id: 'idea-7',
+    title: 'Coffee order ranking ft. Kindred',
+    hook: 'Ranking my go-to Kindred Coffee orders by how much they wake me up',
+    platforms: ['tiktok'],
+    status: 'idea',
+    scheduledDate: null,
+    referenceLinks: [],
+    createdAt: iso(subDays(now, 2)),
+  },
+  {
+    id: 'idea-8',
+    title: 'Unboxing the Terra Naturals gift set',
+    hook: 'First impressions, unfiltered',
+    platforms: ['instagram'],
+    status: 'filming',
+    scheduledDate: iso(addDays(now, 1)),
+    referenceLinks: [],
+    createdAt: iso(subDays(now, 3)),
+  },
+]
+
+export const mockPartnerships: Array<Partnership> = [
+  {
+    id: 'partnership-1',
+    brandId: 'brand-7',
+    startDate: iso(subDays(now, 150)),
+    paymentType: 'retainer',
+    retainerAmount: 2200,
+    retainerCadence: 'monthly',
+    currency: 'USD',
+    deliverableCount: 4,
+    deliverableUnit: 'UGC videos',
+    deliverableCadence: 'month',
+    contentFormats: ['UGC video', 'Instagram Story'],
+    notes: 'Long-term wellness retainer — renews automatically each quarter.',
+    status: 'active',
+    createdAt: iso(subDays(now, 150)),
+  },
+  {
+    id: 'partnership-2',
+    brandId: 'brand-8',
+    startDate: iso(subDays(now, 50)),
+    paymentType: 'per_deliverable',
+    perDeliverableRate: 150,
+    currency: 'USD',
+    deliverableCount: 6,
+    deliverableUnit: 'TikTok videos',
+    deliverableCadence: 'month',
+    contentFormats: ['TikTok video'],
+    notes: 'Pays per posted video, net-15.',
+    status: 'active',
+    createdAt: iso(subDays(now, 50)),
+  },
+  {
+    id: 'partnership-3',
+    brandId: 'brand-4',
+    startDate: iso(subDays(now, 200)),
+    paymentType: 'retainer',
+    retainerAmount: 1800,
+    retainerCadence: 'biweekly',
+    currency: 'USD',
+    deliverableCount: 2,
+    deliverableUnit: 'Reels',
+    deliverableCadence: 'week',
+    contentFormats: ['Instagram Reel'],
+    notes: 'Paused while Aurora reworks their Q3 campaign brief.',
+    status: 'paused',
+    pausedAt: iso(subDays(now, 10)),
+    createdAt: iso(subDays(now, 200)),
+  },
+]
+
+export const mockPartnershipDeliverables: Array<PartnershipDeliverableLog> = [
+  { id: 'pd-1', partnershipId: 'partnership-1', completedAt: iso(subDays(now, 9)) },
+  { id: 'pd-2', partnershipId: 'partnership-1', completedAt: iso(subDays(now, 3)) },
+  { id: 'pd-3', partnershipId: 'partnership-2', completedAt: iso(subDays(now, 14)) },
+  { id: 'pd-4', partnershipId: 'partnership-2', completedAt: iso(subDays(now, 7)) },
+  { id: 'pd-5', partnershipId: 'partnership-2', completedAt: iso(subDays(now, 2)) },
 ]
 
 export const mockLedger: Array<LedgerEntry> = (() => {
   const entries: Array<LedgerEntry> = []
   const monthOffsets = [5, 4, 3, 2, 1, 0]
-  const baseByMonth = [1400, 2100, 1800, 2600, 2200, 1500]
+  const baseByMonth = [1800, 2400, 2100, 3200, 3800, 4600]
   monthOffsets.forEach((offset, idx) => {
     const d = new Date(now.getFullYear(), now.getMonth() - offset, 12)
     entries.push({
@@ -226,6 +369,14 @@ export const mockLedger: Array<LedgerEntry> = (() => {
     date: iso(subDays(now, 4)),
     description: 'Editing software subscription',
   })
+  entries.push({
+    id: 'ledger-expense-2',
+    type: 'expense',
+    amount: 350,
+    currency: 'USD',
+    date: iso(subDays(now, 12)),
+    description: 'Freelance video editor',
+  })
   // completed & paid deals contribute to this month's earnings too
   entries.push({
     id: 'ledger-income-deal-7',
@@ -236,6 +387,27 @@ export const mockLedger: Array<LedgerEntry> = (() => {
     description: 'Aurora Beauty payout',
     dealId: 'deal-7',
     brandId: 'brand-4',
+  })
+  // recurring partnership payouts
+  entries.push({
+    id: 'ledger-income-partnership-1',
+    type: 'income',
+    amount: 2200,
+    currency: 'USD',
+    date: iso(subDays(now, 10)),
+    description: 'Verve Wellness retainer payout',
+    partnershipId: 'partnership-1',
+    brandId: 'brand-7',
+  })
+  entries.push({
+    id: 'ledger-income-partnership-2',
+    type: 'income',
+    amount: 450,
+    currency: 'USD',
+    date: iso(subDays(now, 6)),
+    description: 'Kindred Coffee Co. deliverable payout',
+    partnershipId: 'partnership-2',
+    brandId: 'brand-8',
   })
   return entries
 })()

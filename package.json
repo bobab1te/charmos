@@ -11,7 +11,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "seed-demo": "tsx scripts/seed-demo-data.ts"
+    "seed-demo": "tsx scripts/seed-demo-data.ts",
+    "unseed-demo": "tsx scripts/unseed-demo-data.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

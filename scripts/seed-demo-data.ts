@@ -11,7 +11,7 @@
 // env var and this script only ever runs locally via Node.
 
 import { createClient } from '@supabase/supabase-js'
-import { mockBrands, mockDeals, mockIdeas, mockLedger } from '../src/lib/mock-data'
+import { mockBrands, mockDeals, mockIdeas, mockLedger, mockPartnerships, mockPartnershipDeliverables } from '../src/lib/mock-data'
 import type { Database } from '../src/lib/supabase/database.types'
 
 const userId = process.argv[2] ?? process.env.SEED_USER_ID
@@ -79,6 +79,50 @@ async function main() {
     dealIdByMockId.set(deal.id, data.id)
   }
 
+  const partnershipIdByMockId = new Map<string, string>()
+
+  for (const partnership of mockPartnerships) {
+    const brandId = brandIdByMockId.get(partnership.brandId)
+    if (!brandId) throw new Error(`No inserted brand found for mock brandId "${partnership.brandId}"`)
+    const { data, error } = await supabase
+      .from('partnerships')
+      .insert({
+        user_id: userId!,
+        brand_id: brandId,
+        start_date: partnership.startDate,
+        end_date: partnership.endDate ?? null,
+        payment_type: partnership.paymentType,
+        retainer_amount: partnership.retainerAmount ?? null,
+        retainer_cadence: partnership.retainerCadence ?? null,
+        per_deliverable_rate: partnership.perDeliverableRate ?? null,
+        currency: partnership.currency,
+        deliverable_count: partnership.deliverableCount,
+        deliverable_unit: partnership.deliverableUnit,
+        deliverable_cadence: partnership.deliverableCadence,
+        content_formats: partnership.contentFormats,
+        notes: partnership.notes ?? null,
+        status: partnership.status,
+        paused_at: partnership.pausedAt ?? null,
+        unpaused_at: partnership.unpausedAt ?? null,
+        created_at: partnership.createdAt,
+      })
+      .select('id')
+      .single()
+    if (error || !data) throw new Error(`Failed to insert partnership for brandId "${partnership.brandId}": ${error?.message}`)
+    partnershipIdByMockId.set(partnership.id, data.id)
+  }
+
+  for (const log of mockPartnershipDeliverables) {
+    const partnershipId = partnershipIdByMockId.get(log.partnershipId)
+    if (!partnershipId) throw new Error(`No inserted partnership found for mock partnershipId "${log.partnershipId}"`)
+    const { error } = await supabase.from('partnership_deliverables').insert({
+      user_id: userId!,
+      partnership_id: partnershipId,
+      completed_at: log.completedAt,
+    })
+    if (error) throw new Error(`Failed to insert partnership deliverable log: ${error.message}`)
+  }
+
   for (const idea of mockIdeas) {
     const { error } = await supabase.from('ideas').insert({
       user_id: userId!,
@@ -104,12 +148,13 @@ async function main() {
       description: entry.description,
       deal_id: entry.dealId ? (dealIdByMockId.get(entry.dealId) ?? null) : null,
       brand_id: entry.brandId ? (brandIdByMockId.get(entry.brandId) ?? null) : null,
+      partnership_id: entry.partnershipId ? (partnershipIdByMockId.get(entry.partnershipId) ?? null) : null,
     })
     if (error) throw new Error(`Failed to insert ledger entry "${entry.description}": ${error.message}`)
   }
 
   console.log(
-    `Seeded ${mockBrands.length} brands, ${mockDeals.length} deals, ${mockIdeas.length} ideas, ${mockLedger.length} ledger entries for user ${userId}.`,
+    `Seeded ${mockBrands.length} brands, ${mockDeals.length} deals, ${mockPartnerships.length} partnerships, ${mockIdeas.length} ideas, ${mockLedger.length} ledger entries for user ${userId}.`,
   )
 }
 
