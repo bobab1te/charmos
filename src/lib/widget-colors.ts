@@ -33,20 +33,21 @@ export const WIDGET_COLOR_PALETTE_LIGHT: Array<WidgetColorSwatch> = [
 /**
  * Dark-mode palette — a completely separate cool set (purples, navy/blues, a couple deeper
  * greens) rather than a re-shaded version of the light palette, since the light palette moved
- * warm and no longer suits the dark navy/plum background. Lighter swatches (periwinkle, lilac,
- * amethyst, dusty blue, sage) pair with dark ink same as before; the deeper jewel-toned ones
- * (slate, midnight, forest) pair with white instead — verified via the same color-mix + contrast
- * replication against --surface-strong composited over the dark ombre, all comfortably above
- * 4.5:1 (worst case amethyst at 5.08:1, most at 5.7–10.1:1).
+ * warm and no longer suits the dark navy/plum background. All 8 swatches use white text now
+ * (previously periwinkle/lilac/amethyst/dusty-blue/sage paired with dark ink) — those 5 were
+ * darkened enough to keep white legible (4.6–4.8:1, small but real margin over the 4.5:1 AA
+ * minimum) rather than just switching the text color on the original lighter values, which
+ * would have failed contrast. Slate/midnight/forest were already dark enough (5.3–10.1:1) and
+ * unchanged.
  */
 export const WIDGET_COLOR_PALETTE_DARK: Array<WidgetColorSwatch> = [
-  { id: 'periwinkle', label: 'Periwinkle', value: '#b9c4e8', textColor: '#1a1220' },
-  { id: 'lilac', label: 'Lilac', value: '#d3c2e8', textColor: '#1a1220' },
-  { id: 'amethyst', label: 'Amethyst', value: '#b89bd9', textColor: '#1a1220' },
-  { id: 'dusty-blue', label: 'Dusty Blue', value: '#a3b3dd', textColor: '#1a1220' },
+  { id: 'periwinkle', label: 'Periwinkle', value: '#858da7', textColor: '#ffffff' },
+  { id: 'lilac', label: 'Lilac', value: '#9488a2', textColor: '#ffffff' },
+  { id: 'amethyst', label: 'Amethyst', value: '#9e85bb', textColor: '#ffffff' },
+  { id: 'dusty-blue', label: 'Dusty Blue', value: '#828fb1', textColor: '#ffffff' },
   { id: 'slate', label: 'Slate', value: '#6f84ad', textColor: '#ffffff' },
   { id: 'midnight', label: 'Midnight', value: '#3d4a7a', textColor: '#ffffff' },
-  { id: 'sage', label: 'Sage', value: '#8fa88f', textColor: '#1a1220' },
+  { id: 'sage', label: 'Sage', value: '#7e947e', textColor: '#ffffff' },
   { id: 'forest', label: 'Forest', value: '#4f6b52', textColor: '#ffffff' },
 ]
 
