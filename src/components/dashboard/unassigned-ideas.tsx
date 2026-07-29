@@ -5,6 +5,7 @@ import { Link } from '@tanstack/react-router'
 import { ArrowUpRight, Lightbulb, Plus } from 'lucide-react'
 import { WidgetCard } from '#/components/charm/widget-card'
 import { useCharmStore } from '#/lib/charm-store'
+import { useThemeContext } from '#/lib/theme-context'
 import { cn } from '#/lib/utils'
 import { defaultCardColor, glassBackground, resolveTextColor } from '#/lib/widget-colors'
 
@@ -12,6 +13,7 @@ const NOTE_TILTS = ['-rotate-2', 'rotate-1', '-rotate-1']
 
 export function UnassignedIdeas({ onHide }: { onHide: () => void }) {
   const { ideas, addIdea } = useCharmStore()
+  const { theme } = useThemeContext()
   const [adding, setAdding] = useState(false)
   const [draft, setDraft] = useState('')
 
@@ -72,7 +74,7 @@ export function UnassignedIdeas({ onHide }: { onHide: () => void }) {
         ) : (
           <AnimatePresence initial={false}>
             {unassigned.map((idea, i) => {
-              const color = idea.color ?? defaultCardColor(idea.id)
+              const color = idea.color ?? defaultCardColor(idea.id, theme)
               const textColor = resolveTextColor(color)
               const softTextColor = textColor === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(26,18,32,0.65)'
               return (

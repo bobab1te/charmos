@@ -9,6 +9,7 @@ import { ScrapbookCalendar } from '#/components/scrapbook/scrapbook-calendar'
 import { DraggableIdeaCard, IdeaCardContent } from '#/components/scrapbook/idea-card'
 import { IdeaDetailModal } from '#/components/scrapbook/idea-detail-modal'
 import { useCharmStore } from '#/lib/charm-store'
+import { useThemeContext } from '#/lib/theme-context'
 import { dateOnlyToISOString } from '#/lib/date-only'
 import { cn } from '#/lib/utils'
 import { defaultCardColor, glassBackground, resolveTextColor } from '#/lib/widget-colors'
@@ -58,6 +59,7 @@ function UnscheduledList({
 
 function ScrapbookPage() {
   const { ideas, addIdea, assignIdeaDate, unassignIdeaDate } = useCharmStore()
+  const { theme } = useThemeContext()
   const [interactive, setInteractive] = useState(false)
   const [activeIdea, setActiveIdea] = useState<IdeaPost | null>(null)
   const [openIdeaId, setOpenIdeaId] = useState<string | null>(null)
@@ -157,7 +159,7 @@ function ScrapbookPage() {
           <DragOverlay>
             {activeIdea
               ? (() => {
-                  const color = activeIdea.color ?? defaultCardColor(activeIdea.id)
+                  const color = activeIdea.color ?? defaultCardColor(activeIdea.id, theme)
                   return (
                     <div
                       className="charm-glass w-56 rounded-xl"

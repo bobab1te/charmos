@@ -23,6 +23,7 @@ import { BrandAvatar } from '#/components/deals/brand-avatar'
 import { GiftedLabel, isGiftedAmount } from '#/components/deals/gifted-label'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
+import { useThemeContext } from '#/lib/theme-context'
 import { isDealUnpaidAlert, nextDeliverable, urgencyForDate } from '#/lib/derived'
 import { readDraft, writeDraft } from '#/lib/form-draft'
 import { cn } from '#/lib/utils'
@@ -123,8 +124,9 @@ function DealCardInner({
   onNotesChange?: (dealId: string, notes: string) => void
 }) {
   const { brandById } = useCharmStore()
+  const { theme } = useThemeContext()
   const next = nextDeliverable(deal)
-  const color = deal.color ?? defaultCardColor(deal.id)
+  const color = deal.color ?? defaultCardColor(deal.id, theme)
   const textColor = resolveTextColor(color)
   const softTextColor = textColor === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(26,18,32,0.65)'
   const isUnpaid = isDealUnpaidAlert(deal)

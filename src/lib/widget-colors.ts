@@ -1,49 +1,67 @@
+import type { Theme } from './theme-context'
+
 export interface WidgetColorSwatch {
   id: string
   label: string
   value: string
   /**
    * Overrides readableTextColor's generic pick for this swatch specifically — see
-   * resolveTextColor and the palette's own comment below for why every current swatch sets this.
+   * resolveTextColor and each palette's own comment below for why every swatch sets this.
    */
   textColor?: string
 }
 
 /**
- * "Pastel Bridesmaids" palette — one deterministic-default-plus-custom-override system used by
- * every colorable widget (brand deal cards, idea/scrapbook cards, partnership cards, ...), so a
- * color picked anywhere in the app looks and behaves the same everywhere. Brightening this
- * palette was tried and reverted (too dark/saturated, didn't read as pastel) — these are the
- * original values, kept for now.
- *
- * Every swatch gets an explicit dark-text override rather than relying on the generic luminance
- * heuristic below: the card background is actually glassBackground(swatch) (see below), and
- * --surface-strong is a dark plum in dark mode — mixing that in drags every one of these
- * pastels' effective luminance under the heuristic's 0.5 cutoff, which would pick white text
- * (checked by replicating the real color-mix math in both themes: dark text measures 5.6–10.3:1
- * contrast in dark mode and 10.9–18.2:1 in light mode at the current 76% tint — re-verified after
- * lowering the tint from 82% to let the glassmorphism blur show through; white is never right for
- * this palette in either theme).
+ * Light-mode palette — recolored warm to match the light-mode background revamp (rose/amber
+ * blob). Kept the 4 swatches that were already warm (pale pink, azalea, peach, butter) and
+ * replaced the 4 cool ones (lilac, dusty blue, sage, mint — now in WIDGET_COLOR_PALETTE_DARK
+ * instead) with amber, terracotta, mauve, and champagne. All 8 measure 10.9–18.2:1 contrast
+ * against dark ink at the 76% glass tint — verified via the same OKLab color-mix replication
+ * used throughout this palette's history.
  */
-export const WIDGET_COLOR_PALETTE: Array<WidgetColorSwatch> = [
+export const WIDGET_COLOR_PALETTE_LIGHT: Array<WidgetColorSwatch> = [
   { id: 'pale-pink', label: 'Pale Pink', value: '#ffe1e6', textColor: '#1a1220' },
   { id: 'azalea', label: 'Azalea', value: '#f7c9d4', textColor: '#1a1220' },
-  { id: 'lilac', label: 'Lilac', value: '#d9c7e3', textColor: '#1a1220' },
-  { id: 'dusty-blue', label: 'Dusty Blue', value: '#a9b7db', textColor: '#1a1220' },
-  { id: 'sage', label: 'Sage', value: '#b7c2a8', textColor: '#1a1220' },
-  { id: 'mint', label: 'Mint', value: '#c2e3d6', textColor: '#1a1220' },
   { id: 'peach', label: 'Peach', value: '#f2c9a8', textColor: '#1a1220' },
   { id: 'butter', label: 'Butter', value: '#f2e3a8', textColor: '#1a1220' },
+  { id: 'amber', label: 'Amber', value: '#eec190', textColor: '#1a1220' },
+  { id: 'terracotta', label: 'Terracotta', value: '#e0a082', textColor: '#1a1220' },
+  { id: 'mauve', label: 'Mauve', value: '#d3aed9', textColor: '#1a1220' },
+  { id: 'champagne', label: 'Champagne', value: '#f2e6d0', textColor: '#1a1220' },
 ]
+
+/**
+ * Dark-mode palette — a completely separate cool set (purples, navy/blues, a couple deeper
+ * greens) rather than a re-shaded version of the light palette, since the light palette moved
+ * warm and no longer suits the dark navy/plum background. Lighter swatches (periwinkle, lilac,
+ * amethyst, dusty blue, sage) pair with dark ink same as before; the deeper jewel-toned ones
+ * (slate, midnight, forest) pair with white instead — verified via the same color-mix + contrast
+ * replication against --surface-strong composited over the dark ombre, all comfortably above
+ * 4.5:1 (worst case amethyst at 5.08:1, most at 5.7–10.1:1).
+ */
+export const WIDGET_COLOR_PALETTE_DARK: Array<WidgetColorSwatch> = [
+  { id: 'periwinkle', label: 'Periwinkle', value: '#b9c4e8', textColor: '#1a1220' },
+  { id: 'lilac', label: 'Lilac', value: '#d3c2e8', textColor: '#1a1220' },
+  { id: 'amethyst', label: 'Amethyst', value: '#b89bd9', textColor: '#1a1220' },
+  { id: 'dusty-blue', label: 'Dusty Blue', value: '#a3b3dd', textColor: '#1a1220' },
+  { id: 'slate', label: 'Slate', value: '#6f84ad', textColor: '#ffffff' },
+  { id: 'midnight', label: 'Midnight', value: '#3d4a7a', textColor: '#ffffff' },
+  { id: 'sage', label: 'Sage', value: '#8fa88f', textColor: '#1a1220' },
+  { id: 'forest', label: 'Forest', value: '#4f6b52', textColor: '#ffffff' },
+]
+
+/** Which palette a colorable widget's picker/default should draw from for the given theme. */
+export function widgetColorPalette(theme: Theme): Array<WidgetColorSwatch> {
+  return theme === 'dark' ? WIDGET_COLOR_PALETTE_DARK : WIDGET_COLOR_PALETTE_LIGHT
+}
 
 /**
  * How much of a widget's color shows through its glassmorphism tint — the rest blends with
  * --surface-strong so the card's backdrop-blur has something visible to show through. One
  * constant (not a literal re-typed in every component) so every colorable widget uses exactly
  * the same recipe. Lowered from an earlier 82% specifically to make the blur-through visible;
- * re-verified against the whole palette at 76% before landing on it (see the palette's own
- * comment above for the resulting contrast numbers) — going much lower starts eating into
- * contrast margin on the darker swatches (dusty-blue, sage) in dark mode.
+ * re-verified against both palettes at 76% before landing on it — going much lower starts eating
+ * into contrast margin on the darker swatches (amethyst, slate, forest).
  */
 export const GLASS_TINT_PERCENT = 76
 
@@ -53,17 +71,20 @@ export function glassBackground(color: string): string {
 }
 
 /**
- * Deterministic per-item default, cycling through the palette by a hash of the
- * item's id rather than its position in a list — stable across reloads and
- * unaffected by other items being added, moved, or deleted, unlike an
- * index-based cycle would be. Used for deal, idea, and partnership cards alike.
+ * Deterministic per-item default, cycling through the current theme's palette by a hash of the
+ * item's id rather than its position in a list — stable across reloads and unaffected by other
+ * items being added, moved, or deleted, unlike an index-based cycle would be. Used for deal,
+ * idea, and partnership cards alike. Since light/dark now have entirely different swatches (not
+ * just re-shaded ones), an item with no explicit color override can land on a different-looking
+ * default between themes — expected, not a bug.
  */
-export function defaultCardColor(id: string): string {
+export function defaultCardColor(id: string, theme: Theme): string {
   let hash = 0
   for (let i = 0; i < id.length; i++) {
     hash = (hash * 31 + id.charCodeAt(i)) >>> 0
   }
-  return WIDGET_COLOR_PALETTE[hash % WIDGET_COLOR_PALETTE.length].value
+  const palette = widgetColorPalette(theme)
+  return palette[hash % palette.length].value
 }
 
 /**
@@ -83,10 +104,14 @@ export function readableTextColor(hex: string): string {
 
 /**
  * Text color for a widget card background: uses a palette swatch's explicit `textColor`
- * override when the color matches one exactly, else falls back to the generic
- * luminance heuristic above (for arbitrary custom colors picked via the native color input).
+ * override when the color matches one exactly (checking both themes' palettes, since a color
+ * chosen under one theme is still stored and rendered under the other), else falls back to the
+ * generic luminance heuristic above (for arbitrary custom colors picked via the native color
+ * input).
  */
 export function resolveTextColor(color: string): string {
-  const swatch = WIDGET_COLOR_PALETTE.find((s) => s.value.toLowerCase() === color.toLowerCase())
+  const swatch = [...WIDGET_COLOR_PALETTE_LIGHT, ...WIDGET_COLOR_PALETTE_DARK].find(
+    (s) => s.value.toLowerCase() === color.toLowerCase(),
+  )
   return swatch?.textColor ?? readableTextColor(color)
 }

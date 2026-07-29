@@ -1,5 +1,6 @@
 import { Popover, PopoverContent, PopoverTrigger } from '#/components/ui/popover'
-import { WIDGET_COLOR_PALETTE } from '#/lib/widget-colors'
+import { widgetColorPalette } from '#/lib/widget-colors'
+import { useThemeContext } from '#/lib/theme-context'
 
 /**
  * Shared color-override picker for any colorable widget card (deal, idea, partnership, ...) —
@@ -18,6 +19,8 @@ export function WidgetColorPicker({
   onChange: (color: string | null) => void
   label?: string
 }) {
+  const { theme } = useThemeContext()
+  const palette = widgetColorPalette(theme)
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -37,7 +40,7 @@ export function WidgetColorPicker({
         className="w-auto p-3"
       >
         <div className="flex flex-wrap gap-2">
-          {WIDGET_COLOR_PALETTE.map((swatch) => (
+          {palette.map((swatch) => (
             <button
               key={swatch.id}
               type="button"

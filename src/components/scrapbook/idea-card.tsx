@@ -3,6 +3,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Repeat2 } from 'lucide-react'
 import { WidgetColorPicker } from '#/components/charm/widget-color-picker'
 import { useCharmStore } from '#/lib/charm-store'
+import { useThemeContext } from '#/lib/theme-context'
 import { cn } from '#/lib/utils'
 import { defaultCardColor, glassBackground, resolveTextColor } from '#/lib/widget-colors'
 import type { IdeaPost } from '#/lib/types'
@@ -20,7 +21,8 @@ export function IdeaCardContent({
   softTextColor?: string
   onColorChange?: (color: string | null) => void
 }) {
-  const color = idea.color ?? defaultCardColor(idea.id)
+  const { theme } = useThemeContext()
+  const color = idea.color ?? defaultCardColor(idea.id, theme)
   return (
     <div className={cn('flex flex-col gap-1', compact ? 'p-1.5' : 'p-3')}>
       <div className="flex items-start justify-between gap-2">
@@ -58,8 +60,9 @@ interface DraggableIdeaCardProps {
 
 export function DraggableIdeaCard({ idea, onOpen, compact, rotateClass }: DraggableIdeaCardProps) {
   const { updateIdeaColor } = useCharmStore()
+  const { theme } = useThemeContext()
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: idea.id })
-  const color = idea.color ?? defaultCardColor(idea.id)
+  const color = idea.color ?? defaultCardColor(idea.id, theme)
   const textColor = resolveTextColor(color)
   const softTextColor = textColor === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(26,18,32,0.65)'
 
