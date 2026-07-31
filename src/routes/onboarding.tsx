@@ -1,6 +1,7 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
+import { CharmMascot } from '#/components/charm/charm-mascot'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { Button } from '#/components/ui/button'
@@ -105,6 +106,9 @@ function OnboardingPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
       <div className="charm-glass w-full max-w-lg rounded-3xl p-8">
+        <div className="mb-4 flex justify-center">
+          <CharmMascot mood={submitting ? 'bright' : 'calm'} size={56} />
+        </div>
         <div className="mb-6 flex items-center justify-center gap-1.5">
           {STEPS.map((s, i) => (
             <span

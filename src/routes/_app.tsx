@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect, useLocation } from '@tanstack/react-
 import { useEffect } from 'react'
 import { DecorativeShapes } from '#/components/charm/decorative-shapes'
 import type { PageKey } from '#/components/charm/decorative-shapes'
+import { DashboardAtmosphere } from '#/components/charm/dashboard-atmosphere'
 import { SidebarNav } from '#/components/charm/sidebar-nav'
 import { getCurrentUserAndProfile } from '#/server/auth'
 import { useThemeContext } from '#/lib/theme-context'
@@ -47,6 +48,7 @@ function AppLayout() {
       <div className="flex min-h-screen">
         <SidebarNav profile={profile} avatarUrl={user.avatarUrl} />
         <div className="relative min-h-screen flex-1 overflow-x-hidden">
+          {pageKeyForPath(pathname) === 'dashboard' && <DashboardAtmosphere />}
           <DecorativeShapes page={pageKeyForPath(pathname)} />
           <Outlet />
         </div>

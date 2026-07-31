@@ -1,6 +1,6 @@
 import { Settings } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,13 +26,14 @@ export function WidgetCard({
   children,
   headerAction,
 }: WidgetCardProps) {
+  const prefersReducedMotion = useReducedMotion()
   return (
     <motion.section
-      layout
-      initial={{ opacity: 0, y: 14 }}
+      layout={!prefersReducedMotion}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8, scale: 0.98 }}
-      transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+      exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.98 }}
+      transition={prefersReducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 260, damping: 26 }}
       className={cn(
         'charm-glass relative flex h-full flex-col rounded-2xl p-5 transition-shadow duration-150 ease-out hover:shadow-lg',
         className,

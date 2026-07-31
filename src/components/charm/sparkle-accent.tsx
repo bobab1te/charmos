@@ -20,3 +20,26 @@ export function SparkleAccent({ className }: { className?: string }) {
     </motion.span>
   )
 }
+
+/**
+ * A single one-shot sparkle for a discrete success moment (e.g. a deal reaching Completed) —
+ * appears, glows, disappears once. Deliberately much smaller than a reactive sparkle field: no
+ * proximity tracking, no repeat, just one ~0.8s keyframe. The parent is expected to mount this
+ * conditionally and un-mount it itself after the moment has played (see deal-pipeline.tsx) rather
+ * than this component tracking its own lifetime.
+ */
+export function SparkleBurst({ className }: { className?: string }) {
+  const prefersReducedMotion = useReducedMotion()
+  if (prefersReducedMotion) return null
+
+  return (
+    <motion.span
+      className={cn('pointer-events-none inline-flex text-[var(--accent)]', className)}
+      initial={{ opacity: 0, scale: 0.6 }}
+      animate={{ opacity: [0, 1, 0], scale: [0.6, 1.3, 1] }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+    >
+      <Sparkles className="size-5" />
+    </motion.span>
+  )
+}

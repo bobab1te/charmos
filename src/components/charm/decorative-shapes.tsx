@@ -4,8 +4,9 @@
 // see charmos-background-revamp-mockup. CloudShape/FlowerShape stay exported since
 // login-decor.tsx still uses them for the sign-up page's own decoration.
 import { motion, useReducedMotion } from 'motion/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { CSSProperties } from 'react'
+import { useAllowAmbientMotion } from '#/lib/use-ambient-motion'
 
 /** Each authenticated page gets its own fixed (not randomized) arrangement — see PAGE_CONFIGS. */
 export type PageKey = 'dashboard' | 'pipeline' | 'scrapbook' | 'finances' | 'settings' | 'analytics' | 'default'
@@ -232,19 +233,6 @@ export function FlowerShape({ size, color }: { size: number; color: string }) {
       <circle cx={cx} cy={cy} r={centerR} fill={color} {...GLASS_EDGE} />
     </svg>
   )
-}
-
-/** Ambient drift only kicks in at `lg`+ — cheap on desktop, skipped on mobile/tablet where compositor headroom is tighter and the shapes are less likely to be the point of focus anyway. */
-function useAllowAmbientMotion() {
-  const [allowed, setAllowed] = useState(false)
-  useEffect(() => {
-    const query = window.matchMedia('(min-width: 1024px)')
-    setAllowed(query.matches)
-    const handler = (e: MediaQueryListEvent) => setAllowed(e.matches)
-    query.addEventListener('change', handler)
-    return () => query.removeEventListener('change', handler)
-  }, [])
-  return allowed
 }
 
 export function DecorativeShapes({ page = 'default' }: { page?: PageKey }) {

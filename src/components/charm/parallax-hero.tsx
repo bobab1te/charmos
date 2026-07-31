@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
-import { motion, useMotionValue, useSpring, useTransform } from 'motion/react'
+import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'motion/react'
 import type { MotionValue } from 'motion/react'
+import { CharmMascot } from '#/components/charm/charm-mascot'
+import { useCharmMoment } from '#/lib/charm-moments'
+import { useCharmStore } from '#/lib/charm-store'
+import { useCurrency } from '#/lib/currency-context'
+import { computeMetrics } from '#/lib/derived'
 
 function getIsDaytime(hour: number) {
   return hour >= 6 && hour < 21
@@ -89,6 +94,7 @@ function Constellations() {
 export function ParallaxHero({ displayName }: { displayName: string }) {
   const hour = useHour()
   const isDay = getIsDaytime(hour)
+  const prefersReducedMotion = useReducedMotion()
 
   const mx = useMotionValue(0)
   const my = useMotionValue(0)
@@ -99,6 +105,7 @@ export function ParallaxHero({ displayName }: { displayName: string }) {
   const orbY = useTransform(springY, (v) => v * 0.7)
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (prefersReducedMotion) return
     const rect = e.currentTarget.getBoundingClientRect()
     const relX = (e.clientX - rect.left) / rect.width - 0.5
     const relY = (e.clientY - rect.top) / rect.height - 0.5
@@ -110,6 +117,16 @@ export function ParallaxHero({ displayName }: { displayName: string }) {
     mx.set(0)
     my.set(0)
   }
+
+  // The dashboard mascot's mood is derived from real numbers the user already sees on the
+  // metric card, not decorative — 'overwhelmed' here reads as "concerned about overdue
+  // follow-ups", not literally overwhelmed. Briefly turns 'bright' right after a deal is
+  // dragged to Completed (see deal-pipeline.tsx's fireMoment('deal-completed')).
+  const { activeMoment } = useCharmMoment()
+  const { deals, ledger } = useCharmStore()
+  const { convert } = useCurrency()
+  const metrics = computeMetrics(deals, ledger, convert)
+  const mascotMood = activeMoment === 'deal-completed' ? 'bright' : metrics.needsFollowUp >= 3 ? 'overwhelmed' : 'calm'
 
   const greeting = isDay
     ? hour < 12
@@ -164,21 +181,21 @@ export function ParallaxHero({ displayName }: { displayName: string }) {
       {/* drifting cloud layers, parallax depth via cursor + gentle ambient drift */}
       <div className={isDay ? 'text-white/70' : 'text-white/10'}>
         <motion.div
-          animate={{ x: [0, 14, 0] }}
+          animate={prefersReducedMotion ? undefined : { x: [0, 14, 0] }}
           transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute -left-6 bottom-6"
         >
           <CloudLayer depth={0.6} mx={mx} my={my} />
         </motion.div>
         <motion.div
-          animate={{ x: [0, -18, 0] }}
+          animate={prefersReducedMotion ? undefined : { x: [0, -18, 0] }}
           transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute right-2 bottom-2 scale-90 opacity-80"
         >
           <CloudLayer depth={0.35} mx={mx} my={my} />
         </motion.div>
         <motion.div
-          animate={{ x: [0, 10, 0] }}
+          animate={prefersReducedMotion ? undefined : { x: [0, 10, 0] }}
           transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute left-1/3 bottom-0 scale-75 opacity-60"
         >
@@ -205,25 +222,28 @@ export function ParallaxHero({ displayName }: { displayName: string }) {
         </div>
       )}
 
-      <div className="relative z-10 flex h-full flex-col justify-end p-6 sm:p-9">
-        <span
-          className={
-            'mb-2 w-fit rounded-full px-3 py-1 text-xs font-semibold tracking-wide backdrop-blur-md ' +
-            (isDay ? 'bg-white/50 text-[#5a3a4a]' : 'bg-white/10 text-white/80')
-          }
-        >
-          ✦ CharmOS
-        </span>
-        <h1
-          className={
-            'font-display-bold text-3xl font-semibold sm:text-4xl ' + (isDay ? 'text-[#3a2e42]' : 'text-white')
-          }
-        >
-          {greeting}, {displayName}.
-        </h1>
-        <p className={'mt-1 text-sm sm:text-base ' + (isDay ? 'text-[#6b5b73]' : 'text-white/70')}>
-          Here's how your brand partnerships are looking today.
-        </p>
+      <div className="relative z-10 flex h-full items-end gap-4 p-6 sm:p-9">
+        <CharmMascot mood={mascotMood} lookAtCursor className="hidden shrink-0 sm:block" />
+        <div className="flex flex-1 flex-col justify-end">
+          <span
+            className={
+              'mb-2 w-fit rounded-full px-3 py-1 text-xs font-semibold tracking-wide backdrop-blur-md ' +
+              (isDay ? 'bg-white/50 text-[#5a3a4a]' : 'bg-white/10 text-white/80')
+            }
+          >
+            ✦ CharmOS
+          </span>
+          <h1
+            className={
+              'font-display-bold text-3xl font-semibold sm:text-4xl ' + (isDay ? 'text-[#3a2e42]' : 'text-white')
+            }
+          >
+            {greeting}, {displayName}.
+          </h1>
+          <p className={'mt-1 text-sm sm:text-base ' + (isDay ? 'text-[#6b5b73]' : 'text-white/70')}>
+            Here's how your brand partnerships are looking today.
+          </p>
+        </div>
       </div>
     </div>
   )

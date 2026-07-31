@@ -1,5 +1,6 @@
 import { format } from 'date-fns'
 import { CalendarDays } from 'lucide-react'
+import { CharmMascot } from '#/components/charm/charm-mascot'
 import { WidgetCard } from '#/components/charm/widget-card'
 import { useCharmStore } from '#/lib/charm-store'
 import { getUpcomingDeadlines } from '#/lib/derived'
@@ -18,7 +19,10 @@ export function UpcomingDeadlines({ onHide }: { onHide: () => void }) {
   return (
     <WidgetCard title="Upcoming Deadlines" icon={<CalendarDays className="size-4" />} onHide={onHide}>
       {deadlines.length === 0 ? (
-        <p className="text-sm text-[var(--charm-ink-soft)]">No upcoming deadlines. Enjoy the breathing room.</p>
+        <div className="flex items-center gap-3 py-1">
+          <CharmMascot mood="calm" size={40} />
+          <p className="text-sm text-[var(--charm-ink-soft)]">Nothing due. Enjoy the breathing room.</p>
+        </div>
       ) : (
         <ul className="flex flex-col gap-1">
           {deadlines.map((d) => (

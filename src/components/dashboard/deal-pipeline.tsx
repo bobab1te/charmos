@@ -21,6 +21,8 @@ import { DealModal } from '#/components/deals/deal-modal'
 import { BulkImportModal } from '#/components/deals/bulk-import-modal'
 import { BrandAvatar } from '#/components/deals/brand-avatar'
 import { GiftedLabel, isGiftedAmount } from '#/components/deals/gifted-label'
+import { SparkleBurst } from '#/components/charm/sparkle-accent'
+import { useCharmMoment } from '#/lib/charm-moments'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
 import { useThemeContext } from '#/lib/theme-context'
@@ -255,6 +257,7 @@ function DroppableColumn({
   onOpen,
   onColorChange,
   onNotesChange,
+  showCompletionSparkle,
 }: {
   id: DealStage
   label: string
@@ -263,6 +266,9 @@ function DroppableColumn({
   onOpen: (dealId: string) => void
   onColorChange: (dealId: string, color: string | null) => void
   onNotesChange: (dealId: string, notes: string) => void
+  /** One-shot sparkle next to the label right after a deal lands here via drag — see
+   * handleDragEnd's fireMoment('deal-completed'). */
+  showCompletionSparkle?: boolean
 }) {
   const { setNodeRef, isOver } = useDroppable({ id })
 
@@ -275,7 +281,10 @@ function DroppableColumn({
       )}
     >
       <div className="flex items-center justify-between px-1">
-        <span className="text-xs font-semibold uppercase tracking-wide text-[var(--charm-ink-soft)]">{label}</span>
+        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--charm-ink-soft)]">
+          {label}
+          {showCompletionSparkle && <SparkleBurst />}
+        </span>
         <span className="rounded-full bg-white/50 px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
           {deals.length}
         </span>
@@ -326,8 +335,11 @@ export function DealPipeline({
   initialOpenDealId,
 }: { onHide?: () => void; onlyUnpaid?: boolean; initialOpenDealId?: string } = {}) {
   const { deals, brandById, moveDeal, updateDealColor, updateDealNotes } = useCharmStore()
+  const { fireMoment } = useCharmMoment()
   const [activeDeal, setActiveDeal] = useState<BrandDeal | null>(null)
   const [interactive, setInteractive] = useState(false)
+  // Drives a one-shot sparkle next to the Completed column header — see handleDragEnd.
+  const [justCompleted, setJustCompleted] = useState(false)
   // Persisted (not plain useState) so the "New Deal"/"Edit Deal" modal stays open across a full
   // unmount — navigating to another section and back, or a browser tab switch — instead of just
   // silently disappearing along with whatever the user had typed into it.
@@ -393,6 +405,11 @@ export function DealPipeline({
     const deal = deals.find((d) => d.id === active.id)
     if (deal && deal.stage !== targetStage) {
       moveDeal(deal.id, targetStage)
+      if (targetStage === 'completed') {
+        fireMoment('deal-completed')
+        setJustCompleted(true)
+        window.setTimeout(() => setJustCompleted(false), 900)
+      }
     }
   }
 
@@ -445,6 +462,7 @@ export function DealPipeline({
               onOpen={openDeal}
               onColorChange={updateDealColor}
               onNotesChange={updateDealNotes}
+              showCompletionSparkle={col.id === 'completed' && justCompleted}
             />
           ) : (
             <StaticColumn

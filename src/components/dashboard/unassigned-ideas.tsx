@@ -3,6 +3,7 @@ import type { KeyboardEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Link } from '@tanstack/react-router'
 import { ArrowUpRight, Lightbulb, Plus } from 'lucide-react'
+import { CharmMascot } from '#/components/charm/charm-mascot'
 import { WidgetCard } from '#/components/charm/widget-card'
 import { useCharmStore } from '#/lib/charm-store'
 import { useThemeContext } from '#/lib/theme-context'
@@ -68,9 +69,10 @@ export function UnassignedIdeas({ onHide }: { onHide: () => void }) {
           </div>
         )}
         {unassigned.length === 0 && !adding ? (
-          <p className="text-sm text-[var(--charm-ink-soft)]">
-            No raw concepts waiting. Add one before it slips away.
-          </p>
+          <div className="flex items-center gap-3 py-1">
+            <CharmMascot mood="calm" size={40} />
+            <p className="text-sm text-[var(--charm-ink-soft)]">Nothing here yet. Add a concept before it slips away.</p>
+          </div>
         ) : (
           <AnimatePresence initial={false}>
             {unassigned.map((idea, i) => {

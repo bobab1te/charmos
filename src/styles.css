@@ -44,6 +44,16 @@
   --charm-ombre-dark-3: #5b4488;
   --charm-ombre-dark-4: #9a86c9;
 
+  /* Dashboard-only atmosphere — a second, much more subtle drifting layer than .charm-mesh,
+   * scoped to the dashboard route only (see DashboardAtmosphere). Day: warm cream/peach/pink.
+   * Night (below, .dark override): deep violet/lavender/blue. */
+  --charm-atmosphere-light-1: #fdf1e6;
+  --charm-atmosphere-light-2: #fbdcc9;
+  --charm-atmosphere-light-3: #f6cfe0;
+  --charm-atmosphere-dark-1: #1a1440;
+  --charm-atmosphere-dark-2: #4b3f8f;
+  --charm-atmosphere-dark-3: #2d3a72;
+
   --accent: #e8608f;
   --accent-soft: #f6a8c4;
   --accent-foreground: #fff8fb;
@@ -247,6 +257,88 @@ body {
 .dark .charm-grain {
   opacity: 0.35;
   mix-blend-mode: soft-light;
+}
+
+/* ---------- Dashboard atmosphere ----------
+ * A second, deliberately much more subtle drifting layer than .charm-mesh — scoped to the
+ * dashboard route only (mounted conditionally in _app.tsx, not globally like .charm-mesh in
+ * __root.tsx), sitting behind the dashboard's own `relative z-10` content. Barely-there and
+ * barely-moving by design: opacity 0.07-0.13 vs .charm-mesh's 0.32-0.5, blur 110px vs 70px,
+ * a 62-85s cycle vs 19-26s, ~1.2% drift vs ~4-6% — "light moving through a room," not a second
+ * animated background. */
+.charm-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.charm-atmosphere .charm-atmosphere-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(110px);
+  animation: charm-atmosphere-drift var(--dur, 65s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+.charm-atmosphere .charm-atmosphere-blob-1 {
+  width: 60%;
+  height: 60%;
+  top: -10%;
+  right: -10%;
+  background: var(--charm-atmosphere-light-1);
+  opacity: 0.1;
+  --dur: 62s;
+}
+.charm-atmosphere .charm-atmosphere-blob-2 {
+  width: 55%;
+  height: 55%;
+  bottom: -12%;
+  left: -12%;
+  background: var(--charm-atmosphere-light-2);
+  opacity: 0.09;
+  --dur: 74s;
+  --delay: -20s;
+}
+.charm-atmosphere .charm-atmosphere-blob-3 {
+  width: 40%;
+  height: 40%;
+  top: 30%;
+  left: 30%;
+  background: var(--charm-atmosphere-light-3);
+  opacity: 0.07;
+  --dur: 85s;
+  --delay: -40s;
+}
+
+@keyframes charm-atmosphere-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(1.2%, -1%) scale(1.015);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .charm-atmosphere .charm-atmosphere-blob {
+    animation: none;
+  }
+}
+
+.dark .charm-atmosphere .charm-atmosphere-blob-1 {
+  background: var(--charm-atmosphere-dark-1);
+  opacity: 0.13;
+}
+.dark .charm-atmosphere .charm-atmosphere-blob-2 {
+  background: var(--charm-atmosphere-dark-2);
+  opacity: 0.11;
+}
+.dark .charm-atmosphere .charm-atmosphere-blob-3 {
+  background: var(--charm-atmosphere-dark-3);
+  opacity: 0.09;
 }
 
 /* ---------- Glassmorphism surfaces ---------- */
