@@ -1,15 +1,28 @@
 import { useEffect, useState } from 'react'
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'motion/react'
 import type { MotionValue } from 'motion/react'
+import { CharmLiquidMark } from '#/components/charm/charm-liquid-mark'
+import type { LiquidPalette } from '#/components/charm/charm-liquid-mark'
 import { CharmMascot } from '#/components/charm/charm-mascot'
 import { useCharmMoment } from '#/lib/charm-moments'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
 import { computeMetrics } from '#/lib/derived'
+import { useThemeContext } from '#/lib/theme-context'
 
-function getIsDaytime(hour: number) {
-  return hour >= 6 && hour < 21
-}
+/**
+ * The dashboard's opening. Deliberately NOT a card: there is no panel, border, corner radius or
+ * clipped rectangle anywhere in here. The colour is an atmosphere layer that starts above the
+ * hero, spills wider than the content column, and is masked so it fades out on every side into
+ * the page background — the same blended-section-boundary idea the waitlist uses, rather than a
+ * banner sitting on top of the dashboard.
+ *
+ * The graphic itself is the landing page's own liquid Charm.OS mark (see charm-liquid-mark.tsx),
+ * not a sun. It is blurred and held at low contrast so it reads as an aura behind the greeting;
+ * the copy always wins the composition.
+ */
+
+const HERO_MASK = 'radial-gradient(closest-side at 50% 38%, #000 12%, rgba(0,0,0,0.72) 52%, transparent 100%)'
 
 function useHour() {
   const [hour, setHour] = useState(() => new Date().getHours())
@@ -20,97 +33,111 @@ function useHour() {
   return hour
 }
 
-function CloudLayer({ depth, mx, my, className, style }: { depth: number; mx: MotionValue<number>; my: MotionValue<number>; className?: string; style?: React.CSSProperties }) {
-  const x = useTransform(mx, (v) => v * depth)
-  const y = useTransform(my, (v) => v * depth * 0.5)
+function greetingFor(hour: number) {
+  if (hour < 5) return 'Good night'
+  if (hour < 12) return 'Good morning'
+  if (hour < 17) return 'Good afternoon'
+  if (hour < 21) return 'Good evening'
+  return 'Good night'
+}
+
+/**
+ * Abstract colour banks — soft blurred forms, never literal clouds (the same rule the waitlist's
+ * CelestialWorld follows). These are what give the hero its horizon without a horizon line.
+ */
+function ColourBank({
+  bank,
+  tint,
+  mx,
+  my,
+  animate,
+}: {
+  bank: { w: number; h: number; l: number; t: number; blur: number; o: number; depth: number; drift: number }
+  tint: string
+  mx: MotionValue<number>
+  my: MotionValue<number>
+  animate: boolean
+}) {
+  const x = useTransform(mx, (v) => v * bank.depth)
+  const y = useTransform(my, (v) => v * bank.depth * 0.45)
   return (
-    <motion.div style={{ x, y, ...style }} className={className}>
-      <svg width="220" height="90" viewBox="0 0 220 90" fill="none">
-        <path
-          d="M55 78C25 78 4 62 4 41 4 22 20 8 40 6 47 -3 62 -8 78 -6 96 -4 110 8 115 24 138 24 158 40 158 58 158 70 148 78 132 78H55Z"
-          fill="currentColor"
-        />
-      </svg>
+    <motion.div className="absolute rounded-[50%]" style={{ x, y }}>
+      <motion.div
+        className="rounded-[50%]"
+        style={{
+          width: `${bank.w}%`,
+          height: `${bank.h}px`,
+          marginLeft: `${bank.l}%`,
+          marginTop: `${bank.t}px`,
+          background: tint,
+          filter: `blur(${bank.blur}px)`,
+          opacity: bank.o,
+        }}
+        animate={animate ? { x: [0, bank.drift, 0] } : undefined}
+        transition={{ duration: 34 + Math.abs(bank.drift), repeat: Infinity, ease: 'easeInOut' }}
+      />
     </motion.div>
   )
 }
 
-/** A few small constellations — 4-5 stars each linked by faint straight lines, twinkling
- * independently — scattered among the plain star field for the night scene. */
-function Constellations() {
-  const groups = [
-    {
-      points: [
-        [8, 20],
-        [22, 12],
-        [36, 22],
-        [48, 10],
-      ],
-      top: '10%',
-      left: '6%',
-      scale: 1,
-    },
-    {
-      points: [
-        [0, 10],
-        [16, 4],
-        [26, 16],
-        [14, 26],
-      ],
-      top: '38%',
-      left: '62%',
-      scale: 0.9,
-    },
+/** A handful of four-point sparkles and dots, held to the margins — dark mode only. */
+function HeroSparkles() {
+  const marks = [
+    { left: '4%', top: '18%', size: 13, delay: 0 },
+    { left: '17%', top: '62%', size: 8, delay: 1.4 },
+    { left: '84%', top: '14%', size: 15, delay: 0.7 },
+    { left: '93%', top: '54%', size: 9, delay: 2.1 },
+    { left: '68%', top: '78%', size: 7, delay: 1.1 },
   ]
   return (
-    <div className="pointer-events-none absolute inset-0">
-      {groups.map((g, gi) => {
-        const w = Math.max(...g.points.map((p) => p[0])) + 10
-        const h = Math.max(...g.points.map((p) => p[1])) + 10
-        const path = g.points.map((p) => p.join(',')).join(' ')
-        return (
-          <div key={gi} className="absolute" style={{ top: g.top, left: g.left, transform: `scale(${g.scale})` }}>
-            <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none">
-              <polyline points={path} stroke="white" strokeOpacity="0.35" strokeWidth="1" />
-              {g.points.map(([x, y], pi) => (
-                <motion.circle
-                  key={pi}
-                  cx={x}
-                  cy={y}
-                  r={1.6}
-                  fill="white"
-                  animate={{ opacity: [0.4, 1, 0.4] }}
-                  transition={{ duration: 2.6 + (pi % 3) * 0.4, repeat: Infinity, ease: 'easeInOut', delay: pi * 0.4 + gi }}
-                />
-              ))}
-            </svg>
-          </div>
-        )
-      })}
+    <div className="pointer-events-none absolute -top-16 bottom-[-20%] -left-[10%] -right-[10%] -z-10">
+      {marks.map((m, i) => (
+        <motion.svg
+          key={i}
+          viewBox="0 0 24 24"
+          className="absolute"
+          style={{ left: m.left, top: m.top, width: m.size, height: m.size }}
+          animate={{ opacity: [0.25, 0.85, 0.25], scale: [0.9, 1.05, 0.9] }}
+          transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut', delay: m.delay }}
+        >
+          <path d="M12 0c.6 6.6 4.8 10.8 12 12-7.2 1.2-11.4 5.4-12 12-.6-6.6-4.8-10.8-12-12C7.2 10.8 11.4 6.6 12 0Z" fill="#fff" />
+        </motion.svg>
+      ))}
     </div>
   )
 }
 
-export function ParallaxHero({ displayName }: { displayName: string }) {
+export function ParallaxHero({
+  displayName,
+  /** Overrides the theme-derived palette. Exists so the graphic can be previewed in both states. */
+  palette: paletteOverride,
+}: {
+  displayName: string
+  palette?: LiquidPalette
+}) {
   const hour = useHour()
-  const isDay = getIsDaytime(hour)
+  const { theme } = useThemeContext()
   const prefersReducedMotion = useReducedMotion()
+  const isDark = theme === 'dark'
+
+  // The mark follows the theme rather than the clock. Without the old opaque rectangle behind it
+  // there is nothing separating it from the page, so a cool blue mark on the warm light background
+  // (or the reverse) would read as a mistake. Time of day still shows up — in the greeting.
+  const palette: LiquidPalette = paletteOverride ?? (isDark ? 'cool' : 'warm')
 
   const mx = useMotionValue(0)
   const my = useMotionValue(0)
   const springX = useSpring(mx, { stiffness: 60, damping: 18, mass: 0.6 })
   const springY = useSpring(my, { stiffness: 60, damping: 18, mass: 0.6 })
 
-  const orbX = useTransform(springX, (v) => v * 1.1)
-  const orbY = useTransform(springY, (v) => v * 0.7)
+  const markX = useTransform(springX, (v) => v * 1.1)
+  const markY = useTransform(springY, (v) => v * 0.7)
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (prefersReducedMotion) return
     const rect = e.currentTarget.getBoundingClientRect()
-    const relX = (e.clientX - rect.left) / rect.width - 0.5
-    const relY = (e.clientY - rect.top) / rect.height - 0.5
-    mx.set(relX * 40)
-    my.set(relY * 40)
+    mx.set(((e.clientX - rect.left) / rect.width - 0.5) * 40)
+    my.set(((e.clientY - rect.top) / rect.height - 0.5) * 40)
   }
 
   function handlePointerLeave() {
@@ -128,119 +155,85 @@ export function ParallaxHero({ displayName }: { displayName: string }) {
   const metrics = computeMetrics(deals, ledger, convert)
   const mascotMood = activeMoment === 'deal-completed' ? 'bright' : metrics.needsFollowUp >= 3 ? 'overwhelmed' : 'calm'
 
-  const greeting = isDay
-    ? hour < 12
-      ? 'Good morning'
-      : hour < 17
-        ? 'Good afternoon'
-        : 'Good evening'
-    : 'Good night'
+  // Wash and banks follow the same palette as the mark, so the whole atmosphere is one decision.
+  const cool = palette === 'cool'
+  const wash = cool
+    ? 'radial-gradient(80% 68% at 30% 34%, rgba(120,100,205,0.34) 0%, rgba(58,48,120,0.2) 44%, rgba(19,25,54,0) 78%)'
+    : 'radial-gradient(80% 68% at 30% 34%, rgba(255,198,150,0.4) 0%, rgba(238,168,190,0.24) 46%, rgba(255,240,228,0) 78%)'
+  const bankTint = cool ? '#4b3f8f' : '#fbdcc9'
+
+  const banks = [
+    { w: 62, h: 150, l: -12, t: 120, blur: 46, o: cool ? 0.42 : 0.6, depth: 0.55, drift: 22 },
+    { w: 48, h: 120, l: 44, t: 168, blur: 40, o: cool ? 0.32 : 0.46, depth: 0.32, drift: -18 },
+    { w: 38, h: 96, l: 20, t: 205, blur: 34, o: cool ? 0.24 : 0.34, depth: 0.78, drift: 14 },
+  ]
 
   return (
     <div
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
-      className={
-        'relative w-full overflow-hidden rounded-3xl h-[280px] sm:h-[320px] transition-colors duration-700 ' +
-        // Recolored to the same families as the page background (rose/amber blob light,
-        // navy/plum diagonal dark) so the hero card reads as part of the page, not a separate
-        // panel dropped on top of it.
-        (isDay
-          ? 'bg-[linear-gradient(160deg,#fdf6f1_0%,#f6dfc4_40%,#eec9a8_70%,#e6b3c2_100%)]'
-          : 'bg-[linear-gradient(160deg,#131936_0%,#2c2650_45%,#5b4488_100%)]')
-      }
+      className="relative isolate"
     >
-      {/* radiant sun / moon */}
-      <motion.div
+      {/*
+        The atmosphere. Extends above, beside and well below the hero's own box, then a radial mask
+        dissolves it on every edge — so there is no boundary between "hero" and "dashboard", only a
+        gradient that runs out. -z-10 inside `isolate` keeps it behind the greeting but still
+        entirely contained by the hero, so it can never slide under the widgets below.
+      */}
+      <div
         aria-hidden="true"
-        style={{ x: orbX, y: orbY }}
-        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        className="pointer-events-none absolute -top-28 bottom-[-42%] -left-[16%] -right-[16%] -z-10"
+        style={{
+          // `closest-side` is doing real work here: it sizes the ellipse to the nearest edge on each
+          // axis, which is the only way to guarantee the mask reaches full transparency on *every*
+          // side. A percentage-sized mask leaves a few percent of alpha at whichever edge the
+          // ellipse doesn't quite reach, and that shows up as a faint hard line across the page.
+          WebkitMaskImage: HERO_MASK,
+          maskImage: HERO_MASK,
+        }}
       >
-        {isDay ? (
-          <div
-            className="size-40 rounded-full sm:size-52"
-            style={{
-              background: 'radial-gradient(circle at 35% 30%, #fff9e6, #ffd97a 55%, #ffb457 100%)',
-              boxShadow: '0 0 90px 30px rgba(255, 190, 120, 0.55), 0 0 160px 60px rgba(255, 210, 160, 0.35)',
-            }}
+        <div className="absolute inset-0 transition-[background] duration-700" style={{ background: wash }} />
+        {banks.map((bank, i) => (
+          <ColourBank
+            key={i}
+            bank={bank}
+            tint={bankTint}
+            mx={mx}
+            my={my}
+            animate={!prefersReducedMotion}
           />
-        ) : (
-          <div className="relative size-36 sm:size-44">
-            <div
-              className="absolute inset-0 rounded-full"
-              style={{
-                background: 'radial-gradient(circle at 32% 30%, #f5f0ff, #cdbdf7 60%, #9c86d8 100%)',
-                boxShadow: '0 0 80px 26px rgba(160, 130, 230, 0.45), 0 0 150px 50px rgba(130, 100, 210, 0.3)',
-                clipPath: 'circle(50% at 62% 50%)',
-              }}
-            />
-          </div>
-        )}
-      </motion.div>
-
-      {/* drifting cloud layers, parallax depth via cursor + gentle ambient drift */}
-      <div className={isDay ? 'text-white/70' : 'text-white/10'}>
-        <motion.div
-          animate={prefersReducedMotion ? undefined : { x: [0, 14, 0] }}
-          transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -left-6 bottom-6"
-        >
-          <CloudLayer depth={0.6} mx={mx} my={my} />
-        </motion.div>
-        <motion.div
-          animate={prefersReducedMotion ? undefined : { x: [0, -18, 0] }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute right-2 bottom-2 scale-90 opacity-80"
-        >
-          <CloudLayer depth={0.35} mx={mx} my={my} />
-        </motion.div>
-        <motion.div
-          animate={prefersReducedMotion ? undefined : { x: [0, 10, 0] }}
-          transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute left-1/3 bottom-0 scale-75 opacity-60"
-        >
-          <CloudLayer depth={0.8} mx={mx} my={my} />
-        </motion.div>
+        ))}
       </div>
 
-      {isDay ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white/50 to-transparent" />
-      ) : (
-        <div className="pointer-events-none absolute inset-0">
-          {[...Array(24)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute size-[3px] rounded-full bg-white/70"
-              style={{
-                left: `${(i * 37) % 100}%`,
-                top: `${(i * 53) % 70}%`,
-                opacity: 0.3 + ((i * 13) % 60) / 100,
-              }}
-            />
-          ))}
-          <Constellations />
-        </div>
-      )}
+      {/* Outside the masked layer on purpose — the sparkles live at the margins, which is exactly
+          where that mask is transparent, so inside it they would be invisible. */}
+      {isDark && !prefersReducedMotion && <HeroSparkles />}
 
-      <div className="relative z-10 flex h-full items-end gap-4 p-6 sm:p-9">
+      {/*
+        The mark. Blurred and held at low opacity on purpose: at full strength it is a landing-page
+        graphic, and at this strength it is the room the greeting sits in.
+      */}
+      <motion.div
+        aria-hidden="true"
+        style={{ x: markX, y: markY }}
+        className="pointer-events-none absolute -top-2 right-[1%] -z-10 hidden aspect-square w-[38%] max-w-[320px] sm:block"
+      >
+        <CharmLiquidMark
+          palette={palette}
+          className="size-full opacity-90 blur-[1px] dark:opacity-80"
+        />
+      </motion.div>
+
+      <div className="relative flex min-h-[200px] items-end gap-4 px-1 pb-3 pt-12 sm:min-h-[236px] sm:pt-16">
         <CharmMascot mood={mascotMood} lookAtCursor className="hidden shrink-0 sm:block" />
         <div className="flex flex-1 flex-col justify-end">
-          <span
-            className={
-              'mb-2 w-fit rounded-full px-3 py-1 text-xs font-semibold tracking-wide backdrop-blur-md ' +
-              (isDay ? 'bg-white/50 text-[#5a3a4a]' : 'bg-white/10 text-white/80')
-            }
-          >
-            ✦ CharmOS
+          <span className="mb-3 w-fit rounded-full bg-white/45 px-3 py-1 text-xs font-semibold tracking-wide text-[var(--charm-ink-soft)] backdrop-blur-md dark:bg-white/10 dark:text-white/75">
+            ✦ Charm.OS
           </span>
-          <h1
-            className={
-              'font-display-bold text-3xl font-semibold sm:text-4xl ' + (isDay ? 'text-[#3a2e42]' : 'text-white')
-            }
-          >
-            {greeting}, {displayName}.
+          <h1 className="font-display-bold text-3xl font-semibold tracking-tight text-[var(--charm-ink)] sm:text-[2.6rem] sm:leading-[1.08]">
+            {greetingFor(hour)}, {displayName}.
           </h1>
-          <p className={'mt-1 text-sm sm:text-base ' + (isDay ? 'text-[#6b5b73]' : 'text-white/70')}>
+          <p className="mt-2 max-w-md text-sm text-[var(--charm-ink-soft)] sm:text-base">
             Here's how your brand partnerships are looking today.
           </p>
         </div>

@@ -34,8 +34,11 @@ export function WidgetCard({
       animate={{ opacity: 1, y: 0 }}
       exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.98 }}
       transition={prefersReducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 260, damping: 26 }}
+      // A 2px lift, not a pop. Done through motion rather than a Tailwind hover:-translate-y, since
+      // motion owns this element's inline transform and a class-based translate would be ignored.
+      whileHover={prefersReducedMotion ? undefined : { y: -2 }}
       className={cn(
-        'charm-glass relative flex h-full flex-col rounded-2xl p-5 transition-shadow duration-150 ease-out hover:shadow-lg',
+        'charm-glass relative flex h-full flex-col rounded-2xl p-5 transition-shadow duration-150 ease-out hover:shadow-xl',
         className,
       )}
     >
