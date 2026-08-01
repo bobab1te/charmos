@@ -111,25 +111,53 @@ export function dealEarnedDate(deal: BrandDeal): Date | undefined {
   return new Date(deal.stageUpdatedAt)
 }
 
-/**
- * Whether a ledger entry should be summed as "ledger income" for the totals below.
- * Deal-linked entries are excluded because a deal's revenue is already counted via
- * dealEarningsInMonth's accrual (dealEarnedDate) — summing the entry too would double
- * it. Partnership-linked entries are NOT excluded: confirming a payment cycle (see
- * markPartnershipCyclePaid) is the only thing that makes retainer revenue count at all,
- * so its ledger entry is the sole source of truth for that money, not a parallel record
- * of something already counted elsewhere.
- */
-function countsTowardLedgerIncome(entry: LedgerEntry): boolean {
-  return !entry.dealId
+/** One piece of revenue, already converted to the display currency. */
+export interface RevenueEvent {
+  date: Date
+  amount: number
 }
 
-function dealEarningsInMonth(deals: Array<BrandDeal>, convert: ConvertFn, now: Date): number {
-  return deals.reduce((sum, deal) => {
+/**
+ * THE single source of truth for "money earned". Every revenue total in the app — the dashboard's
+ * earnings metric, the Finances chart — is a filter over this list, so they cannot disagree and a
+ * new revenue source only has to be added in one place.
+ *
+ * Revenue reaches the app by two routes and each payment must be counted through exactly one:
+ *
+ *   accrual   a deal's own compensationAmount, dated by dealEarnedDate
+ *   ledger    a row in the ledger — retainer cycles (markPartnershipCyclePaid), the row
+ *             syncDealLedgerEntry writes when a deal is marked paid, manual entries
+ *
+ * A deal marked paid has BOTH, so one has to be dropped. The rule is derived from whether the deal
+ * actually accrues rather than merely from whether the entry has a dealId: an entry is skipped only
+ * when the deal it points at is genuinely contributing its own accrual. That is what makes the two
+ * routes exhaustive — any deal that drops out of the accrual for any reason, now or later, hands
+ * responsibility for its money to its ledger row instead of silently taking it with it.
+ */
+export function revenueEvents(
+  deals: Array<BrandDeal>,
+  ledger: Array<LedgerEntry>,
+  convert: ConvertFn,
+): Array<RevenueEvent> {
+  const events: Array<RevenueEvent> = []
+
+  const accruingDealIds = new Set<string>()
+  for (const deal of deals) {
     const earnedDate = dealEarnedDate(deal)
-    if (!earnedDate || !isSameMonth(earnedDate, now)) return sum
-    return sum + convert(deal.compensationAmount, deal.compensationCurrency)
-  }, 0)
+    if (!earnedDate) continue
+    accruingDealIds.add(deal.id)
+    events.push({ date: earnedDate, amount: convert(deal.compensationAmount, deal.compensationCurrency) })
+  }
+
+  for (const entry of ledger) {
+    if (entry.type !== 'income') continue
+    // Skipped only because the deal is accruing this same money itself. A deal-linked entry whose
+    // deal is archived, missing, or otherwise not accruing is real received income and counts.
+    if (entry.dealId && accruingDealIds.has(entry.dealId)) continue
+    events.push({ date: new Date(entry.date), amount: convert(entry.amount, entry.currency) })
+  }
+
+  return events
 }
 
 export interface DashboardMetrics {
@@ -147,12 +175,9 @@ export function computeMetrics(
   convert: ConvertFn,
   now = new Date(),
 ): DashboardMetrics {
-  const ledgerEarningsThisMonth = ledger
-    .filter(
-      (entry) => entry.type === 'income' && countsTowardLedgerIncome(entry) && isSameMonth(new Date(entry.date), now),
-    )
-    .reduce((sum, entry) => sum + convert(entry.amount, entry.currency), 0)
-  const earningsThisMonth = ledgerEarningsThisMonth + dealEarningsInMonth(deals, convert, now)
+  const earningsThisMonth = revenueEvents(deals, ledger, convert)
+    .filter((event) => isSameMonth(event.date, now))
+    .reduce((sum, event) => sum + event.amount, 0)
 
   const activeDeals = deals.filter((d) => !d.archived && (d.stage === 'confirmed' || d.stage === 'live')).length
 
@@ -191,13 +216,9 @@ export function monthlyRevenue(ledger: Array<LedgerEntry>, deals: Array<BrandDea
     if (bucket) bucket.total += amount
   }
 
-  ledger
-    .filter((e) => e.type === 'income' && countsTowardLedgerIncome(e))
-    .forEach((entry) => addToBucket(new Date(entry.date), convert(entry.amount, entry.currency)))
-  deals.forEach((deal) => {
-    const earnedDate = dealEarnedDate(deal)
-    if (earnedDate) addToBucket(earnedDate, convert(deal.compensationAmount, deal.compensationCurrency))
-  })
+  // Same event list the dashboard metric sums, just bucketed by month instead of filtered to one —
+  // which is what keeps the chart and the dashboard total consistent by construction.
+  revenueEvents(deals, ledger, convert).forEach((event) => addToBucket(event.date, event.amount))
 
   return buckets.map(({ label, total, key }) => ({ label, total, key }))
 }
