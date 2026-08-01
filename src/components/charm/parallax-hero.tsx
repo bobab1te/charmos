@@ -282,35 +282,42 @@ export function ParallaxHero({
 
       {/* Taller than the copy strictly needs: the extra height is what lets the character sit low
           in the hero instead of being pinned near the top of the page. */}
-      <div className="relative flex min-h-[210px] items-end pb-3 pt-14 sm:min-h-[300px] sm:pt-20">
+      <div className="relative flex min-h-[210px] items-end gap-3 pb-3 pt-14 sm:min-h-[300px] sm:pt-20">
+        {/*
+          The assistant sits beside the whole greeting block rather than inside it. That matters for
+          alignment: with it inline on the heading row, the heading started after the mascot while
+          the badge and subline started at the column edge, so the three lines had two different
+          left edges. Out here, every line of the greeting shares one.
+        */}
+        <motion.div
+          style={{ x: mascotX, y: mascotY }}
+          className="pointer-events-none relative hidden shrink-0 self-end pb-1 sm:block"
+        >
+          <div
+            aria-hidden="true"
+            className="absolute left-1/2 top-1/2 size-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full transition-[background] duration-1000"
+            style={{
+              background: `radial-gradient(closest-side, ${withAlpha(mascotGlow, 0.26)} 0%, ${withAlpha(mascotGlow, 0.1)} 45%, transparent 76%)`,
+              filter: 'blur(30px)',
+            }}
+          />
+          {/*
+            Stationary by design — no `lookAtCursor`. The large hero character is the one that
+            reacts; two flowers tracking the same cursor read as competing for attention rather than
+            as hierarchy. This one keeps only its own slow ambient float (see charm-mascot.tsx),
+            which also means it registers no pointer listener at all.
+          */}
+          <CharmMascot mood={mascotMood} size={84} className="relative" />
+        </motion.div>
+
+        {/* One block, one left edge: greeting → wordmark → subline. */}
         <div className="flex flex-1 flex-col justify-end">
-          <span className="mb-3 w-fit rounded-full bg-white/45 px-3 py-1 text-xs font-semibold tracking-wide text-[var(--charm-ink-soft)] backdrop-blur-md dark:bg-white/10 dark:text-white/75">
+          <h1 className="font-display-bold text-3xl font-semibold tracking-tight text-[var(--charm-ink)] sm:text-[2.6rem] sm:leading-[1.08]">
+            {greetingForPhaseHour(hour)}, {displayName}.
+          </h1>
+          <span className="mt-2 w-fit rounded-full bg-white/45 px-3 py-1 text-xs font-semibold tracking-wide text-[var(--charm-ink-soft)] backdrop-blur-md dark:bg-white/10 dark:text-white/75">
             ✦ Charm.OS
           </span>
-
-          {/*
-            The small assistant sits on the greeting line itself rather than floating in the hero's
-            left gutter, so it reads as being *with* the greeting. Inline in the flex row, which
-            also means it stays vertically locked to the heading at any type size.
-          */}
-          <div className="flex items-center gap-3">
-            <motion.div style={{ x: mascotX, y: mascotY }} className="pointer-events-none relative hidden shrink-0 sm:block">
-              <div
-                aria-hidden="true"
-                className="absolute left-1/2 top-1/2 size-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full transition-[background] duration-1000"
-                style={{
-                  background: `radial-gradient(closest-side, ${withAlpha(mascotGlow, 0.26)} 0%, ${withAlpha(mascotGlow, 0.1)} 45%, transparent 76%)`,
-                  filter: 'blur(30px)',
-                }}
-              />
-              <CharmMascot mood={mascotMood} size={84} lookAtCursor className="relative" />
-            </motion.div>
-
-            <h1 className="font-display-bold text-3xl font-semibold tracking-tight text-[var(--charm-ink)] sm:text-[2.6rem] sm:leading-[1.08]">
-              {greetingForPhaseHour(hour)}, {displayName}.
-            </h1>
-          </div>
-
           <p className="mt-2 max-w-md text-sm text-[var(--charm-ink-soft)] sm:text-base">
             Here's how your brand partnerships are looking today.
           </p>

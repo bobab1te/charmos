@@ -3,7 +3,7 @@ import { AlertCircle, ArrowRight, CalendarClock, HeartHandshake, Wallet } from '
 import { AnimatePresence } from 'motion/react'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
-import { computeMetrics } from '#/lib/derived'
+import { computeFinanceInsights, computeMetrics } from '#/lib/derived'
 import { MetricCard } from './metric-card'
 
 const WIDGET_IDS = {
@@ -19,9 +19,11 @@ interface MetricsGridProps {
 }
 
 export function MetricsGrid({ isHidden, hide }: MetricsGridProps) {
-  const { deals, ledger } = useCharmStore()
+  const { deals, ledger, brands, partnerships } = useCharmStore()
   const { displayCurrency, convert } = useCurrency()
-  const metrics = computeMetrics(deals, ledger, convert, new Date())
+  const now = new Date()
+  const metrics = computeMetrics(deals, ledger, convert, now)
+  const finance = computeFinanceInsights(deals, ledger, brands, partnerships, convert, now)
 
   const currency = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -31,12 +33,21 @@ export function MetricsGrid({ isHidden, hide }: MetricsGridProps) {
 
   const cards = [
     {
+      // Year to date rather than month to date: a calendar rollover used to wipe this back to zero
+      // on the 1st even though nothing about the creator's year had changed.
       id: WIDGET_IDS.earnings,
-      label: 'Earnings this month',
-      value: currency.format(metrics.earningsThisMonth),
+      label: `Total earnings — ${finance.year}`,
+      value: currency.format(finance.earningsThisYear),
       icon: <Wallet className="size-4.5" />,
       accentClass: 'bg-[var(--accent)]',
-      hint: 'From deals, partnerships & ledger entries',
+      action: (
+        <Link
+          to="/finances"
+          className="flex items-center gap-1 text-xs font-semibold text-[var(--accent)] transition duration-150 ease-out hover:underline active:scale-95"
+        >
+          View Finance <ArrowRight className="size-3" />
+        </Link>
+      ),
     },
     {
       id: WIDGET_IDS.activeDeals,

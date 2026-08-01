@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { dateOnlyToISOString } from './date-only'
-import { computeMetrics, monthlyRevenue } from './derived'
-import type { BrandDeal, LedgerEntry } from './types'
+import { computeFinanceInsights, computeMetrics, monthlyRetainerValue, monthlyRevenue } from './derived'
+import type { Brand, BrandDeal, LedgerEntry, Partnership } from './types'
 
 /**
  * Regression tests for the revenue totals.
@@ -171,5 +171,113 @@ describe('earnings totals', () => {
 
     expect(dashboard).toBe(1000 + 800 + 300 + 500 + 120)
     expect(thisMonthBar?.total).toBe(dashboard)
+  })
+})
+
+const brand = (id: string, name: string) => ({ id, name }) as Brand
+
+function partnership(over: Partial<Partnership> = {}): Partnership {
+  return {
+    id: 'p1',
+    brandId: 'b1',
+    startDate: '2026-01-01T00:00:00Z',
+    paymentType: 'retainer',
+    retainerAmount: 500,
+    retainerCadence: 'monthly',
+    currency: 'USD',
+    deliverableCount: 4,
+    deliverableUnit: 'videos',
+    deliverableCadence: 'month',
+    contentFormats: [],
+    status: 'active',
+    createdAt: '2026-01-01T00:00:00Z',
+    ...over,
+  } as Partnership
+}
+
+const insights = (
+  deals: Array<BrandDeal>,
+  ledger: Array<LedgerEntry>,
+  brands: Array<Brand> = [],
+  partnerships: Array<Partnership> = [],
+) => computeFinanceInsights(deals, ledger, brands, partnerships, identity, now)
+
+describe('finance insights', () => {
+  /** The whole point of moving off "this month": July money must survive the roll into August. */
+  it('includes earlier months of the same year, unlike the monthly metric', () => {
+    const july = entry({ id: 'r-july', partnershipId: 'p1', amount: 900, date: '2026-07-15T12:00:00Z' })
+    const august = entry({ id: 'r-aug', partnershipId: 'p1', amount: 100 })
+
+    expect(total([], [july, august])).toBe(100) // monthly metric: August only
+    expect(insights([], [july, august]).earningsThisYear).toBe(1000)
+  })
+
+  it('excludes last year', () => {
+    const lastYear = entry({ id: 'old', partnershipId: 'p1', amount: 5000, date: '2025-11-01T12:00:00Z' })
+    expect(insights([], [lastYear]).earningsThisYear).toBe(0)
+  })
+
+  it('reports the current year dynamically', () => {
+    expect(insights([], []).year).toBe(2026)
+  })
+
+  it('does not double-count a paid deal in the yearly total', () => {
+    const d = deal()
+    expect(insights([d], [entry({ dealId: d.id })]).earningsThisYear).toBe(1000)
+  })
+
+  it('names the largest deal and its brand', () => {
+    const deals = [
+      deal({ id: 'a', brandId: 'b1', compensationAmount: 1200 }),
+      deal({ id: 'b', brandId: 'b2', compensationAmount: 4800 }),
+    ]
+    const result = insights(deals, [], [brand('b1', 'Glossier'), brand('b2', 'Rhode')])
+    expect(result.largestDeal).toEqual({ amount: 4800, brandName: 'Rhode' })
+  })
+
+  it('leaves gifted and still-negotiating deals out of the deal statistics', () => {
+    const deals = [
+      deal({ id: 'cash', compensationAmount: 1000 }),
+      deal({ id: 'gifted', compensationAmount: 0, compensationType: 'gifted' }),
+      deal({ id: 'pitching', compensationAmount: 9999, stage: 'negotiating', paid: false, paidDate: undefined }),
+    ]
+    const result = insights(deals, [])
+    expect(result.dealCount).toBe(1)
+    expect(result.largestDeal?.amount).toBe(1000)
+    expect(result.averageDealSize).toBe(1000)
+  })
+
+  it('averages only the cash deals', () => {
+    const deals = [deal({ id: 'a', compensationAmount: 1000 }), deal({ id: 'b', compensationAmount: 500 })]
+    expect(insights(deals, []).averageDealSize).toBe(750)
+  })
+
+  it('normalises retainer cadences to a monthly figure before comparing', () => {
+    // 200/week is worth more per month than 700/month, despite the smaller headline number.
+    const weekly = partnership({ id: 'p-week', brandId: 'b1', retainerAmount: 200, retainerCadence: 'weekly' })
+    const monthly = partnership({ id: 'p-month', brandId: 'b2', retainerAmount: 700, retainerCadence: 'monthly' })
+    const result = insights([], [], [brand('b1', 'Aesop'), brand('b2', 'Rhode')], [monthly, weekly])
+
+    expect(result.topRetainer?.brandName).toBe('Aesop')
+    expect(Math.round(result.topRetainer?.monthlyAmount ?? 0)).toBe(867)
+    expect(monthlyRetainerValue(monthly)).toBe(700)
+  })
+
+  it('ignores ended partnerships but keeps paused ones', () => {
+    const ended = partnership({ id: 'p-ended', brandId: 'b1', retainerAmount: 5000, status: 'ended' })
+    const paused = partnership({ id: 'p-paused', brandId: 'b2', retainerAmount: 400, status: 'paused' })
+    const result = insights([], [], [brand('b1', 'Old'), brand('b2', 'Current')], [ended, paused])
+    expect(result.topRetainer?.brandName).toBe('Current')
+  })
+
+  it('ignores per-deliverable partnerships in the retainer stat', () => {
+    const perDeliverable = partnership({ paymentType: 'per_deliverable', retainerAmount: undefined })
+    expect(insights([], [], [], [perDeliverable]).topRetainer).toBeUndefined()
+  })
+
+  it('returns undefined rather than zero when there is nothing to average', () => {
+    const result = insights([], [])
+    expect(result.averageDealSize).toBeUndefined()
+    expect(result.largestDeal).toBeUndefined()
   })
 })

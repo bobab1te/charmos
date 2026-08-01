@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, isSameMonth, isWithinInterval } from 'date-fns'
-import type { Brand, BrandDeal, LedgerEntry } from './types'
+import type { Brand, BrandDeal, LedgerEntry, Partnership, RetainerCadence } from './types'
 
 /** Converts an amount from its own currency into the creator's display currency — see CurrencyProvider. */
 export type ConvertFn = (amount: number, fromCurrency: string) => number
@@ -197,6 +197,89 @@ export function computeMetrics(
   const needsFollowUp = ghostedCount + unpaidCount
 
   return { earningsThisMonth, activeDeals, dueThisWeek, needsFollowUp, unpaidCount }
+}
+
+/**
+ * Deals that represent real, won cash — the set every deal-value statistic below is drawn from.
+ *
+ * Excluded, and why: gifted/zero-value deals (a $0 average is not an average deal size), and deals
+ * still being negotiated (not won, so quoting one as a "largest deal" would be wishful). Archived
+ * deals ARE included: archiving is a tidying action for the board, and a past deal is still part of
+ * the creator's earning history — the same reasoning behind the archived-deal fix in revenueEvents.
+ */
+function cashDeals(deals: Array<BrandDeal>): Array<BrandDeal> {
+  return deals.filter(
+    (deal) => deal.compensationType === 'paid' && deal.compensationAmount > 0 && deal.stage !== 'negotiating',
+  )
+}
+
+/** Retainer value normalised to a monthly figure so cadences can be compared against each other. */
+export function monthlyRetainerValue(partnership: Partnership): number {
+  if (partnership.paymentType !== 'retainer' || !partnership.retainerAmount) return 0
+  if (partnership.retainerCadence === 'weekly') return partnership.retainerAmount * (52 / 12)
+  if (partnership.retainerCadence === 'biweekly') return partnership.retainerAmount * (26 / 12)
+  return partnership.retainerAmount
+}
+
+export interface FinanceInsights {
+  /** Every revenue event in the current calendar year — not just the current month. */
+  earningsThisYear: number
+  year: number
+  largestDeal?: { amount: number; brandName: string }
+  /** Highest recurring value, normalised to per-month so weekly/biweekly retainers compare fairly. */
+  topRetainer?: { monthlyAmount: number; brandName: string; cadence: RetainerCadence }
+  averageDealSize?: number
+  dealCount: number
+}
+
+/**
+ * The dashboard's finance snapshot. Deliberately built on the same revenueEvents list the monthly
+ * metric and the Finances chart use, so the year-to-date figure cannot drift from them — it is the
+ * same events with a wider filter, not a second way of adding money up.
+ */
+export function computeFinanceInsights(
+  deals: Array<BrandDeal>,
+  ledger: Array<LedgerEntry>,
+  brands: Array<Brand>,
+  partnerships: Array<Partnership>,
+  convert: ConvertFn,
+  now = new Date(),
+): FinanceInsights {
+  const year = now.getFullYear()
+  const earningsThisYear = revenueEvents(deals, ledger, convert)
+    .filter((event) => event.date.getFullYear() === year)
+    .reduce((sum, event) => sum + event.amount, 0)
+
+  const brandName = (id: string) => brands.find((b) => b.id === id)?.name ?? 'Unknown brand'
+
+  const valued = cashDeals(deals).map((deal) => ({
+    amount: convert(deal.compensationAmount, deal.compensationCurrency),
+    brandName: brandName(deal.brandId),
+  }))
+
+  const largestDeal = valued.reduce<FinanceInsights['largestDeal']>(
+    (best, deal) => (!best || deal.amount > best.amount ? deal : best),
+    undefined,
+  )
+
+  const averageDealSize =
+    valued.length > 0 ? valued.reduce((sum, d) => sum + d.amount, 0) / valued.length : undefined
+
+  // Ended partnerships are excluded — "top retainer" is a statement about current recurring income,
+  // not a historical record. Paused ones stay: a pause is temporary and the contract still stands.
+  const topRetainer = partnerships
+    .filter((p) => p.status !== 'ended' && p.paymentType === 'retainer' && p.retainerAmount)
+    .map((p) => ({
+      monthlyAmount: convert(monthlyRetainerValue(p), p.currency),
+      brandName: brandName(p.brandId),
+      cadence: (p.retainerCadence ?? 'monthly') as RetainerCadence,
+    }))
+    .reduce<FinanceInsights['topRetainer']>(
+      (best, p) => (!best || p.monthlyAmount > best.monthlyAmount ? p : best),
+      undefined,
+    )
+
+  return { earningsThisYear, year, largestDeal, topRetainer, averageDealSize, dealCount: valued.length }
 }
 
 export function monthlyRevenue(ledger: Array<LedgerEntry>, deals: Array<BrandDeal>, convert: ConvertFn, months = 6, now = new Date()) {

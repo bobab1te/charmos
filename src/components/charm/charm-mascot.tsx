@@ -164,15 +164,23 @@ export function CharmMascot({
   const bodyX = useTransform(look.x, (v) => v * 5)
   const bodyY = useTransform(look.y, (v) => v * 3.5)
 
+  /*
+   * Ambient float. The calm state is a float → settle → float rather than a single sine bob: it
+   * rises, pauses near the top, drifts back and rests, which reads as breathing instead of
+   * bouncing. Kept to a 5px range over 9s — slow enough that you only notice it if you look
+   * directly at it, which is the point for an instance that no longer tracks the cursor.
+   *
+   * All of it is transform-only on one element, so it composites on the GPU and costs no layout.
+   */
   const idle = reduced
     ? undefined
     : mood === 'overwhelmed'
       ? { y: [0, -2, 0, 2, 0], rotate: [0, -2.5, 0, 2.5, 0] }
       : mood === 'bright'
         ? { y: [0, -7, 0], rotate: [0, 3, 0] }
-        : { y: [0, -4, 0], rotate: [0, -2, 0] }
+        : { y: [0, -5, -4.5, 0, 0], rotate: [0, -1.4, -1.2, 0, 0] }
 
-  const duration = mood === 'overwhelmed' ? 1.6 : mood === 'bright' ? 2.4 : 4.2
+  const duration = mood === 'overwhelmed' ? 1.6 : mood === 'bright' ? 2.4 : 9
 
   return (
     <motion.div
