@@ -18,6 +18,8 @@ export interface Database {
           audience_tier: 'nano' | 'micro' | 'mid' | 'macro' | null
           niche: string | null
           onboarding_completed_at: string | null
+          tour_step: string | null
+          tour_status: 'pending' | 'active' | 'later' | 'done'
           created_at: string
           updated_at: string
         }
@@ -31,6 +33,8 @@ export interface Database {
           audience_tier?: 'nano' | 'micro' | 'mid' | 'macro' | null
           niche?: string | null
           onboarding_completed_at?: string | null
+          tour_step?: string | null
+          tour_status?: 'pending' | 'active' | 'later' | 'done'
           created_at?: string
           updated_at?: string
         }
@@ -103,6 +107,30 @@ export interface Database {
           notes?: string | null
         }
         Update: Partial<Database['public']['Tables']['deals']['Insert']>
+        Relationships: []
+      }
+      feature_requests: {
+        Row: {
+          id: string
+          user_id: string
+          suggestion: string
+          reason: string | null
+          category: string | null
+          details: string | null
+          status: 'submitted' | 'considering' | 'planned' | 'in_progress' | 'completed'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          suggestion: string
+          reason?: string | null
+          category?: string | null
+          details?: string | null
+          status?: 'submitted' | 'considering' | 'planned' | 'in_progress' | 'completed'
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['feature_requests']['Insert']>
         Relationships: []
       }
       ideas: {

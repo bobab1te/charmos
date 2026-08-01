@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#
 import { ThemeToggle } from '#/components/charm/theme-toggle'
 import { useWidgetVisibility } from '#/lib/use-widget-visibility'
 import { WIDGET_LABELS } from '#/lib/widget-ids'
+import { SuggestFeature } from '#/components/settings/suggest-feature'
 import { updateMyProfile } from '#/server/profile'
 import { cn } from '#/lib/utils'
 import { SUPPORTED_CURRENCIES } from '#/lib/currencies'
@@ -221,6 +222,8 @@ function SettingsPage() {
           </ul>
         )}
       </div>
+
+      <SuggestFeature />
     </div>
   )
 }
