@@ -2,7 +2,6 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { AnimatePresence } from 'motion/react'
 import { SlidersHorizontal } from 'lucide-react'
 import { ParallaxHero } from '#/components/charm/parallax-hero'
-import { FinanceInsights } from '#/components/dashboard/finance-insights'
 import { MetricsGrid } from '#/components/dashboard/metrics-grid'
 import { PipelineSummary } from '#/components/dashboard/pipeline-summary'
 import { UpcomingDeadlines } from '#/components/dashboard/upcoming-deadlines'
@@ -45,12 +44,6 @@ function Dashboard() {
 
       <AnimatePresence mode="popLayout">
         <MetricsGrid key="metrics" isHidden={isHidden} hide={hide} />
-      </AnimatePresence>
-
-      <AnimatePresence mode="popLayout">
-        {!isHidden(WIDGET_IDS.financeInsights) && (
-          <FinanceInsights key="finance-insights" onHide={() => hide(WIDGET_IDS.financeInsights)} />
-        )}
       </AnimatePresence>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { ArrowRight } from 'lucide-react'
 import { EarningsChart } from '#/components/dashboard/earnings-chart'
+import { FinanceInsights } from '#/components/dashboard/finance-insights'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
 
@@ -26,6 +27,8 @@ function FinancesPage() {
       </div>
 
       <EarningsChart />
+
+      <FinanceInsights />
 
       <div className="charm-glass rounded-2xl p-5">
         <h2 className="mb-3 font-display text-sm font-semibold text-[var(--charm-ink)]">Transactions</h2>

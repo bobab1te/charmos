@@ -13,7 +13,8 @@ interface MetricCardProps {
   label: string
   value: string
   icon: ReactNode
-  hint?: string
+  /** ReactNode rather than string so a card can emphasise a figure inside its supporting line. */
+  hint?: ReactNode
   accentClass?: string
   onHide: () => void
   action?: ReactNode

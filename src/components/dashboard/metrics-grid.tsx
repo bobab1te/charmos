@@ -33,13 +33,22 @@ export function MetricsGrid({ isHidden, hide }: MetricsGridProps) {
 
   const cards = [
     {
-      // Year to date rather than month to date: a calendar rollover used to wipe this back to zero
-      // on the 1st even though nothing about the creator's year had changed.
+      // Month to date leads, with the year underneath. The year-to-date line is what stops a
+      // calendar rollover reading as "your earnings vanished" on the 1st — the headline resets
+      // because the month did, and the figure below it shows the year carrying on regardless.
       id: WIDGET_IDS.earnings,
-      label: `Total earnings — ${finance.year}`,
-      value: currency.format(finance.earningsThisYear),
+      label: 'Earnings this month',
+      value: currency.format(metrics.earningsThisMonth),
       icon: <Wallet className="size-4.5" />,
       accentClass: 'bg-[var(--accent)]',
+      hint: (
+        <>
+          <span className="font-semibold text-[var(--charm-ink-soft)]">
+            {currency.format(finance.earningsThisYear)}
+          </span>{' '}
+          earned in {finance.year}
+        </>
+      ),
       action: (
         <Link
           to="/finances"
