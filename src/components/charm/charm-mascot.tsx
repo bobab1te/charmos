@@ -38,7 +38,7 @@ function onWindowPointerMove(e: PointerEvent) {
   if (!pendingFrame) pendingFrame = requestAnimationFrame(flushPointer)
 }
 
-function subscribePointer(fn: (x: number, y: number) => void) {
+export function subscribePointer(fn: (x: number, y: number) => void) {
   pointerSubscribers.add(fn)
   if (!pointerBound) {
     window.addEventListener('pointermove', onWindowPointerMove, { passive: true })
@@ -55,7 +55,7 @@ function subscribePointer(fn: (x: number, y: number) => void) {
   }
 }
 
-function usePointerLook(enabled: boolean, ref: React.RefObject<SVGSVGElement | null>) {
+export function usePointerLook(enabled: boolean, ref: React.RefObject<SVGSVGElement | null>) {
   const mx = useMotionValue(0)
   const my = useMotionValue(0)
   const x = useSpring(mx, { stiffness: 55, damping: 17, mass: 0.9 })
@@ -81,7 +81,7 @@ function usePointerLook(enabled: boolean, ref: React.RefObject<SVGSVGElement | n
 }
 
 /** Cursor-following is a pointer affordance only — no hover on touch, and off under reduced motion. */
-function useFinePointer() {
+export function useFinePointer() {
   const [fine, setFine] = useState(false)
   useEffect(() => {
     const q = window.matchMedia('(pointer: fine)')

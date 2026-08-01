@@ -240,13 +240,18 @@ export function ParallaxHero({
 
       {sparkleStrength > 0.02 && !prefersReducedMotion && <HeroSparkles strength={Math.min(1, sparkleStrength)} />}
 
-      {/* Sun by day, true crescent moon at night — one object, see charm-celestial.tsx. */}
+      {/*
+        The large hero character: the Charm.OS flower by day, morphing into a crescent moon at
+        night. Sits centre-left and behind everything, so the greeting passes in front of it — that
+        overlap is the depth. Blurred and held below full contrast so it stays environment rather
+        than becoming a landing-page graphic.
+      */}
       <motion.div
         aria-hidden="true"
         style={{ x: celestialX, y: celestialY }}
-        className="pointer-events-none absolute -top-2 right-[3%] -z-10 hidden aspect-square w-[30%] max-w-[250px] sm:block"
+        className="pointer-events-none absolute -top-16 left-[46%] -z-10 hidden aspect-square w-[34%] max-w-[300px] sm:block"
       >
-        <CharmCelestial phase={phase} className="size-full opacity-90 blur-[1px]" />
+        <CharmCelestial phase={phase} className="size-full opacity-80 blur-[2px]" />
       </motion.div>
 
       {/*
@@ -266,7 +271,9 @@ export function ParallaxHero({
             filter: 'blur(30px)',
           }}
         />
-        <CharmMascot mood={mascotMood} size={132} lookAtCursor className="relative" />
+        {/* The small assistant, back at its original size — the "make it larger" note was about the
+            large hero character above, not this one. */}
+        <CharmMascot mood={mascotMood} size={84} lookAtCursor className="relative" />
       </motion.div>
 
       <div className="relative flex min-h-[210px] items-end pb-3 pt-14 sm:min-h-[248px] sm:pt-16 sm:pl-[136px]">
