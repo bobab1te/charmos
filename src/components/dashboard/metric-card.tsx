@@ -30,7 +30,7 @@ export function MetricCard({ label, value, icon, hint, accentClass, onHide, acti
       transition={prefersReducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 260, damping: 26 }}
       // Matches WidgetCard: a 2px lift via motion, since motion owns the inline transform here.
       whileHover={prefersReducedMotion ? undefined : { y: -2 }}
-      className="charm-glass relative flex flex-col gap-3 rounded-2xl p-5 transition-shadow duration-150 ease-out hover:shadow-xl"
+      className="charm-glass relative flex flex-col gap-3 rounded-3xl p-5 transition-shadow duration-150 ease-out hover:shadow-xl"
     >
       <div className="flex items-start justify-between">
         <div

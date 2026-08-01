@@ -38,7 +38,7 @@ export function WidgetCard({
       // motion owns this element's inline transform and a class-based translate would be ignored.
       whileHover={prefersReducedMotion ? undefined : { y: -2 }}
       className={cn(
-        'charm-glass relative flex h-full flex-col rounded-2xl p-5 transition-shadow duration-150 ease-out hover:shadow-xl',
+        'charm-glass relative flex h-full flex-col rounded-3xl p-5 transition-shadow duration-150 ease-out hover:shadow-xl',
         className,
       )}
     >

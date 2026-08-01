@@ -242,7 +242,14 @@ body {
   display: none;
 }
 
-/* subtle grain/noise texture, overlaid above the mesh */
+/* Subtle grain/noise texture, overlaid above the mesh. Same fractalNoise tile, tile size, opacities
+ * and blend modes as the waitlist's own .charm-grain — this is that texture, not a lookalike.
+ * The image lives in a custom property so .charm-grain-local can reuse it without a second copy of
+ * the data URI. */
+:root {
+  --charm-grain-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
 .charm-grain {
   position: fixed;
   inset: 0;
@@ -250,12 +257,33 @@ body {
   pointer-events: none;
   opacity: 0.5;
   mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image: var(--charm-grain-image);
   background-size: 180px 180px;
 }
 
 .dark .charm-grain {
   opacity: 0.35;
+  mix-blend-mode: soft-light;
+}
+
+/*
+ * The same grain, scoped to an element rather than the viewport. The page-level .charm-grain is
+ * `position: fixed; z-index: -1`, which puts it behind everything in the root stacking context —
+ * including the hero, whose atmosphere therefore never picked the texture up. This goes *inside*
+ * the hero's own layer so the liquid gradients there are grained too.
+ */
+.charm-grain-local {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.42;
+  mix-blend-mode: overlay;
+  background-image: var(--charm-grain-image);
+  background-size: 180px 180px;
+}
+
+.dark .charm-grain-local {
+  opacity: 0.3;
   mix-blend-mode: soft-light;
 }
 
@@ -343,22 +371,33 @@ body {
 
 /* ---------- Glassmorphism surfaces ---------- */
 
+/*
+ * "Soft lifted": three stacked shadows rather than one. A contact shadow holds the card's bottom
+ * edge to the page, a mid shadow gives it thickness, and a wide low-opacity ambient shadow is what
+ * actually reads as floating. One big blur alone reads as a drop shadow sitting under a flat
+ * rectangle; the stack reads as an object with a gap beneath it. The inset top highlight is the
+ * light catching the card's upper edge, which is what keeps it dimensional rather than glossy.
+ */
 .charm-glass {
   background: linear-gradient(165deg, var(--surface-strong), var(--surface));
   border: 1px solid var(--surface-border);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.5) inset,
-    0 20px 44px var(--surface-shadow),
-    0 4px 14px rgba(58, 46, 66, 0.06);
+    0 1px 0 rgba(255, 255, 255, 0.62) inset,
+    0 1px 2px rgba(58, 46, 66, 0.04),
+    0 6px 14px rgba(58, 46, 66, 0.05),
+    0 18px 34px rgba(58, 46, 66, 0.05),
+    0 34px 68px var(--surface-shadow);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
 
 .dark .charm-glass {
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 20px 44px var(--surface-shadow),
-    0 4px 14px rgba(0, 0, 0, 0.2);
+    0 1px 0 rgba(255, 255, 255, 0.07) inset,
+    0 1px 2px rgba(0, 0, 0, 0.22),
+    0 6px 14px rgba(0, 0, 0, 0.2),
+    0 18px 34px rgba(0, 0, 0, 0.22),
+    0 34px 68px var(--surface-shadow);
 }
 
 /*

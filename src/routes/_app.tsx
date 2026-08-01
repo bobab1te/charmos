@@ -34,14 +34,14 @@ export const Route = createFileRoute('/_app')({
 
 function AppLayout() {
   const { user, profile } = Route.useRouteContext()
-  const { setTheme } = useThemeContext()
+  const { applyProfileTheme } = useThemeContext()
   const pathname = useLocation({ select: (location) => location.pathname })
 
-  // The profile's saved theme is the source of truth once authenticated —
-  // flows through the same shared ThemeProvider pre-login routes fall back to.
+  // The profile's saved theme is the source of truth once authenticated — unless this device is set
+  // to Auto, which applyProfileTheme deliberately leaves alone (see theme-context).
   useEffect(() => {
-    setTheme(profile.theme)
-  }, [profile.theme, setTheme])
+    applyProfileTheme(profile.theme)
+  }, [profile.theme, applyProfileTheme])
 
   return (
     <CurrencyProvider displayCurrency={profile.currency ?? 'USD'}>

@@ -1,25 +1,28 @@
 import { useEffect, useState } from 'react'
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'motion/react'
 import type { MotionValue } from 'motion/react'
-import { CharmLiquidMark } from '#/components/charm/charm-liquid-mark'
-import type { LiquidPalette } from '#/components/charm/charm-liquid-mark'
+import { CharmCelestial } from '#/components/charm/charm-celestial'
 import { CharmMascot } from '#/components/charm/charm-mascot'
 import { useCharmMoment } from '#/lib/charm-moments'
 import { useCharmStore } from '#/lib/charm-store'
+import { num3, ramp3, withAlpha } from '#/lib/color-ramp'
 import { useCurrency } from '#/lib/currency-context'
 import { computeMetrics } from '#/lib/derived'
+import { greetingForPhaseHour, useSkyPhase } from '#/lib/sky-phase'
 import { useThemeContext } from '#/lib/theme-context'
 
 /**
- * The dashboard's opening. Deliberately NOT a card: there is no panel, border, corner radius or
- * clipped rectangle anywhere in here. The colour is an atmosphere layer that starts above the
- * hero, spills wider than the content column, and is masked so it fades out on every side into
- * the page background — the same blended-section-boundary idea the waitlist uses, rather than a
- * banner sitting on top of the dashboard.
+ * The dashboard's opening — an environment the page sits inside, not a banner sitting on it. There
+ * is no panel, border, corner radius or clipped rectangle anywhere in here.
  *
- * The graphic itself is the landing page's own liquid Charm.OS mark (see charm-liquid-mark.tsx),
- * not a sun. It is blurred and held at low contrast so it reads as an aura behind the greeting;
- * the copy always wins the composition.
+ * Everything visual is driven by one scalar: `phase` from sky-phase.ts, 0 at midday and 1 in the
+ * middle of the night. The wash, the colour banks, the wisps, the sparkles and the sun/crescent all
+ * read that same number, which is what makes the day → sunset → night change feel like one event
+ * rather than a background swap plus an icon swap. The user's manual light/dark choice still
+ * controls the *page* palette; this controls the *sky*.
+ *
+ * Layering, front to back: greeting copy → mascot → celestial → colour banks and wisps → wash.
+ * The greeting deliberately overlaps the mascot's glow, which is where the depth comes from.
  */
 
 const HERO_MASK = 'radial-gradient(closest-side at 50% 38%, #000 12%, rgba(0,0,0,0.72) 52%, transparent 100%)'
@@ -33,61 +36,52 @@ function useHour() {
   return hour
 }
 
-function greetingFor(hour: number) {
-  if (hour < 5) return 'Good night'
-  if (hour < 12) return 'Good morning'
-  if (hour < 17) return 'Good afternoon'
-  if (hour < 21) return 'Good evening'
-  return 'Good night'
-}
-
 /**
- * Abstract colour banks — soft blurred forms, never literal clouds (the same rule the waitlist's
- * CelestialWorld follows). These are what give the hero its horizon without a horizon line.
+ * Wisps of atmosphere, not clouds. Heavily blurred, low opacity, drifting on a minute-plus cycle —
+ * at these settings they read as light in the air rather than as objects, which is the only way
+ * something cloud-shaped belongs in a CRM. Three of them, placed to frame the composition.
  */
-function ColourBank({
-  bank,
+function Wisp({
+  wisp,
   tint,
   mx,
   my,
   animate,
 }: {
-  bank: { w: number; h: number; l: number; t: number; blur: number; o: number; depth: number; drift: number }
+  wisp: { w: number; h: number; left: string; top: string; blur: number; o: number; depth: number; drift: number }
   tint: string
   mx: MotionValue<number>
   my: MotionValue<number>
   animate: boolean
 }) {
-  const x = useTransform(mx, (v) => v * bank.depth)
-  const y = useTransform(my, (v) => v * bank.depth * 0.45)
+  const x = useTransform(mx, (v) => v * wisp.depth)
+  const y = useTransform(my, (v) => v * wisp.depth * 0.45)
   return (
-    <motion.div className="absolute rounded-[50%]" style={{ x, y }}>
+    <motion.div className="absolute" style={{ left: wisp.left, top: wisp.top, x, y }}>
       <motion.div
         className="rounded-[50%]"
         style={{
-          width: `${bank.w}%`,
-          height: `${bank.h}px`,
-          marginLeft: `${bank.l}%`,
-          marginTop: `${bank.t}px`,
+          width: wisp.w,
+          height: wisp.h,
           background: tint,
-          filter: `blur(${bank.blur}px)`,
-          opacity: bank.o,
+          filter: `blur(${wisp.blur}px)`,
+          opacity: wisp.o,
         }}
-        animate={animate ? { x: [0, bank.drift, 0] } : undefined}
-        transition={{ duration: 34 + Math.abs(bank.drift), repeat: Infinity, ease: 'easeInOut' }}
+        animate={animate ? { x: [0, wisp.drift, 0] } : undefined}
+        transition={{ duration: 48 + Math.abs(wisp.drift), repeat: Infinity, ease: 'easeInOut' }}
       />
     </motion.div>
   )
 }
 
-/** A handful of four-point sparkles and dots, held to the margins — dark mode only. */
-function HeroSparkles() {
+/** A few four-point sparkles at the margins. Fades in with the phase, so they arrive with dusk. */
+function HeroSparkles({ strength }: { strength: number }) {
   const marks = [
-    { left: '4%', top: '18%', size: 13, delay: 0 },
-    { left: '17%', top: '62%', size: 8, delay: 1.4 },
-    { left: '84%', top: '14%', size: 15, delay: 0.7 },
-    { left: '93%', top: '54%', size: 9, delay: 2.1 },
-    { left: '68%', top: '78%', size: 7, delay: 1.1 },
+    { left: '3%', top: '12%', size: 13, delay: 0 },
+    { left: '15%', top: '78%', size: 8, delay: 1.4 },
+    { left: '88%', top: '58%', size: 14, delay: 0.7 },
+    { left: '70%', top: '8%', size: 9, delay: 2.1 },
+    { left: '52%', top: '86%', size: 7, delay: 1.1 },
   ]
   return (
     <div className="pointer-events-none absolute -top-16 bottom-[-20%] -left-[10%] -right-[10%] -z-10">
@@ -97,7 +91,7 @@ function HeroSparkles() {
           viewBox="0 0 24 24"
           className="absolute"
           style={{ left: m.left, top: m.top, width: m.size, height: m.size }}
-          animate={{ opacity: [0.25, 0.85, 0.25], scale: [0.9, 1.05, 0.9] }}
+          animate={{ opacity: [0.2 * strength, 0.85 * strength, 0.2 * strength], scale: [0.9, 1.05, 0.9] }}
           transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut', delay: m.delay }}
         >
           <path d="M12 0c.6 6.6 4.8 10.8 12 12-7.2 1.2-11.4 5.4-12 12-.6-6.6-4.8-10.8-12-12C7.2 10.8 11.4 6.6 12 0Z" fill="#fff" />
@@ -109,29 +103,44 @@ function HeroSparkles() {
 
 export function ParallaxHero({
   displayName,
-  /** Overrides the theme-derived palette. Exists so the graphic can be previewed in both states. */
-  palette: paletteOverride,
+  /** Overrides the clock-derived sky phase. Exists so the arc can be previewed at any time of day. */
+  phase: phaseOverride,
 }: {
   displayName: string
-  palette?: LiquidPalette
+  phase?: number
 }) {
   const hour = useHour()
-  const { theme } = useThemeContext()
+  const clockPhase = useSkyPhase()
+  const { preference } = useThemeContext()
   const prefersReducedMotion = useReducedMotion()
-  const isDark = theme === 'dark'
 
-  // The mark follows the theme rather than the clock. Without the old opaque rectangle behind it
-  // there is nothing separating it from the page, so a cool blue mark on the warm light background
-  // (or the reverse) would read as a mistake. Time of day still shows up — in the greeting.
-  const palette: LiquidPalette = paletteOverride ?? (isDark ? 'cool' : 'warm')
+  /*
+   * On Auto the sky is simply the clock, and the page palette follows the same scalar — so sky and
+   * background are one thing by construction.
+   *
+   * On a manual override the sky is clamped into the half of the arc that matches the palette the
+   * user picked. Without this, choosing Dark at noon would put a bright warm daytime wash and a sun
+   * on a navy page, which is precisely the "background and celestial element out of sync" the whole
+   * design is meant to avoid. The clamp is a range rather than a fixed value, so manual mode still
+   * drifts a little across the day.
+   */
+  const phase =
+    phaseOverride ??
+    (preference === 'auto'
+      ? clockPhase
+      : preference === 'dark'
+        ? Math.max(0.72, clockPhase)
+        : Math.min(0.3, clockPhase))
 
   const mx = useMotionValue(0)
   const my = useMotionValue(0)
   const springX = useSpring(mx, { stiffness: 60, damping: 18, mass: 0.6 })
   const springY = useSpring(my, { stiffness: 60, damping: 18, mass: 0.6 })
 
-  const markX = useTransform(springX, (v) => v * 1.1)
-  const markY = useTransform(springY, (v) => v * 0.7)
+  const celestialX = useTransform(springX, (v) => v * 1.1)
+  const celestialY = useTransform(springY, (v) => v * 0.7)
+  const mascotX = useTransform(springX, (v) => v * -0.35)
+  const mascotY = useTransform(springY, (v) => v * -0.22)
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (prefersReducedMotion) return
@@ -155,83 +164,118 @@ export function ParallaxHero({
   const metrics = computeMetrics(deals, ledger, convert)
   const mascotMood = activeMoment === 'deal-completed' ? 'bright' : metrics.needsFollowUp >= 3 ? 'overwhelmed' : 'calm'
 
-  // Wash and banks follow the same palette as the mark, so the whole atmosphere is one decision.
-  const cool = palette === 'cool'
-  const wash = cool
-    ? 'radial-gradient(80% 68% at 30% 34%, rgba(120,100,205,0.34) 0%, rgba(58,48,120,0.2) 44%, rgba(19,25,54,0) 78%)'
-    : 'radial-gradient(80% 68% at 30% 34%, rgba(255,198,150,0.4) 0%, rgba(238,168,190,0.24) 46%, rgba(255,240,228,0) 78%)'
-  const bankTint = cool ? '#4b3f8f' : '#fbdcc9'
+  // Day → sunset → night, all from the one scalar.
+  const washInner = ramp3('#ffc696', '#ff8f6e', '#7864cd', phase)
+  const washOuter = ramp3('#eea8be', '#c2688f', '#3a3078', phase)
+  const washInnerAlpha = num3(0.4, 0.46, 0.36, phase)
+  const washOuterAlpha = num3(0.24, 0.3, 0.22, phase)
+  const wash = `radial-gradient(closest-side at 46% 32%, ${withAlpha(washInner, washInnerAlpha)} 0%, ${withAlpha(washOuter, washOuterAlpha)} 48%, transparent 84%)`
+
+  const bankTint = ramp3('#fbdcc9', '#f0a48c', '#4b3f8f', phase)
+  const wispTint = ramp3('#fff1e0', '#ffc4a8', '#6f5fb8', phase)
+  const bankOpacity = num3(0.55, 0.5, 0.36, phase)
+  const wispOpacity = num3(0.22, 0.2, 0.16, phase)
+  // Sparkles arrive with dusk rather than snapping on when the page turns dark.
+  const sparkleStrength = Math.max(0, (phase - 0.4) / 0.45)
+
+  // Glow that sits between the mascot and the wash, so the mascot's colour dissolves outward
+  // instead of ending in a defined patch: mascot -> glow -> liquid gradient -> dashboard.
+  const mascotGlow = ramp3('#f6a8c4', '#f09a86', '#8f7ad4', phase)
 
   const banks = [
-    { w: 62, h: 150, l: -12, t: 120, blur: 46, o: cool ? 0.42 : 0.6, depth: 0.55, drift: 22 },
-    { w: 48, h: 120, l: 44, t: 168, blur: 40, o: cool ? 0.32 : 0.46, depth: 0.32, drift: -18 },
-    { w: 38, h: 96, l: 20, t: 205, blur: 34, o: cool ? 0.24 : 0.34, depth: 0.78, drift: 14 },
+    { w: 62, h: 150, l: -12, t: 118, blur: 46, depth: 0.55, drift: 22, scale: 1 },
+    { w: 48, h: 120, l: 44, t: 166, blur: 40, depth: 0.32, drift: -18, scale: 0.85 },
+    { w: 38, h: 96, l: 20, t: 202, blur: 34, depth: 0.78, drift: 14, scale: 0.62 },
+  ]
+
+  const wisps = [
+    { w: 340, h: 84, left: '-4%', top: '2%', blur: 52, o: wispOpacity, depth: 0.5, drift: 20 },
+    { w: 260, h: 70, left: '60%', top: '10%', blur: 46, o: wispOpacity * 0.8, depth: 0.28, drift: -16 },
+    { w: 300, h: 76, left: '26%', top: '76%', blur: 54, o: wispOpacity * 0.66, depth: 0.68, drift: 13 },
   ]
 
   return (
-    <div
-      onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerLeave}
-      className="relative isolate"
-    >
+    <div onPointerMove={handlePointerMove} onPointerLeave={handlePointerLeave} className="relative isolate">
       {/*
-        The atmosphere. Extends above, beside and well below the hero's own box, then a radial mask
-        dissolves it on every edge — so there is no boundary between "hero" and "dashboard", only a
-        gradient that runs out. -z-10 inside `isolate` keeps it behind the greeting but still
-        entirely contained by the hero, so it can never slide under the widgets below.
+        The atmosphere. Extends above, beside and well below the hero's own box, then a mask
+        dissolves it on every edge — so there is no hero/dashboard boundary, only a gradient that
+        runs out. `closest-side` is load-bearing: a percentage-sized mask leaves a few percent of
+        alpha at whichever edge its ellipse doesn't reach, which shows up as a hard line.
       */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-28 bottom-[-42%] -left-[16%] -right-[16%] -z-10"
-        style={{
-          // `closest-side` is doing real work here: it sizes the ellipse to the nearest edge on each
-          // axis, which is the only way to guarantee the mask reaches full transparency on *every*
-          // side. A percentage-sized mask leaves a few percent of alpha at whichever edge the
-          // ellipse doesn't quite reach, and that shows up as a faint hard line across the page.
-          WebkitMaskImage: HERO_MASK,
-          maskImage: HERO_MASK,
-        }}
+        className="pointer-events-none absolute -top-28 bottom-[-42%] -left-[16%] -right-[16%] -z-10 overflow-hidden"
+        style={{ WebkitMaskImage: HERO_MASK, maskImage: HERO_MASK }}
       >
-        <div className="absolute inset-0 transition-[background] duration-700" style={{ background: wash }} />
+        <div className="absolute inset-0 transition-[background] duration-1000" style={{ background: wash }} />
+
         {banks.map((bank, i) => (
-          <ColourBank
-            key={i}
-            bank={bank}
+          <Wisp
+            key={`bank-${i}`}
+            wisp={{
+              w: bank.w * 12,
+              h: bank.h,
+              left: `${bank.l}%`,
+              top: `${bank.t}px`,
+              blur: bank.blur,
+              o: bankOpacity * bank.scale,
+              depth: bank.depth,
+              drift: bank.drift,
+            }}
             tint={bankTint}
             mx={mx}
             my={my}
             animate={!prefersReducedMotion}
           />
         ))}
+
+        {wisps.map((wisp, i) => (
+          <Wisp key={`wisp-${i}`} wisp={wisp} tint={wispTint} mx={mx} my={my} animate={!prefersReducedMotion} />
+        ))}
+
+        {/* Grain over the hero's own gradients — the page-level .charm-grain sits behind all of
+            this and never reaches it. */}
+        <div className="charm-grain-local" />
       </div>
 
-      {/* Outside the masked layer on purpose — the sparkles live at the margins, which is exactly
-          where that mask is transparent, so inside it they would be invisible. */}
-      {isDark && !prefersReducedMotion && <HeroSparkles />}
+      {sparkleStrength > 0.02 && !prefersReducedMotion && <HeroSparkles strength={Math.min(1, sparkleStrength)} />}
 
-      {/*
-        The mark. Blurred and held at low opacity on purpose: at full strength it is a landing-page
-        graphic, and at this strength it is the room the greeting sits in.
-      */}
+      {/* Sun by day, true crescent moon at night — one object, see charm-celestial.tsx. */}
       <motion.div
         aria-hidden="true"
-        style={{ x: markX, y: markY }}
-        className="pointer-events-none absolute -top-2 right-[1%] -z-10 hidden aspect-square w-[38%] max-w-[320px] sm:block"
+        style={{ x: celestialX, y: celestialY }}
+        className="pointer-events-none absolute -top-2 right-[3%] -z-10 hidden aspect-square w-[30%] max-w-[250px] sm:block"
       >
-        <CharmLiquidMark
-          palette={palette}
-          className="size-full opacity-90 blur-[1px] dark:opacity-80"
-        />
+        <CharmCelestial phase={phase} className="size-full opacity-90 blur-[1px]" />
       </motion.div>
 
-      <div className="relative flex min-h-[200px] items-end gap-4 px-1 pb-3 pt-12 sm:min-h-[236px] sm:pt-16">
-        <CharmMascot mood={mascotMood} lookAtCursor className="hidden shrink-0 sm:block" />
+      {/*
+        The mascot, and the glow that embeds it. Both sit at -z-10 so the greeting can pass in front
+        of the glow's outer edge — that overlap is the whole point of the layering. The mascot's own
+        body stays clear of the copy, so nothing readable is ever behind it.
+      */}
+      <motion.div
+        style={{ x: mascotX, y: mascotY }}
+        className="pointer-events-none absolute left-[-18px] top-6 -z-10 hidden sm:block"
+      >
+        <div
+          aria-hidden="true"
+          className="absolute left-1/2 top-1/2 size-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full transition-[background] duration-1000"
+          style={{
+            background: `radial-gradient(closest-side, ${withAlpha(mascotGlow, 0.26)} 0%, ${withAlpha(mascotGlow, 0.1)} 45%, transparent 76%)`,
+            filter: 'blur(30px)',
+          }}
+        />
+        <CharmMascot mood={mascotMood} size={132} lookAtCursor className="relative" />
+      </motion.div>
+
+      <div className="relative flex min-h-[210px] items-end pb-3 pt-14 sm:min-h-[248px] sm:pt-16 sm:pl-[136px]">
         <div className="flex flex-1 flex-col justify-end">
           <span className="mb-3 w-fit rounded-full bg-white/45 px-3 py-1 text-xs font-semibold tracking-wide text-[var(--charm-ink-soft)] backdrop-blur-md dark:bg-white/10 dark:text-white/75">
             ✦ Charm.OS
           </span>
           <h1 className="font-display-bold text-3xl font-semibold tracking-tight text-[var(--charm-ink)] sm:text-[2.6rem] sm:leading-[1.08]">
-            {greetingFor(hour)}, {displayName}.
+            {greetingForPhaseHour(hour)}, {displayName}.
           </h1>
           <p className="mt-2 max-w-md text-sm text-[var(--charm-ink-soft)] sm:text-base">
             Here's how your brand partnerships are looking today.
