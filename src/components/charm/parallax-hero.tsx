@@ -242,48 +242,50 @@ export function ParallaxHero({
 
       {/*
         The large hero character: the Charm.OS flower by day, morphing into a crescent moon at
-        night. Sits centre-left and behind everything, so the greeting passes in front of it — that
-        overlap is the depth. Blurred and held below full contrast so it stays environment rather
-        than becoming a landing-page graphic.
+        night. Blurred and held below full contrast so it stays environment rather than becoming a
+        landing-page graphic.
+
+        The 57.5% is measured rather than guessed — it leaves ~139px of clear space on either side
+        of the character at the 6xl container width, between the end of the greeting copy on its
+        left and the content edge on its right.
       */}
       <motion.div
         aria-hidden="true"
         style={{ x: celestialX, y: celestialY }}
-        className="pointer-events-none absolute -top-16 left-[46%] -z-10 hidden aspect-square w-[34%] max-w-[300px] sm:block"
+        className="pointer-events-none absolute -top-16 left-[57.5%] -z-10 hidden aspect-square w-[36%] max-w-[330px] sm:block"
       >
         <CharmCelestial phase={phase} className="size-full opacity-80 blur-[2px]" />
       </motion.div>
 
-      {/*
-        The mascot, and the glow that embeds it. Both sit at -z-10 so the greeting can pass in front
-        of the glow's outer edge — that overlap is the whole point of the layering. The mascot's own
-        body stays clear of the copy, so nothing readable is ever behind it.
-      */}
-      <motion.div
-        style={{ x: mascotX, y: mascotY }}
-        className="pointer-events-none absolute left-[-18px] top-6 -z-10 hidden sm:block"
-      >
-        <div
-          aria-hidden="true"
-          className="absolute left-1/2 top-1/2 size-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full transition-[background] duration-1000"
-          style={{
-            background: `radial-gradient(closest-side, ${withAlpha(mascotGlow, 0.26)} 0%, ${withAlpha(mascotGlow, 0.1)} 45%, transparent 76%)`,
-            filter: 'blur(30px)',
-          }}
-        />
-        {/* The small assistant, back at its original size — the "make it larger" note was about the
-            large hero character above, not this one. */}
-        <CharmMascot mood={mascotMood} size={84} lookAtCursor className="relative" />
-      </motion.div>
-
-      <div className="relative flex min-h-[210px] items-end pb-3 pt-14 sm:min-h-[248px] sm:pt-16 sm:pl-[136px]">
+      <div className="relative flex min-h-[210px] items-end pb-3 pt-14 sm:min-h-[248px] sm:pt-16">
         <div className="flex flex-1 flex-col justify-end">
           <span className="mb-3 w-fit rounded-full bg-white/45 px-3 py-1 text-xs font-semibold tracking-wide text-[var(--charm-ink-soft)] backdrop-blur-md dark:bg-white/10 dark:text-white/75">
             ✦ Charm.OS
           </span>
-          <h1 className="font-display-bold text-3xl font-semibold tracking-tight text-[var(--charm-ink)] sm:text-[2.6rem] sm:leading-[1.08]">
-            {greetingForPhaseHour(hour)}, {displayName}.
-          </h1>
+
+          {/*
+            The small assistant sits on the greeting line itself rather than floating in the hero's
+            left gutter, so it reads as being *with* the greeting. Inline in the flex row, which
+            also means it stays vertically locked to the heading at any type size.
+          */}
+          <div className="flex items-center gap-3">
+            <motion.div style={{ x: mascotX, y: mascotY }} className="pointer-events-none relative hidden shrink-0 sm:block">
+              <div
+                aria-hidden="true"
+                className="absolute left-1/2 top-1/2 size-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full transition-[background] duration-1000"
+                style={{
+                  background: `radial-gradient(closest-side, ${withAlpha(mascotGlow, 0.26)} 0%, ${withAlpha(mascotGlow, 0.1)} 45%, transparent 76%)`,
+                  filter: 'blur(30px)',
+                }}
+              />
+              <CharmMascot mood={mascotMood} size={84} lookAtCursor className="relative" />
+            </motion.div>
+
+            <h1 className="font-display-bold text-3xl font-semibold tracking-tight text-[var(--charm-ink)] sm:text-[2.6rem] sm:leading-[1.08]">
+              {greetingForPhaseHour(hour)}, {displayName}.
+            </h1>
+          </div>
+
           <p className="mt-2 max-w-md text-sm text-[var(--charm-ink-soft)] sm:text-base">
             Here's how your brand partnerships are looking today.
           </p>
