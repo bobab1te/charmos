@@ -127,6 +127,27 @@ describe('earnings totals', () => {
   })
 
   /**
+   * A retainer confirmed late must land in the month it was earned, not the month it was
+   * confirmed. confirmPartnershipCycle dates its ledger entry from the cycle's periodStart for
+   * exactly this reason — backfillPastPartnershipCycles exists to create historical cycles in
+   * bulk, and dating them "now" piled several months of retainer income into whichever month the
+   * user happened to catch up in, leaving the real months reading zero.
+   */
+  it('books a retainer into its own period, not the month it was confirmed', () => {
+    const juneCycleConfirmedInAugust = entry({
+      id: 'r-june',
+      partnershipId: 'p1',
+      amount: 250,
+      date: '2026-06-11T09:00:00Z', // periodStart, not the confirmation click
+    })
+    const monthly = monthlyRevenue([juneCycleConfirmedInAugust], [], identity, 6, now)
+    const june = monthly.find((m) => m.key === '2026-5')
+
+    expect(june?.total).toBe(250)
+    expect(total([], [juneCycleConfirmedInAugust])).toBe(0) // August, correctly, has none of it
+  })
+
+  /**
    * The dashboard metric and the Finances chart are the two things users compare against each
    * other. They now read the same event list, and this pins that: the current month's bar must
    * equal the dashboard's earnings figure for any mix of payment types.

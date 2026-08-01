@@ -1052,7 +1052,7 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       const partnership = partnerships.find((p) => p.id === cycle.partnershipId)
       if (!partnership) return
       const brand = brandById(partnership.brandId)
-      const date = new Date().toISOString()
+      const confirmedAt = new Date().toISOString()
       const supabase = getSupabaseBrowserClient()
 
       const { data: ledgerData, error: ledgerError } = await supabase
@@ -1062,7 +1062,20 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
           type: 'income',
           amount: cycle.expectedAmount,
           currency: cycle.currency,
-          date,
+          /*
+           * The period this money was earned for, NOT the moment the button was clicked.
+           *
+           * Confirming is a bookkeeping action that can happen at any time — this function
+           * explicitly supports confirming historical cycles, and backfillPastPartnershipCycles
+           * exists to create them in bulk. Dating the entry `now` booked every one of those into
+           * the current month, so a retainer earned in June showed up as June revenue only if you
+           * happened to click confirm in June. Catching up on three months at once dumped all of
+           * it into today and left those months reading zero.
+           *
+           * periodStart also makes this idempotent: re-confirming after an undo lands the money in
+           * the same month it was in before, rather than wherever "today" happens to be.
+           */
+          date: cycle.periodStart,
           description: `${brand?.name ?? 'Unknown brand'} — retainer payment`,
           partnership_id: partnership.id,
           brand_id: partnership.brandId,
@@ -1075,7 +1088,9 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
 
       const { data: cycleData, error: cycleError } = await supabase
         .from('partnership_payment_cycles')
-        .update({ status: 'confirmed', confirmed_at: date, ledger_entry_id: ledgerEntry.id })
+        // confirmed_at stays the real click time — it is an audit field, deliberately distinct
+        // from the ledger entry's accrual date above.
+        .update({ status: 'confirmed', confirmed_at: confirmedAt, ledger_entry_id: ledgerEntry.id })
         .eq('id', cycle.id)
         .select('*')
         .single()
