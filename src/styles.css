@@ -369,6 +369,32 @@ body {
   opacity: 0.09;
 }
 
+/*
+ * Edge dissolve for the large hero character. The SVG's own feather softens the silhouette
+ * uniformly, which would take the face with it; this fades only the outer ring, so the centre —
+ * where the wink lives — stays fully opaque while the petal tips melt into the liquid background.
+ *
+ * The stops are keyed to the artwork: the face sits inside r≈35 of the 100-unit half-box and the
+ * petal tips reach r≈74, so the mask holds full alpha to 44% and does all of its falloff outside
+ * that, across the petals.
+ */
+.charm-celestial-dissolve {
+  -webkit-mask-image: radial-gradient(
+    closest-side,
+    #000 44%,
+    rgba(0, 0, 0, 0.88) 62%,
+    rgba(0, 0, 0, 0.45) 82%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    closest-side,
+    #000 44%,
+    rgba(0, 0, 0, 0.88) 62%,
+    rgba(0, 0, 0, 0.45) 82%,
+    transparent 100%
+  );
+}
+
 /* ---------- Glassmorphism surfaces ---------- */
 
 /*

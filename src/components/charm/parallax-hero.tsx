@@ -242,22 +242,47 @@ export function ParallaxHero({
 
       {/*
         The large hero character: the Charm.OS flower by day, morphing into a crescent moon at
-        night. Blurred and held below full contrast so it stays environment rather than becoming a
-        landing-page graphic.
+        night.
 
-        The 57.5% is measured rather than guessed — it leaves ~139px of clear space on either side
-        of the character at the 6xl container width, between the end of the greeting copy on its
-        left and the content edge on its right.
+        It overflows the hero's bottom edge and reaches down past the Customize row, stopping just
+        short of the metric cards — measured at 1440px, its box ends 11px above the first card, and
+        the edge dissolve puts the visible gap nearer 60px. Adjacent to the widget area rather than
+        underneath it. Because it does cross the Customize row, that row needs its own `relative`
+        (see dashboard.tsx) or the control would paint beneath the artwork.
+
+        Everything here is proportional rather than a fixed offset: `top` is a share of the hero's
+        own height and the width is a share of the content column, so the composition holds as the
+        column narrows instead of drifting.
       */}
       <motion.div
         aria-hidden="true"
         style={{ x: celestialX, y: celestialY }}
-        className="pointer-events-none absolute -top-16 left-[57.5%] -z-10 hidden aspect-square w-[36%] max-w-[330px] sm:block"
+        /*
+         * Hidden below `sm`, and that is a measured decision rather than a default. At 414px the
+         * greeting wraps to the full column width and the metric cards stack single-file, which
+         * leaves exactly one clear band — 222px to 312px, 90px tall — with the Customize pill
+         * sitting in its right half. A character large enough to read cannot put its face in 90px:
+         * placing it there buries it behind the first card, and placing it any higher puts artwork
+         * under the greeting. Making it genuinely fit needs the mobile hero at ~330px, which pushes
+         * the first metric card past the half-screen mark on an 812px device — too much of a
+         * working dashboard spent on atmosphere.
+         *
+         * Two placements above that, split at `lg` for a reason that falls out of the arithmetic:
+         * the greeting is ~495px wide, so it reaches the character's 54% left edge once the content
+         * column drops under ~917px — a viewport of about 965px. Below `lg`, then, the low
+         * behind-the-widgets placement would put artwork under the heading, so the character moves
+         * up into the empty space above the copy (which is bottom-aligned) and shrinks. The
+         * behind-the-dashboard layering is a `lg`-and-up effect; everything narrower gets the
+         * character without the overlap.
+         */
+        className="pointer-events-none absolute -top-[6%] left-[56%] -z-10 hidden aspect-square w-[38%] max-w-[280px] sm:block lg:-top-[11%] lg:left-[54%] lg:w-[42%] lg:max-w-[400px]"
       >
-        <CharmCelestial phase={phase} className="size-full opacity-80 blur-[2px]" />
+        <CharmCelestial phase={phase} className="charm-celestial-dissolve size-full opacity-[0.78] blur-[2px]" />
       </motion.div>
 
-      <div className="relative flex min-h-[210px] items-end pb-3 pt-14 sm:min-h-[248px] sm:pt-16">
+      {/* Taller than the copy strictly needs: the extra height is what lets the character sit low
+          in the hero instead of being pinned near the top of the page. */}
+      <div className="relative flex min-h-[210px] items-end pb-3 pt-14 sm:min-h-[300px] sm:pt-20">
         <div className="flex flex-1 flex-col justify-end">
           <span className="mb-3 w-fit rounded-full bg-white/45 px-3 py-1 text-xs font-semibold tracking-wide text-[var(--charm-ink-soft)] backdrop-blur-md dark:bg-white/10 dark:text-white/75">
             ✦ Charm.OS

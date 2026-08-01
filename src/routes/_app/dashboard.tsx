@@ -21,7 +21,13 @@ function Dashboard() {
     <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
       <ParallaxHero displayName={displayName} />
 
-      <div className="flex items-center justify-end">
+      {/*
+        `relative` is load-bearing, not cosmetic. The hero's flower now overflows downward into this
+        row, and the hero is a positioned element — so an unpositioned row here would paint *under*
+        it and the Customize control would end up behind the artwork. Every widget below is already
+        positioned (MetricCard/WidgetCard both set `relative`), so this row was the only gap.
+      */}
+      <div className="relative flex items-center justify-end">
         <Link
           to="/settings"
           className="charm-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:text-[var(--charm-ink)] hover:shadow-md active:scale-95"
