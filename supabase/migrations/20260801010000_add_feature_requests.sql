@@ -23,6 +23,7 @@ create table if not exists public.feature_requests (
 
 alter table public.feature_requests enable row level security;
 
+drop policy if exists "Feature requests are owner-accessible" on public.feature_requests;
 create policy "Feature requests are owner-accessible"
   on public.feature_requests for all
   using (auth.uid() = user_id)
@@ -34,5 +35,14 @@ create index if not exists feature_requests_user_id_idx on public.feature_reques
 -- click, or a retried request after a flaky network). Two identical suggestions from the same
 -- user inside the same minute are a duplicate, not a second idea; the same text submitted next
 -- week still goes through.
+--
+-- created_at is normalised to UTC first because an index expression must be IMMUTABLE, and
+-- date_trunc() over a timestamptz is only STABLE — its result depends on the session TimeZone,
+-- so Postgres refuses it. Fixing the zone makes the whole expression immutable. UTC is also the
+-- right choice on its own terms: the duplicate window shouldn't move when a creator travels.
 create unique index if not exists feature_requests_no_rapid_duplicates_idx
-  on public.feature_requests (user_id, suggestion, date_trunc('minute', created_at));
+  on public.feature_requests (
+    user_id,
+    suggestion,
+    (date_trunc('minute', created_at at time zone 'UTC'))
+  );
