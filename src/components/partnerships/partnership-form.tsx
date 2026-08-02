@@ -39,7 +39,7 @@ const CONTENT_FORMAT_SUGGESTIONS = ['Canvas UGC', 'UGC', 'Whitelisted Content', 
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl bg-white/40 p-4">
+    <div className="flex flex-col gap-3 rounded-2xl bg-[var(--surface-nested)] p-4">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--charm-ink-soft)]">{title}</h3>
       {children}
     </div>

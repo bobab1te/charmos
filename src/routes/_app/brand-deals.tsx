@@ -104,7 +104,7 @@ function BrandCard({ brand, dealCount }: { brand: Brand; dealCount: number }) {
             {brand.contactEmail && <p className="text-xs text-[var(--charm-ink-soft)]">{brand.contactEmail}</p>}
           </div>
         </div>
-        <span className="shrink-0 rounded-full bg-white/50 px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
+        <span className="shrink-0 rounded-full bg-[var(--surface-nested)] px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
           {dealCount} deal{dealCount === 1 ? '' : 's'}
         </span>
       </div>
@@ -202,7 +202,7 @@ function ArchivedDealCard({ deal, brandName }: { deal: BrandDeal; brandName: str
             <p className="text-xs text-[var(--charm-ink-soft)] capitalize">Archived from: {deal.stage}</p>
           </div>
         </div>
-        <span className="shrink-0 rounded-full bg-white/50 px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
+        <span className="shrink-0 rounded-full bg-[var(--surface-nested)] px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
           {isGiftedAmount(deal.compensationAmount) ? (
             <GiftedLabel />
           ) : (

@@ -32,7 +32,7 @@ function DealRow({ deal, brandName, logoUrl }: { deal: BrandDeal; brandName: str
         }).format(convert(deal.compensationAmount, deal.compensationCurrency))
 
   return (
-    <li className="flex items-center gap-1.5 rounded-lg px-1.5 py-1 transition-colors duration-150 ease-out hover:bg-white/40">
+    <li className="flex items-center gap-1.5 rounded-lg px-1.5 py-1 transition-colors duration-150 ease-out hover:bg-[var(--surface-interactive)]">
       <BrandAvatar name={brandName} logoUrl={logoUrl} className="size-5 shrink-0 text-[10px]" />
       <div className="min-w-0">
         <p className="truncate text-xs font-medium text-[var(--charm-ink)]">{brandName}</p>
@@ -59,7 +59,7 @@ export function PipelineSummary({ onHide }: { onHide: () => void }) {
       headerAction={
         <Link
           to="/brand-deals"
-          className="flex items-center gap-1 rounded-full bg-white/50 px-2.5 py-1 text-xs font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:text-[var(--charm-ink)] hover:shadow-sm active:scale-95"
+          className="flex items-center gap-1 rounded-full bg-[var(--surface-nested)] px-2.5 py-1 text-xs font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:text-[var(--charm-ink)] hover:shadow-sm active:scale-95"
         >
           Full board <ArrowUpRight className="size-3.5" />
         </Link>
@@ -70,12 +70,12 @@ export function PipelineSummary({ onHide }: { onHide: () => void }) {
           const visible = col.deals.slice(0, VISIBLE_PER_COLUMN)
           const overflow = col.deals.length - visible.length
           return (
-            <div key={col.id} className="flex min-h-[220px] flex-col rounded-xl border border-dashed border-white/40 p-3">
+            <div key={col.id} className="flex min-h-[220px] flex-col rounded-xl border border-dashed border-[var(--border-subtle)] p-3">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--charm-ink-soft)]">
                   {col.label}
                 </span>
-                <span className="rounded-full bg-white/50 px-1.5 py-0.5 text-[11px] font-medium text-[var(--charm-ink-soft)]">
+                <span className="rounded-full bg-[var(--surface-nested)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--charm-ink-soft)]">
                   {col.deals.length}
                 </span>
               </div>

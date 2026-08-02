@@ -139,7 +139,7 @@ export function IdeaDetailModal({ ideaId, onOpenChange }: IdeaDetailModalProps) 
             </Button>
           </div>
 
-          <div className="flex flex-col gap-2 rounded-xl bg-white/40 p-3">
+          <div className="flex flex-col gap-2 rounded-xl bg-[var(--surface-nested)] p-3">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="isSeries">Part of a series?</Label>
               <Switch id="isSeries" checked={isSeries} onCheckedChange={setIsSeries} />

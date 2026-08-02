@@ -52,7 +52,7 @@ function CycleAmount({
             setEditing(false)
           }
         }}
-        className="w-20 rounded border border-black/15 bg-white/80 px-1.5 py-0.5 text-xs text-[var(--charm-ink)] outline-none focus:border-[var(--accent)]"
+        className="w-20 rounded border border-[var(--border-subtle)] bg-[var(--surface-nested)] px-1.5 py-0.5 text-xs text-[var(--charm-ink)] outline-none focus:border-[var(--accent)]"
       />
     )
   }
@@ -64,7 +64,7 @@ function CycleAmount({
         setDraft(String(cycle.expectedAmount))
         setEditing(true)
       }}
-      className="-mx-1 rounded px-1 underline decoration-dotted decoration-[var(--charm-ink-soft)] underline-offset-2 transition duration-150 ease-out hover:bg-black/5"
+      className="-mx-1 rounded px-1 underline decoration-dotted decoration-[var(--charm-ink-soft)] underline-offset-2 transition duration-150 ease-out hover:bg-[var(--surface-interactive)]"
     >
       {currency.format(cycle.expectedAmount)}
     </button>
@@ -98,7 +98,7 @@ export function PartnershipCycleHistory({ partnershipId }: { partnershipId: stri
   return (
     <div className="flex max-h-64 flex-col gap-1.5 overflow-y-auto">
       {cycles.map((cycle) => (
-        <div key={cycle.id} className="flex items-center justify-between gap-2 rounded-xl bg-white/50 p-2.5">
+        <div key={cycle.id} className="flex items-center justify-between gap-2 rounded-xl bg-[var(--surface-nested)] p-2.5">
           <div className="min-w-0">
             <p className="text-sm font-medium text-[var(--charm-ink)]">
               {format(new Date(cycle.periodStart), 'MMM d')} – {format(new Date(cycle.periodEnd), 'MMM d, yyyy')}

@@ -52,7 +52,7 @@ function GhostedRow({
   }
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-xl bg-white/50 p-2.5">
+    <div className="flex flex-col gap-1.5 rounded-xl bg-[var(--surface-nested)] p-2.5">
       <button type="button" onClick={() => onOpen(deal.id)} className="flex items-center gap-2 text-left">
         <BrandAvatar name={brandName} logoUrl={brandById(deal.brandId)?.logoUrl} className="size-6 shrink-0 text-xs" />
         <div className="min-w-0">
@@ -91,7 +91,7 @@ function StaleCompletedRow({
   const daysSince = differenceInCalendarDays(new Date(), new Date(deal.stageUpdatedAt))
 
   return (
-    <div className="flex items-center justify-between gap-2 rounded-xl bg-white/50 p-2.5">
+    <div className="flex items-center justify-between gap-2 rounded-xl bg-[var(--surface-nested)] p-2.5">
       <button type="button" onClick={() => onOpen(deal.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
         <BrandAvatar name={brandName} logoUrl={brandById(deal.brandId)?.logoUrl} className="size-6 shrink-0 text-xs" />
         <div className="min-w-0">
@@ -145,7 +145,7 @@ export function NotificationBell() {
           <button
             type="button"
             aria-label="Notifications"
-            className="relative rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
+            className="relative rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-[var(--surface-interactive)] hover:text-[var(--charm-ink)] active:scale-90"
           >
             <Bell className="size-4" />
             {count > 0 && (
@@ -172,7 +172,7 @@ export function NotificationBell() {
                         key={deal.id}
                         type="button"
                         onClick={() => openDeal(deal.id)}
-                        className="flex flex-col gap-0.5 rounded-xl bg-white/50 p-2.5 text-left transition duration-150 ease-out hover:bg-white/70"
+                        className="flex flex-col gap-0.5 rounded-xl bg-[var(--surface-nested)] p-2.5 text-left transition duration-150 ease-out hover:bg-[var(--surface-interactive)]"
                       >
                         <div className="flex items-center gap-1.5">
                           <span

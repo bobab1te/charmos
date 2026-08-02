@@ -315,7 +315,7 @@ export function ParallaxHero({
           <h1 className="font-display-bold text-3xl font-semibold tracking-tight text-[var(--charm-ink)] sm:text-[2.6rem] sm:leading-[1.08]">
             {greetingForPhaseHour(hour)}, {displayName}.
           </h1>
-          <span className="mt-2 w-fit rounded-full bg-white/45 px-3 py-1 text-xs font-semibold tracking-wide text-[var(--charm-ink-soft)] backdrop-blur-md dark:bg-white/10 dark:text-white/75">
+          <span className="mt-2 w-fit rounded-full bg-[var(--surface-nested)] px-3 py-1 text-xs font-semibold tracking-wide text-[var(--charm-ink-soft)] backdrop-blur-md  dark:text-white/75">
             ✦ Charm.OS
           </span>
           <p className="mt-2 max-w-md text-sm text-[var(--charm-ink-soft)] sm:text-base">

@@ -29,7 +29,7 @@ export function WidgetColorPicker({
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           aria-label={label}
-          className="size-4 shrink-0 rounded-full border border-black/15 shadow-sm transition duration-150 ease-out hover:scale-110 active:scale-95"
+          className="size-4 shrink-0 rounded-full border border-[var(--border-subtle)] shadow-sm transition duration-150 ease-out hover:scale-110 active:scale-95"
           style={{ background: color }}
         />
       </PopoverTrigger>
@@ -46,7 +46,7 @@ export function WidgetColorPicker({
               type="button"
               aria-label={swatch.label}
               onClick={() => onChange(swatch.value)}
-              className="size-6 rounded-full border border-black/15 transition duration-150 ease-out hover:scale-110 active:scale-95"
+              className="size-6 rounded-full border border-[var(--border-subtle)] transition duration-150 ease-out hover:scale-110 active:scale-95"
               style={{ background: swatch.value }}
             />
           ))}
@@ -58,7 +58,7 @@ export function WidgetColorPicker({
               type="color"
               value={color}
               onChange={(e) => onChange(e.target.value)}
-              className="size-6 cursor-pointer rounded border border-black/15 bg-transparent p-0"
+              className="size-6 cursor-pointer rounded border border-[var(--border-subtle)] bg-transparent p-0"
             />
           </label>
           <button

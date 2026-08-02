@@ -36,7 +36,7 @@ const COMPENSATION_TYPES: Array<{ value: CompensationType; label: string }> = [
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl bg-white/40 p-4">
+    <div className="flex flex-col gap-3 rounded-2xl bg-[var(--surface-nested)] p-4">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--charm-ink-soft)]">{title}</h3>
       {children}
     </div>
@@ -200,7 +200,7 @@ export function DealForm({
               {values.deliverables.map((d, i) => (
                 <div
                   key={i}
-                  className="grid grid-cols-1 gap-2 rounded-xl bg-white/50 p-2.5 sm:grid-cols-[1fr_1fr_auto_auto]"
+                  className="grid grid-cols-1 gap-2 rounded-xl bg-[var(--surface-nested)] p-2.5 sm:grid-cols-[1fr_1fr_auto_auto]"
                 >
                   <Input
                     value={d.type}
@@ -304,7 +304,7 @@ export function DealForm({
               </div>
 
               {values.compensationType === 'paid' && (
-                <div className="flex flex-col gap-3 rounded-xl bg-white/50 p-3 sm:col-span-3">
+                <div className="flex flex-col gap-3 rounded-xl bg-[var(--surface-nested)] p-3 sm:col-span-3">
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="expectedPayoutDate">Expected payout date</Label>
                     <Input

@@ -36,7 +36,7 @@ export function MetricCard({ label, value, icon, hint, accentClass, onHide, acti
       <div className="flex items-start justify-between">
         <div
           className={cn(
-            'flex size-9 items-center justify-center rounded-xl text-white',
+            'flex size-9 items-center justify-center rounded-xl text-[var(--text-on-pastel)]',
             accentClass ?? 'bg-[var(--accent)]',
           )}
         >
@@ -47,7 +47,7 @@ export function MetricCard({ label, value, icon, hint, accentClass, onHide, acti
             <button
               type="button"
               aria-label={`${label} widget settings`}
-              className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
+              className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-[var(--surface-interactive)] hover:text-[var(--charm-ink)] active:scale-90"
             >
               <Settings className="size-4" />
             </button>

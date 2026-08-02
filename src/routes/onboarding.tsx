@@ -115,7 +115,7 @@ function OnboardingPage() {
               key={s}
               className={cn(
                 'h-1.5 flex-1 rounded-full transition-colors',
-                i <= stepIndex ? 'bg-[var(--accent)]' : 'bg-white/40',
+                i <= stepIndex ? 'bg-[var(--accent)]' : 'bg-[var(--surface-nested)]',
               )}
             />
           ))}
@@ -156,7 +156,7 @@ function OnboardingPage() {
                     'rounded-full border px-4 py-2 text-sm font-medium transition duration-150 ease-out active:scale-95',
                     platforms.includes(p.value)
                       ? 'border-transparent bg-[var(--accent)] text-[var(--accent-foreground)]'
-                      : 'border-[var(--charm-ink-soft)]/30 text-[var(--charm-ink-soft)] hover:bg-white/50',
+                      : 'border-[var(--charm-ink-soft)]/30 text-[var(--charm-ink-soft)] hover:bg-[var(--surface-interactive)]',
                   )}
                 >
                   {p.label}
@@ -182,7 +182,7 @@ function OnboardingPage() {
                     'rounded-xl border px-3 py-2.5 text-left transition duration-150 ease-out active:scale-[0.97]',
                     audienceTier === tier.value
                       ? 'border-transparent bg-[var(--accent)] text-[var(--accent-foreground)]'
-                      : 'border-[var(--charm-ink-soft)]/30 hover:bg-white/50',
+                      : 'border-[var(--charm-ink-soft)]/30 hover:bg-[var(--surface-interactive)]',
                   )}
                 >
                   <p className="text-sm font-semibold">{tier.label}</p>

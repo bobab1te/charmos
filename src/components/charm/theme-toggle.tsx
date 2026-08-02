@@ -30,7 +30,7 @@ export function ThemeToggle({ onChange }: { onChange?: (theme: Theme) => void })
     <div
       role="radiogroup"
       aria-label="Appearance"
-      className="inline-flex items-center gap-1 rounded-full bg-white/40 p-1 dark:bg-white/10"
+      className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-nested)] p-1 "
     >
       {OPTIONS.map((option) => {
         const Icon = option.icon

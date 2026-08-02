@@ -184,7 +184,7 @@ export function BulkImportModal({ open, onOpenChange }: BulkImportModalProps) {
                     key={row.id}
                     className={cn(
                       'flex flex-col gap-2 rounded-xl p-3',
-                      needsReview ? 'bg-[var(--urgency-orange)]/10' : 'bg-white/50',
+                      needsReview ? 'bg-[var(--urgency-orange)]/10' : 'bg-[var(--surface-nested)]',
                     )}
                   >
                     <div className="flex items-center justify-between gap-2">

@@ -16,8 +16,11 @@ const buttonVariants = cva(
           "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground hover:shadow-md dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
           "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 hover:shadow-md",
+        // Explicit foreground rather than inheriting. Inheritance made a ghost button's contrast a
+        // property of wherever it happened to be mounted, which is the failure mode this whole
+        // token pass exists to remove.
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+          "text-[var(--text-primary)] hover:bg-[var(--surface-interactive)] hover:text-[var(--text-primary)]",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

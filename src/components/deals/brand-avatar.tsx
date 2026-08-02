@@ -8,7 +8,7 @@ export function BrandAvatar({ name, logoUrl, className }: { name: string; logoUr
   return (
     <span
       className={cn(
-        'flex shrink-0 items-center justify-center rounded-full bg-white/60 font-semibold text-[var(--charm-ink-soft)]',
+        'flex shrink-0 items-center justify-center rounded-full bg-[var(--surface-nested)] font-semibold text-[var(--charm-ink-soft)]',
         className,
       )}
     >

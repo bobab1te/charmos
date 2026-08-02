@@ -56,7 +56,7 @@ export function UnassignedIdeas({ onHide }: { onHide: () => void }) {
     >
       <div className="flex flex-wrap items-start gap-3">
         {adding && (
-          <div className="w-full max-w-[220px] rotate-1 rounded-xl bg-white/80 p-3 shadow-sm">
+          <div className="w-full max-w-[220px] rotate-1 rounded-xl bg-[var(--surface-nested)] p-3 shadow-sm">
             <input
               autoFocus
               value={draft}
@@ -107,13 +107,13 @@ export function UnassignedIdeas({ onHide }: { onHide: () => void }) {
           </AnimatePresence>
         )}
       </div>
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/40 pt-3">
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--border-subtle)] pt-3">
         <span className="text-xs text-[var(--charm-ink-soft)]">
           {remaining > 0 ? `+${remaining} more in the scrapbook` : 'Full scrapbook: calendar, references, series & more'}
         </span>
         <Link
           to="/scrapbook"
-          className="flex shrink-0 items-center gap-1 rounded-full bg-white/50 px-2.5 py-1 text-xs font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:text-[var(--charm-ink)] hover:shadow-sm active:scale-95"
+          className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--surface-nested)] px-2.5 py-1 text-xs font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:text-[var(--charm-ink)] hover:shadow-sm active:scale-95"
         >
           Open scrapbook <ArrowUpRight className="size-3.5" />
         </Link>

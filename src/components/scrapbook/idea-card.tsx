@@ -41,7 +41,7 @@ export function IdeaCardContent({
       )}
       {!compact && idea.series && (
         <span
-          className="mt-0.5 flex w-fit items-center gap-1 rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] font-medium"
+          className="mt-0.5 flex w-fit items-center gap-1 rounded-full bg-[var(--surface-nested)] px-1.5 py-0.5 text-[10px] font-medium"
           style={{ color: softTextColor }}
         >
           <Repeat2 className="size-2.5" /> {idea.series}

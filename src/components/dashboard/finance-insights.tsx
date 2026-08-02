@@ -89,7 +89,7 @@ export function FinanceInsightsView({
       headerAction={
         <Link
           to="/finances"
-          className="flex shrink-0 items-center gap-1 rounded-full bg-white/50 px-2.5 py-1 text-xs font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:text-[var(--charm-ink)] hover:shadow-sm active:scale-95 dark:bg-white/10"
+          className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--surface-nested)] px-2.5 py-1 text-xs font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:text-[var(--charm-ink)] hover:shadow-sm active:scale-95 "
         >
           View Finance <ArrowUpRight className="size-3.5" />
         </Link>

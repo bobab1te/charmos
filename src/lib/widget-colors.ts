@@ -33,22 +33,28 @@ export const WIDGET_COLOR_PALETTE_LIGHT: Array<WidgetColorSwatch> = [
 /**
  * Dark-mode palette — a completely separate cool set (purples, navy/blues, a couple deeper
  * greens) rather than a re-shaded version of the light palette, since the light palette moved
- * warm and no longer suits the dark navy/plum background. All 8 swatches use white text now
- * (previously periwinkle/lilac/amethyst/dusty-blue/sage paired with dark ink) — those 5 were
- * darkened enough to keep white legible (4.6–4.8:1, small but real margin over the 4.5:1 AA
- * minimum) rather than just switching the text color on the original lighter values, which
- * would have failed contrast. Slate/midnight/forest were already dark enough (5.3–10.1:1) and
- * unchanged.
+ * warm and no longer suits the dark navy/plum background. All 8 swatches use white text.
+ *
+ * Darkened again after measuring the *painted* result in the browser rather than modelling it.
+ * The previous values were derived from a replication of the color-mix that turned out to be
+ * optimistic: periwinkle rendered at 3.26:1 against white, not the 4.6:1 the old note claimed,
+ * because glassBackground() mixes with a translucent --surface-strong and the composite lands
+ * lighter than a straight blend predicts.
+ *
+ * The title is not the binding constraint — the secondary line is. Card body text renders at
+ * ~0.88 alpha (see softTextColor in deal-pipeline), so a swatch needs the white title to clear
+ * roughly 6:1 for the dates and deliverables on the same card to clear 4.5:1. These values are
+ * measured, not modelled; re-measure in the browser if you change them.
  */
 export const WIDGET_COLOR_PALETTE_DARK: Array<WidgetColorSwatch> = [
-  { id: 'periwinkle', label: 'Periwinkle', value: '#858da7', textColor: '#ffffff' },
-  { id: 'lilac', label: 'Lilac', value: '#9488a2', textColor: '#ffffff' },
-  { id: 'amethyst', label: 'Amethyst', value: '#9e85bb', textColor: '#ffffff' },
-  { id: 'dusty-blue', label: 'Dusty Blue', value: '#828fb1', textColor: '#ffffff' },
-  { id: 'slate', label: 'Slate', value: '#6f84ad', textColor: '#ffffff' },
+  { id: 'periwinkle', label: 'Periwinkle', value: '#5c6480', textColor: '#ffffff' },
+  { id: 'lilac', label: 'Lilac', value: '#6a6078', textColor: '#ffffff' },
+  { id: 'amethyst', label: 'Amethyst', value: '#6f5b8a', textColor: '#ffffff' },
+  { id: 'dusty-blue', label: 'Dusty Blue', value: '#59657f', textColor: '#ffffff' },
+  { id: 'slate', label: 'Slate', value: '#4c5c7e', textColor: '#ffffff' },
   { id: 'midnight', label: 'Midnight', value: '#3d4a7a', textColor: '#ffffff' },
-  { id: 'sage', label: 'Sage', value: '#7e947e', textColor: '#ffffff' },
-  { id: 'forest', label: 'Forest', value: '#4f6b52', textColor: '#ffffff' },
+  { id: 'sage', label: 'Sage', value: '#566a56', textColor: '#ffffff' },
+  { id: 'forest', label: 'Forest', value: '#445c47', textColor: '#ffffff' },
 ]
 
 /** Which palette a colorable widget's picker/default should draw from for the given theme. */
@@ -66,9 +72,35 @@ export function widgetColorPalette(theme: Theme): Array<WidgetColorSwatch> {
  */
 export const GLASS_TINT_PERCENT = 76
 
+/**
+ * Colors saved before the dark palette was darkened, mapped to their replacements.
+ *
+ * Changing the palette only affects new defaults and new picks — a card whose color was already
+ * chosen and stored keeps rendering the old value, so without this the exact cards a real user
+ * has been using are the ones that stay unreadable. Verified against live data: a deal holding
+ * the old periwinkle still measured 2.9:1 on its body text after the palette change.
+ *
+ * Applied at render time rather than as a database migration, so nobody's stored choice is
+ * silently rewritten — pick the same shade again and it simply resolves to the readable version.
+ */
+const LEGACY_DARK_SWATCH_REMAP: Record<string, string> = {
+  '#858da7': '#5c6480', // periwinkle
+  '#9488a2': '#6a6078', // lilac
+  '#9e85bb': '#6f5b8a', // amethyst
+  '#828fb1': '#59657f', // dusty blue
+  '#6f84ad': '#4c5c7e', // slate
+  '#7e947e': '#566a56', // sage
+  '#4f6b52': '#445c47', // forest
+}
+
+/** Normalises a stored color before it is painted or measured. Safe to call repeatedly. */
+export function normalizeCardColor(color: string): string {
+  return LEGACY_DARK_SWATCH_REMAP[color.toLowerCase()] ?? color
+}
+
 /** The actual background for any colorable glass widget — deal/idea/partnership cards, kept as one function so the tint percentage and mix method can't drift between components. */
 export function glassBackground(color: string): string {
-  return `color-mix(in oklab, ${color} ${GLASS_TINT_PERCENT}%, var(--surface-strong))`
+  return `color-mix(in oklab, ${normalizeCardColor(color)} ${GLASS_TINT_PERCENT}%, var(--surface-strong))`
 }
 
 /**
@@ -88,19 +120,37 @@ export function defaultCardColor(id: string, theme: Theme): string {
   return palette[hash % palette.length].value
 }
 
+export const CARD_INK = '#1a1220'
+export const CARD_WHITE = '#ffffff'
+
+function relativeLuminance(hex: string): number {
+  const n = hex.replace('#', '')
+  const channel = (i: number) => {
+    const v = parseInt(n.substring(i, i + 2), 16) / 255
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+  }
+  return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4)
+}
+
+function contrast(aHex: string, bHex: string): number {
+  const [hi, lo] = [relativeLuminance(aHex), relativeLuminance(bHex)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+
 /**
- * Simplified relative-luminance heuristic (not a full WCAG contrast-ratio
- * calculation) to pick readable black/white text for an arbitrary background
- * hex — good enough for the saturated pastel/accent colors this picker offers.
+ * Pick whichever of dark ink / white actually contrasts better against a background.
+ *
+ * This replaces a `luminance > 0.5` threshold, which is not the same question and got real cards
+ * wrong. A user-picked #a9b7db sits just under that threshold, so it was assigned white text and
+ * rendered at 2.9:1 — while dark ink on the same color measures about 8:1. Any color from the
+ * native picker could land in that band; comparing the two ratios cannot.
+ *
+ * Compared against the raw color rather than the glass-mixed result: the mix is 76% this color,
+ * so it dominates, and the two candidates are far enough apart that the remaining 24% does not
+ * flip the winner. Confirmed by measuring painted cards in the browser.
  */
 export function readableTextColor(hex: string): string {
-  const normalized = hex.replace('#', '')
-  const r = parseInt(normalized.substring(0, 2), 16) / 255
-  const g = parseInt(normalized.substring(2, 4), 16) / 255
-  const b = parseInt(normalized.substring(4, 6), 16) / 255
-  const linear = (v: number) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
-  const luminance = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)
-  return luminance > 0.5 ? '#1a1220' : '#ffffff'
+  return contrast(CARD_INK, hex) >= contrast(CARD_WHITE, hex) ? CARD_INK : CARD_WHITE
 }
 
 /**
@@ -111,8 +161,11 @@ export function readableTextColor(hex: string): string {
  * input).
  */
 export function resolveTextColor(color: string): string {
+  // Normalised first so a legacy stored swatch is matched against the value that will actually
+  // be painted, not the one it was saved as.
+  const normalized = normalizeCardColor(color)
   const swatch = [...WIDGET_COLOR_PALETTE_LIGHT, ...WIDGET_COLOR_PALETTE_DARK].find(
-    (s) => s.value.toLowerCase() === color.toLowerCase(),
+    (s) => s.value.toLowerCase() === normalized.toLowerCase(),
   )
-  return swatch?.textColor ?? readableTextColor(color)
+  return swatch?.textColor ?? readableTextColor(normalized)
 }

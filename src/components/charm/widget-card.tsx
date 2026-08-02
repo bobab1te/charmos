@@ -55,7 +55,7 @@ export function WidgetCard({
                 <button
                   type="button"
                   aria-label={`${title} widget settings`}
-                  className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
+                  className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-[var(--surface-interactive)] hover:text-[var(--charm-ink)] active:scale-90"
                 >
                   <Settings className="size-4" />
                 </button>

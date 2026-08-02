@@ -171,7 +171,7 @@ export function TourBubble() {
           type="button"
           onClick={tour.phase === 'welcome' ? tour.dismiss : tour.pause}
           aria-label={tour.phase === 'welcome' ? 'Dismiss tour' : 'Continue later'}
-          className="absolute right-3 top-3 rounded-full p-1 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
+          className="absolute right-3 top-3 rounded-full p-1 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-[var(--surface-interactive)] hover:text-[var(--charm-ink)] active:scale-90"
         >
           <X className="size-4" />
         </button>

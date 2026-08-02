@@ -24,7 +24,7 @@ const DEFAULT_PARTNERSHIP_COLOR = '#ffffff'
 const STATUS_STYLES: Record<Partnership['status'], string> = {
   active: 'bg-[var(--urgency-green)]/15 text-[var(--urgency-green)]',
   paused: 'bg-[var(--urgency-orange)]/15 text-[var(--urgency-orange)]',
-  ended: 'bg-black/10 text-[var(--charm-ink-soft)]',
+  ended: 'bg-[var(--surface-nested)] text-[var(--charm-ink-soft)]',
 }
 
 export function PartnershipCard({
@@ -132,7 +132,7 @@ export function PartnershipCard({
           {partnership.contentFormats.map((tag) => (
             <span
               key={tag}
-              className="flex items-center gap-1 rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-medium"
+              className="flex items-center gap-1 rounded-full bg-[var(--surface-nested)] px-2 py-0.5 text-[10px] font-medium"
               style={{ color: softTextColor }}
             >
               <Repeat2 className="size-2.5" /> {tag}
@@ -214,7 +214,7 @@ export function PartnershipCard({
       </div>
 
       {canConfirmPayment && cycleWindow && (
-        <div className="flex items-center justify-between gap-1.5 border-t border-white/40 pt-2.5">
+        <div className="flex items-center justify-between gap-1.5 border-t border-[var(--border-subtle)] pt-2.5">
           <p className="text-[10px]" style={{ color: softTextColor }}>
             {cycleConfirmed
               ? `Payment confirmed for ${format(cycleWindow.start, 'MMM d')} – ${format(cycleWindow.end, 'MMM d')}`

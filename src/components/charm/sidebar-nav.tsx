@@ -45,7 +45,7 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
   return (
     <aside
       className={cn(
-        'charm-glass sticky top-0 z-20 flex h-screen shrink-0 flex-col rounded-none border-r border-white/40 p-3 transition-[width] duration-200',
+        'charm-glass sticky top-0 z-20 flex h-screen shrink-0 flex-col rounded-none border-r border-[var(--border-subtle)] p-3 transition-[width] duration-200',
         collapsed ? 'w-[76px]' : 'w-60',
       )}
     >
@@ -63,7 +63,7 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
               type="button"
               onClick={toggle}
               aria-label="Collapse sidebar"
-              className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
+              className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-[var(--surface-interactive)] hover:text-[var(--charm-ink)] active:scale-90"
             >
               <ChevronsLeft className="size-4" />
             </button>
@@ -78,7 +78,7 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
             type="button"
             onClick={toggle}
             aria-label="Expand sidebar"
-            className="flex items-center justify-center rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
+            className="flex items-center justify-center rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-[var(--surface-interactive)] hover:text-[var(--charm-ink)] active:scale-90"
           >
             <ChevronsRight className="size-4" />
           </button>
@@ -93,7 +93,7 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
               to={link.to}
               activeOptions={{ exact: true }}
               className={cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-[0.98]',
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-[var(--surface-interactive)] hover:text-[var(--charm-ink)] active:scale-[0.98]',
                 'data-[status=active]:bg-[var(--accent)] data-[status=active]:text-[var(--accent-foreground)]',
                 collapsed && 'justify-center px-0',
               )}
@@ -116,7 +116,7 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
         })}
       </nav>
 
-      <div className="mt-auto flex items-center gap-2.5 border-t border-white/40 px-1 pt-3">
+      <div className="mt-auto flex items-center gap-2.5 border-t border-[var(--border-subtle)] px-1 pt-3">
         {avatarUrl ? (
           <img src={avatarUrl} alt={displayName} className="size-8 shrink-0 rounded-full object-cover" />
         ) : (
@@ -131,7 +131,7 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
               type="button"
               onClick={handleSignOut}
               aria-label="Log out"
-              className="shrink-0 rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
+              className="shrink-0 rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-[var(--surface-interactive)] hover:text-[var(--charm-ink)] active:scale-90"
             >
               <LogOut className="size-4" />
             </button>

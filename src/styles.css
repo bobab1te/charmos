@@ -31,8 +31,8 @@
   --charm-blue-deep: #9cc2ea;
   --charm-yellow: #fff2c2;
   --charm-beige: #f8f1ea;
-  --charm-ink: #3a2e42;
-  --charm-ink-soft: #6b5b73;
+  --charm-ink: var(--text-primary);
+  --charm-ink-soft: var(--text-secondary);
 
   /* Background ombre — warm rose-to-amber (light) / navy-to-plum (dark), see .charm-mesh */
   --charm-ombre-light-1: #eda6bf;
@@ -65,6 +65,61 @@
   --surface-solid: rgba(255, 255, 255, 0.94);
   --surface-solid-strong: rgba(255, 255, 255, 0.98);
 
+  /* ---------- Semantic tokens ----------
+   *
+   * The layer that makes light/dark correct by construction. Everything below flips with the
+   * theme, so a component that uses these cannot be readable in one mode and broken in the other
+   * — which is exactly what a literal `bg-white/50` does, since it stays white while the text on
+   * top of it becomes white in dark mode.
+   *
+   * Rule of thumb for new code: never write a literal white/black surface or a raw hex text
+   * colour. Reach for one of these instead.
+   */
+
+  /* Text. Primary for content, secondary for supporting copy, muted for placeholders and hints. */
+  --text-primary: #3a2e42;
+  --text-secondary: #6b5b73;
+  /* Darkened from the old #8a7a8f, which composited to 3.39:1 on a glass card — below the 4.5
+   * AA threshold for the placeholder and helper text it was being used for. */
+  --text-muted: #6f5f77;
+  --text-on-accent: #fff8fb;
+  /*
+   * Foreground for a fixed pastel chip that keeps the same background in both themes — the metric
+   * icon tiles, for instance. Deliberately identical in light and dark: the surface doesn't flip,
+   * so neither should the text on it. White here measured 1.9:1 on --charm-blue-deep and 2.4:1 on
+   * --charm-lavender-deep, both under the 3:1 that WCAG 1.4.11 asks of icons.
+   */
+  --text-on-pastel: #2a1220;
+
+  /* Surfaces. `interactive` is the one hover/pressed states use — the fix for `bg-white/50`. */
+  --surface-elevated: rgba(255, 255, 255, 0.82);
+  --surface-interactive: rgba(255, 255, 255, 0.5);
+  --surface-interactive-strong: rgba(255, 255, 255, 0.72);
+  /* A panel or chip sitting *inside* a glass card — the deliverables block in a deal form, a
+   * count pill, a calendar day cell. Distinct from `elevated` (popovers, which need to be nearly
+   * opaque to escape whatever is behind them) and from `interactive` (a hover response). */
+  --surface-nested: rgba(255, 255, 255, 0.5);
+
+  /* Borders. Two tiers on purpose: `subtle` is for decorative dividers, where an accessible
+   * contrast ratio is not required and a strong line would fight the glass aesthetic. `strong` is
+   * for the boundary of an actual control (inputs, selects, toggles), which WCAG 1.4.11 requires
+   * to hit 3:1 — that is the line a user has to find in order to click it. */
+  --border-subtle: rgba(58, 46, 66, 0.16);
+  /* 0.55 is the point where this composites to 3:1 on the input surface; 0.42 measured 2.33. */
+  --border-strong: rgba(58, 46, 66, 0.55);
+
+  /* Inputs get a real surface rather than `transparent`, so typed text sits on a defined field
+   * instead of directly on the drifting background gradient. */
+  --input-bg: rgba(255, 255, 255, 0.72);
+  --input-bg-focus: rgba(255, 255, 255, 0.9);
+  --placeholder: #6f5f77;
+
+  /* Status. Named by meaning, not colour, so dark mode can lighten them without renaming. */
+  /* Darkened until each clears 4.5:1 on a light glass card: the originals measured 3.42 and 4.25. */
+  --success: #26794f;
+  --warning: #965c14;
+  --error: #b03840;
+
   --bg-base: #fbf3f6;
 
   --background: oklch(1 0 0);
@@ -78,11 +133,13 @@
   --secondary: #f3e8f7;
   --secondary-foreground: #3a2e42;
   --muted: #f1e9ee;
-  --muted-foreground: #8a7a8f;
+  --muted-foreground: var(--text-muted);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: #fff8fb;
-  --border: rgba(58, 46, 66, 0.1);
-  --input: rgba(58, 46, 66, 0.14);
+  /* Routed through the semantic tier so the shadcn primitives inherit the fixes rather than
+   * needing every one of them edited. `--input` is a control boundary, so it gets the 3:1 tier. */
+  --border: var(--border-subtle);
+  --input: var(--border-strong);
   --ring: #e8608f;
   --chart-1: #e8608f;
   --chart-2: #b79cea;
@@ -97,8 +154,8 @@
 }
 
 .dark {
-  --charm-ink: #ffffff;
-  --charm-ink-soft: #d3c2da;
+  --charm-ink: var(--text-primary);
+  --charm-ink-soft: var(--text-secondary);
 
   --accent: #f284ab;
   --accent-soft: #b95c82;
@@ -110,6 +167,36 @@
   --surface-shadow: rgba(0, 0, 0, 0.35);
   --surface-solid: rgba(36, 24, 44, 0.96);
   --surface-solid-strong: rgba(36, 24, 44, 0.99);
+
+  /* Semantic tokens — dark. See the light-mode block for what each tier is for. */
+  --text-primary: #ffffff;
+  --text-secondary: #d3c2da;
+  --text-muted: #b3a2bb;
+  --text-on-accent: #2a1220;
+
+  /*
+   * The heart of the reported bug. In dark mode an interactive surface has to get LIGHTER to read
+   * as raised, but only slightly — a literal `bg-white/50` here put white text on a light grey
+   * wash at 3.19:1, and `bg-white/60` at 2.43:1. At 0.10 the same white text measures 11.8:1 and
+   * the surface still visibly lifts.
+   */
+  --surface-elevated: rgba(56, 42, 68, 0.86);
+  --surface-interactive: rgba(255, 255, 255, 0.1);
+  --surface-interactive-strong: rgba(255, 255, 255, 0.16);
+  --surface-nested: rgba(255, 255, 255, 0.08);
+
+  --border-subtle: rgba(255, 255, 255, 0.16);
+  --border-strong: rgba(255, 255, 255, 0.38);
+
+  --input-bg: rgba(255, 255, 255, 0.07);
+  --input-bg-focus: rgba(255, 255, 255, 0.12);
+  --placeholder: #b3a2bb;
+
+  /* Lightened from the light-mode values — the same green/amber/red at their light-mode darkness
+   * would sit at roughly 2:1 against a dark card. */
+  --success: #5fc894;
+  --warning: #f0b354;
+  --error: #ff8a8a;
 
   --bg-base: #1a1220;
 
@@ -124,11 +211,11 @@
   --secondary: #322a3c;
   --secondary-foreground: #ffffff;
   --muted: #2c2434;
-  --muted-foreground: #b3a2bb;
+  --muted-foreground: var(--text-muted);
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: #ffffff;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.14);
+  --border: var(--border-subtle);
+  --input: var(--border-strong);
   --ring: #f284ab;
   --chart-1: #f284ab;
   --chart-2: #c3aef2;

@@ -88,7 +88,7 @@ function DealCardNotes({
           }
         }}
         placeholder="Add a note..."
-        className="mt-1.5 w-full resize-none rounded-lg border border-black/10 bg-white/60 p-1.5 text-xs text-[var(--charm-ink)] outline-none focus:border-[var(--accent)]"
+        className="mt-1.5 w-full resize-none rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-nested)] p-1.5 text-xs text-[var(--charm-ink)] outline-none focus:border-[var(--accent)]"
       />
     )
   }
@@ -102,8 +102,10 @@ function DealCardNotes({
         setEditing(true)
       }}
       className={cn(
-        'mt-1.5 line-clamp-2 cursor-text rounded-lg px-1.5 py-1 text-xs transition duration-150 ease-out hover:bg-black/5',
-        !notes && 'italic opacity-70',
+        'mt-1.5 line-clamp-2 cursor-text rounded-lg px-1.5 py-1 text-xs transition duration-150 ease-out hover:bg-[var(--surface-interactive)]',
+        // Italic alone distinguishes the empty prompt from a real note. The extra opacity stacked
+        // on top of softTextColor's own alpha and pushed it to ~2.0:1 on the lighter cards.
+        !notes && 'italic',
       )}
       style={{ color: softTextColor }}
     >
@@ -130,7 +132,10 @@ function DealCardInner({
   const next = nextDeliverable(deal)
   const color = deal.color ?? defaultCardColor(deal.id, theme)
   const textColor = resolveTextColor(color)
-  const softTextColor = textColor === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(26,18,32,0.65)'
+  // Raised from 0.75/0.65. This is the dates-and-deliverables line — real content, not a hint —
+  // and at the old alphas it measured 2.53–4.06:1 on the actual painted cards, under AA
+  // throughout. The card still reads as having a title/body hierarchy at these values.
+  const softTextColor = textColor === '#ffffff' ? 'rgba(255,255,255,0.88)' : 'rgba(26,18,32,0.88)'
   const isUnpaid = isDealUnpaidAlert(deal)
   const { displayCurrency, convert } = useCurrency()
   const showsConverted = deal.compensationCurrency !== displayCurrency
@@ -167,7 +172,7 @@ function DealCardInner({
       {next ? (
         <div className="mt-1.5 flex items-center gap-1.5 text-xs" style={{ color: softTextColor }}>
           <span
-            className={cn('size-1.5 rounded-full ring-1 ring-black/10', urgencyDot[urgencyForDate(next.dueDate)])}
+            className={cn('size-1.5 rounded-full ring-1 ring-[var(--border-subtle)]', urgencyDot[urgencyForDate(next.dueDate)])}
           />
           {format(new Date(next.dueDate), 'MMM d')} · {next.type}
         </div>
@@ -277,7 +282,7 @@ function DroppableColumn({
       ref={setNodeRef}
       className={cn(
         'flex min-h-[220px] flex-col gap-2 rounded-2xl border border-dashed p-2.5 transition-colors',
-        isOver ? 'border-[var(--accent)] bg-white/30' : 'border-white/40',
+        isOver ? 'border-[var(--accent)] bg-[var(--surface-nested)]' : 'border-[var(--border-subtle)]',
       )}
     >
       <div className="flex items-center justify-between px-1">
@@ -285,7 +290,7 @@ function DroppableColumn({
           {label}
           {showCompletionSparkle && <SparkleBurst />}
         </span>
-        <span className="rounded-full bg-white/50 px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
+        <span className="rounded-full bg-[var(--surface-nested)] px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
           {deals.length}
         </span>
       </div>
@@ -315,10 +320,10 @@ function StaticColumn({
   onOpen: (dealId: string) => void
 }) {
   return (
-    <div className="flex min-h-[220px] flex-col gap-2 rounded-2xl border border-dashed border-white/40 p-2.5">
+    <div className="flex min-h-[220px] flex-col gap-2 rounded-2xl border border-dashed border-[var(--border-subtle)] p-2.5">
       <div className="flex items-center justify-between px-1">
         <span className="text-xs font-semibold uppercase tracking-wide text-[var(--charm-ink-soft)]">{label}</span>
-        <span className="rounded-full bg-white/50 px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
+        <span className="rounded-full bg-[var(--surface-nested)] px-2 py-0.5 text-xs font-medium text-[var(--charm-ink-soft)]">
           {deals.length}
         </span>
       </div>

@@ -43,7 +43,7 @@ function CalendarDay({
         // once, and that many simultaneous backdrop-filter regions is a real mobile perf cost -
         // see idea-card.tsx's DraggableIdeaCard for the same trade-off on its compact cards.
         'charm-glass-lite flex min-h-[86px] flex-col gap-1 rounded-lg border border-transparent p-1.5 transition-colors duration-150 ease-out',
-        inMonth ? 'bg-white/40' : 'bg-white/15 opacity-50',
+        inMonth ? 'bg-[var(--surface-nested)]' : 'bg-[var(--surface-nested)] opacity-50',
         isOver && 'border-[var(--accent)] bg-[var(--accent)]/10',
       )}
     >
@@ -101,14 +101,14 @@ export function ScrapbookCalendar({
             type="button"
             onClick={() => setCursor((c) => subMonths(c, 1))}
             aria-label="Previous month"
-            className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
+            className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-[var(--surface-interactive)] hover:text-[var(--charm-ink)] active:scale-90"
           >
             <ChevronLeft className="size-4" />
           </button>
           <button
             type="button"
             onClick={() => setCursor(startOfMonth(new Date()))}
-            className="rounded-full px-2 py-1 text-xs font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-95"
+            className="rounded-full px-2 py-1 text-xs font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-[var(--surface-interactive)] hover:text-[var(--charm-ink)] active:scale-95"
           >
             Today
           </button>
@@ -116,7 +116,7 @@ export function ScrapbookCalendar({
             type="button"
             onClick={() => setCursor((c) => addMonths(c, 1))}
             aria-label="Next month"
-            className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-white/50 hover:text-[var(--charm-ink)] active:scale-90"
+            className="rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-[var(--surface-interactive)] hover:text-[var(--charm-ink)] active:scale-90"
           >
             <ChevronRight className="size-4" />
           </button>
