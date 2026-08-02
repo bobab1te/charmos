@@ -22,8 +22,8 @@ import type { Partnership } from '#/lib/types'
 const DEFAULT_PARTNERSHIP_COLOR = '#ffffff'
 
 const STATUS_STYLES: Record<Partnership['status'], string> = {
-  active: 'bg-[var(--urgency-green)]/15 text-[var(--urgency-green)]',
-  paused: 'bg-[var(--urgency-orange)]/15 text-[var(--urgency-orange)]',
+  active: 'bg-[var(--urgency-green)]/15 text-[var(--success)]',
+  paused: 'bg-[var(--urgency-orange)]/15 text-[var(--warning)]',
   ended: 'bg-[var(--surface-nested)] text-[var(--charm-ink-soft)]',
 }
 
@@ -119,7 +119,7 @@ export function PartnershipCard({
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           {renewalDueSoon && (
-            <span className="flex items-center gap-1 rounded-full bg-[var(--urgency-orange)]/15 px-2 py-0.5 text-[10px] font-semibold text-[var(--urgency-orange)]">
+            <span className="flex items-center gap-1 rounded-full bg-[var(--urgency-orange)]/15 px-2 py-0.5 text-[10px] font-semibold text-[var(--warning)]">
               <AlertTriangle className="size-3" /> Renewal due soon
             </span>
           )}
@@ -207,7 +207,7 @@ export function PartnershipCard({
             e.stopPropagation()
             logPartnershipDeliverable(partnership.id)
           }}
-          className="gap-1 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+          className="gap-1 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
         >
           <Plus className="size-3.5" /> Log delivered
         </Button>

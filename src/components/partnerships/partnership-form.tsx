@@ -185,7 +185,7 @@ export function PartnershipForm({
             </div>
           )}
           {values.status === 'paused' && (
-            <p className="text-xs text-[var(--urgency-orange)] sm:col-span-2">
+            <p className="text-xs text-[var(--warning)] sm:col-span-2">
               Excluded from revenue totals while paused — set "Date unpaused" (or switch status back to Active) to
               resume counting.
             </p>
@@ -372,7 +372,7 @@ export function PartnershipForm({
         <Button
           type="submit"
           disabled={submitting || deleting}
-          className="gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+          className="gap-1.5 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
         >
           {submitting && <Loader2 className="size-4 animate-spin" />}
           {submitLabel}

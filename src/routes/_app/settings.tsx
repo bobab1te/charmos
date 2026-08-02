@@ -104,7 +104,7 @@ function SettingsPage() {
                 className={cn(
                   'rounded-full border px-3.5 py-1.5 text-sm font-medium transition duration-150 ease-out active:scale-95',
                   platforms.includes(p.value)
-                    ? 'border-transparent bg-[var(--accent)] text-[var(--accent-foreground)]'
+                    ? 'border-transparent bg-[var(--accent-strong)] text-[var(--accent-foreground)]'
                     : 'border-[var(--charm-ink-soft)]/30 text-[var(--charm-ink-soft)] hover:bg-[var(--surface-interactive)]',
                 )}
               >
@@ -174,7 +174,7 @@ function SettingsPage() {
         </div>
 
         {error && (
-          <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--urgency-red)]">{error}</p>
+          <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--error)]">{error}</p>
         )}
 
         <div className="flex items-center gap-3">
@@ -182,12 +182,12 @@ function SettingsPage() {
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+            className="gap-1.5 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
           >
             {saving && <Loader2 className="size-4 animate-spin" />}
             Save changes
           </Button>
-          {saved && <span className="text-sm text-[var(--urgency-green)]">Saved.</span>}
+          {saved && <span className="text-sm text-[var(--success)]">Saved.</span>}
         </div>
       </div>
 

@@ -493,7 +493,7 @@ export function DealForm({
         <Button
           type="submit"
           disabled={submitting || deleting}
-          className="gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+          className="gap-1.5 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
         >
           {submitting && <Loader2 className="size-4 animate-spin" />}
           {submitLabel}

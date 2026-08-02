@@ -192,7 +192,7 @@ export function IdeaDetailModal({ ideaId, onOpenChange }: IdeaDetailModalProps) 
           <Button
             type="button"
             onClick={() => handleOpenChange(false)}
-            className="gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+            className="gap-1.5 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
           >
             Done
           </Button>

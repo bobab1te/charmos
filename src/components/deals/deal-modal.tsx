@@ -209,12 +209,12 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
         ) : (
           <>
             {missingFields.length > 0 && (
-              <p className="rounded-lg bg-[var(--urgency-orange)]/10 px-3 py-2 text-sm text-[var(--urgency-orange)]">
+              <p className="rounded-lg bg-[var(--urgency-orange)]/10 px-3 py-2 text-sm text-[var(--warning)]">
                 Couldn't find: {missingFields.join(', ')}. Fill these in manually below.
               </p>
             )}
             {saveError && (
-              <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--urgency-red)]">
+              <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--error)]">
                 {saveError}
               </p>
             )}

@@ -155,17 +155,17 @@ function LoginPage() {
             />
           </div>
           {error && (
-            <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--urgency-red)]">{error}</p>
+            <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--error)]">{error}</p>
           )}
           {signUpNotice && (
-            <p className="rounded-lg bg-[var(--urgency-green)]/10 px-3 py-2 text-sm text-[var(--urgency-green)]">
+            <p className="rounded-lg bg-[var(--urgency-green)]/10 px-3 py-2 text-sm text-[var(--success)]">
               {signUpNotice}
             </p>
           )}
           <Button
             type="submit"
             disabled={loading}
-            className="gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+            className="gap-1.5 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
           >
             {loading && <Loader2 className="size-4 animate-spin" />}
             {mode === 'sign-in' ? 'Sign in' : 'Create account'}

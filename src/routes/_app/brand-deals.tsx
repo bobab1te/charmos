@@ -84,7 +84,7 @@ function BrandCard({ brand, dealCount }: { brand: Brand; dealCount: number }) {
             type="button"
             size="sm"
             onClick={save}
-            className="gap-1 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+            className="gap-1 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
           >
             <Check className="size-3.5" /> Save
           </Button>
@@ -109,7 +109,7 @@ function BrandCard({ brand, dealCount }: { brand: Brand; dealCount: number }) {
         </span>
       </div>
       {blockedMessage && (
-        <p className="rounded-lg bg-[var(--urgency-orange)]/10 px-2.5 py-1.5 text-xs text-[var(--urgency-orange)]">
+        <p className="rounded-lg bg-[var(--urgency-orange)]/10 px-2.5 py-1.5 text-xs text-[var(--warning)]">
           {blockedMessage}
         </p>
       )}
@@ -363,7 +363,7 @@ function BrandDealsPage() {
               size="sm"
               data-tour="new-partnership"
               onClick={openNewPartnership}
-              className="shrink-0 gap-1 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+              className="shrink-0 gap-1 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
             >
               <Plus className="size-3.5" /> New Partnership
             </Button>

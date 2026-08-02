@@ -155,14 +155,14 @@ export function BulkImportModal({ open, onOpenChange }: BulkImportModalProps) {
               rows={10}
             />
             {parseError && (
-              <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--urgency-red)]">{parseError}</p>
+              <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--error)]">{parseError}</p>
             )}
             <div className="flex justify-end">
               <Button
                 type="button"
                 onClick={handleParse}
                 disabled={parsing || !rawText.trim()}
-                className="gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+                className="gap-1.5 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
               >
                 {parsing ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
                 {parsing ? 'Parsing…' : 'Parse deals'}
@@ -172,7 +172,7 @@ export function BulkImportModal({ open, onOpenChange }: BulkImportModalProps) {
         ) : (
           <div className="flex flex-col gap-3">
             {statusMessage && (
-              <p className="rounded-lg bg-[var(--urgency-orange)]/10 px-3 py-2 text-sm text-[var(--urgency-orange)]">
+              <p className="rounded-lg bg-[var(--urgency-orange)]/10 px-3 py-2 text-sm text-[var(--warning)]">
                 {statusMessage}
               </p>
             )}
@@ -198,7 +198,7 @@ export function BulkImportModal({ open, onOpenChange }: BulkImportModalProps) {
                         Include
                       </label>
                       {needsReview && (
-                        <span className="flex items-center gap-1 rounded-full bg-[var(--urgency-orange)]/15 px-2 py-0.5 text-[10px] font-semibold text-[var(--urgency-orange)]">
+                        <span className="flex items-center gap-1 rounded-full bg-[var(--urgency-orange)]/15 px-2 py-0.5 text-[10px] font-semibold text-[var(--warning)]">
                           <AlertTriangle className="size-3" /> Needs review
                         </span>
                       )}
@@ -291,7 +291,7 @@ export function BulkImportModal({ open, onOpenChange }: BulkImportModalProps) {
                 type="button"
                 onClick={handleImport}
                 disabled={importing || includedCount === 0}
-                className="gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+                className="gap-1.5 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
               >
                 {importing && <Loader2 className="size-4 animate-spin" />}
                 Import {includedCount} deal{includedCount === 1 ? '' : 's'}

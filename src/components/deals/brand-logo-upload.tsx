@@ -69,7 +69,7 @@ export function BrandLogoUpload({ brandName, existingLogoUrl, file, onFileChange
             )}
           </div>
           <p className="text-xs text-[var(--charm-ink-soft)]">PNG, JPG, or SVG · up to 2MB</p>
-          {error && <p className="text-xs text-[var(--urgency-red)]">{error}</p>}
+          {error && <p className="text-xs text-[var(--error)]">{error}</p>}
         </div>
       </div>
       <input

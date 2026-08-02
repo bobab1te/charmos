@@ -48,7 +48,7 @@ export function UnassignedIdeas({ onHide }: { onHide: () => void }) {
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-xs font-semibold text-[var(--accent-foreground)] transition duration-150 ease-out hover:opacity-90 hover:shadow-md active:scale-95"
+          className="flex items-center gap-1 rounded-full bg-[var(--accent-strong)] px-2.5 py-1 text-xs font-semibold text-[var(--accent-foreground)] transition duration-150 ease-out hover:opacity-90 hover:shadow-md active:scale-95"
         >
           <Plus className="size-3.5" /> Add idea
         </button>

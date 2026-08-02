@@ -155,7 +155,13 @@ function DealCardInner({
           {isUnpaid && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="flex items-center gap-0.5 rounded-full bg-[var(--urgency-red)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--urgency-red)]">
+                {/*
+                  Self-contained rather than themed. This badge sits on a user-coloured card, so a
+                  tinted background plus themed red text tracks neither the card nor the page — it
+                  measured 1.41:1 on a light card. A fixed pale-red pill with dark red text is
+                  legible on any card in either mode, and reads as an alert besides.
+                */}
+                <span className="flex items-center gap-0.5 rounded-full bg-[#ffe4e4] px-1.5 py-0.5 text-[10px] font-semibold text-[#9e1b23]">
                   <AlertTriangle className="size-3" /> Unpaid
                 </span>
               </TooltipTrigger>
@@ -441,7 +447,7 @@ export function DealPipeline({
             size="sm"
             data-tour="new-deal"
             onClick={openNewDeal}
-            className="gap-1 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+            className="gap-1 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
           >
             <Plus className="size-3.5" /> New Deal
           </Button>
@@ -449,7 +455,7 @@ export function DealPipeline({
       }
     >
       {onlyUnpaid && (
-        <div className="mb-3 flex items-center justify-between gap-2 rounded-xl bg-[var(--urgency-red)]/10 px-3 py-2 text-xs font-medium text-[var(--urgency-red)]">
+        <div className="mb-3 flex items-center justify-between gap-2 rounded-xl bg-[var(--urgency-red)]/10 px-3 py-2 text-xs font-medium text-[var(--error)]">
           Showing unpaid deals only
           <Link to="/brand-deals" className="underline underline-offset-2 hover:opacity-80">
             Clear filter

@@ -60,7 +60,7 @@ export function MetricCard({ label, value, icon, hint, accentClass, onHide, acti
       <div>
         <p className="font-display-bold text-2xl font-semibold text-[var(--charm-ink)] sm:text-3xl">{value}</p>
         <p className="mt-0.5 text-sm text-[var(--charm-ink-soft)]">{label}</p>
-        {hint && <p className="mt-1 text-xs text-[var(--charm-ink-soft)]/80">{hint}</p>}
+        {hint && <p className="mt-1 text-xs text-[var(--charm-ink-soft)]">{hint}</p>}
         {action && <div className="mt-2">{action}</div>}
       </div>
     </motion.div>

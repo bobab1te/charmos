@@ -43,14 +43,18 @@ function CalendarDay({
         // once, and that many simultaneous backdrop-filter regions is a real mobile perf cost -
         // see idea-card.tsx's DraggableIdeaCard for the same trade-off on its compact cards.
         'charm-glass-lite flex min-h-[86px] flex-col gap-1 rounded-lg border border-transparent p-1.5 transition-colors duration-150 ease-out',
-        inMonth ? 'bg-[var(--surface-nested)]' : 'bg-[var(--surface-nested)] opacity-50',
+        // Adjacent-month cells are de-emphasised via a dimmer surface rather than opacity on the
+        // whole cell. Blanket opacity took the date text down with it — those numbers measured
+        // 3.25:1, and a date you can't read is not "de-emphasised", it's broken. The cell still
+        // recedes; only the label keeps its contrast.
+        inMonth ? 'bg-[var(--surface-nested)]' : 'bg-[var(--surface-nested)]/40',
         isOver && 'border-[var(--accent)] bg-[var(--accent)]/10',
       )}
     >
       <span
         className={cn(
           'flex size-5 items-center justify-center rounded-full text-[11px] font-semibold',
-          isToday(day) ? 'bg-[var(--accent)] text-[var(--accent-foreground)]' : 'text-[var(--charm-ink-soft)]',
+          isToday(day) ? 'bg-[var(--accent-strong)] text-[var(--accent-foreground)]' : 'text-[var(--charm-ink-soft)]',
         )}
       >
         {format(day, 'd')}

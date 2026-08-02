@@ -12,7 +12,7 @@ export function SparkleAccent({ className }: { className?: string }) {
 
   return (
     <motion.span
-      className={cn('inline-flex text-[var(--accent)]', className)}
+      className={cn('inline-flex text-[var(--accent-strong)]', className)}
       animate={prefersReducedMotion ? undefined : { opacity: [0.55, 1, 0.55], scale: [0.92, 1.05, 0.92] }}
       transition={prefersReducedMotion ? undefined : { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
     >
@@ -34,7 +34,7 @@ export function SparkleBurst({ className }: { className?: string }) {
 
   return (
     <motion.span
-      className={cn('pointer-events-none inline-flex text-[var(--accent)]', className)}
+      className={cn('pointer-events-none inline-flex text-[var(--accent-strong)]', className)}
       initial={{ opacity: 0, scale: 0.6 }}
       animate={{ opacity: [0, 1, 0], scale: [0.6, 1.3, 1] }}
       transition={{ duration: 0.8, ease: 'easeOut' }}

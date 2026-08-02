@@ -52,7 +52,7 @@ export function MetricsGrid({ isHidden, hide }: MetricsGridProps) {
       action: (
         <Link
           to="/finances"
-          className="flex items-center gap-1 text-xs font-semibold text-[var(--accent)] transition duration-150 ease-out hover:underline active:scale-95"
+          className="flex items-center gap-1 text-xs font-semibold text-[var(--accent-strong)] transition duration-150 ease-out hover:underline active:scale-95"
         >
           View Finance <ArrowRight className="size-3" />
         </Link>
@@ -86,7 +86,7 @@ export function MetricsGrid({ isHidden, hide }: MetricsGridProps) {
           <Link
             to="/brand-deals"
             search={{ filter: 'unpaid' }}
-            className="flex items-center gap-1 text-xs font-semibold text-[var(--accent)] transition duration-150 ease-out hover:underline active:scale-95"
+            className="flex items-center gap-1 text-xs font-semibold text-[var(--accent-strong)] transition duration-150 ease-out hover:underline active:scale-95"
           >
             {metrics.unpaidCount} unpaid — view on board <ArrowRight className="size-3" />
           </Link>

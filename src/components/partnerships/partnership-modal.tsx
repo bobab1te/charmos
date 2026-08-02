@@ -117,12 +117,12 @@ export function PartnershipModal({ open, onOpenChange, partnershipId }: Partners
         </DialogHeader>
 
         {missingFields.length > 0 && (
-          <p className="rounded-lg bg-[var(--urgency-orange)]/10 px-3 py-2 text-sm text-[var(--urgency-orange)]">
+          <p className="rounded-lg bg-[var(--urgency-orange)]/10 px-3 py-2 text-sm text-[var(--warning)]">
             Missing: {missingFields.join(', ')}.
           </p>
         )}
         {saveError && (
-          <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--urgency-red)]">
+          <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--error)]">
             {saveError}
           </p>
         )}

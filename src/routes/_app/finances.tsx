@@ -55,7 +55,7 @@ function FinancesPage() {
                       <Link
                         to="/brand-deals"
                         search={{ openDeal: linkedDeal.id }}
-                        className="mt-0.5 flex items-center gap-0.5 text-xs font-medium text-[var(--accent)] hover:underline"
+                        className="mt-0.5 flex items-center gap-0.5 text-xs font-medium text-[var(--accent-strong)] hover:underline"
                       >
                         View deal <ArrowRight className="size-3" />
                       </Link>
@@ -64,7 +64,7 @@ function FinancesPage() {
                       <Link
                         to="/brand-deals"
                         search={{ openPartnership: linkedPartnership.id }}
-                        className="mt-0.5 flex items-center gap-0.5 text-xs font-medium text-[var(--accent)] hover:underline"
+                        className="mt-0.5 flex items-center gap-0.5 text-xs font-medium text-[var(--accent-strong)] hover:underline"
                       >
                         View partnership <ArrowRight className="size-3" />
                       </Link>
@@ -74,7 +74,7 @@ function FinancesPage() {
                     <span
                       className={
                         'text-sm font-semibold ' +
-                        (entry.type === 'income' ? 'text-[var(--urgency-green)]' : 'text-[var(--urgency-red)]')
+                        (entry.type === 'income' ? 'text-[var(--success)]' : 'text-[var(--error)]')
                       }
                     >
                       {entry.type === 'income' ? '+' : '-'}

@@ -103,7 +103,7 @@ export function DealParseInput({
         <p className="text-sm text-muted-foreground">
           Drag creative briefs or PDFs here, or <span className="font-medium text-foreground">click to upload</span>
         </p>
-        <p className="text-xs text-muted-foreground/70">PDF, TXT, JPG, or PNG · multiple files supported</p>
+        <p className="text-xs text-muted-foreground">PDF, TXT, JPG, or PNG · multiple files supported</p>
         <input
           ref={fileInputRef}
           id={inputId}
@@ -129,12 +129,12 @@ export function DealParseInput({
               >
                 <Icon className="size-3.5 shrink-0 text-muted-foreground" />
                 <span className="max-w-40 truncate">{asset.file.name}</span>
-                <span className="text-muted-foreground/70">{formatFileSize(asset.file.size)}</span>
+                <span className="text-muted-foreground">{formatFileSize(asset.file.size)}</span>
                 <button
                   type="button"
                   onClick={() => removeAsset(asset.id)}
                   aria-label={`Remove ${asset.file.name}`}
-                  className="ml-0.5 flex size-4 items-center justify-center rounded-full text-[var(--urgency-red)] transition duration-150 ease-out hover:bg-[var(--urgency-red)]/10 active:scale-90"
+                  className="ml-0.5 flex size-4 items-center justify-center rounded-full text-[var(--error)] transition duration-150 ease-out hover:bg-[var(--urgency-red)]/10 active:scale-90"
                 >
                   <X className="size-3.5" />
                 </button>
@@ -152,7 +152,7 @@ export function DealParseInput({
       />
 
       {parseError && (
-        <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--urgency-red)]">{parseError}</p>
+        <p className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--error)]">{parseError}</p>
       )}
 
       <div className="flex justify-end gap-2">
@@ -163,7 +163,7 @@ export function DealParseInput({
           type="button"
           onClick={handleParseClick}
           disabled={!canParse}
-          className="gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+          className="gap-1.5 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
         >
           {parsing ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
           {parsing ? 'Parsing...' : 'Parse with AI'}

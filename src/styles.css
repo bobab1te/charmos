@@ -57,6 +57,17 @@
   --accent: #e8608f;
   --accent-soft: #f6a8c4;
   --accent-foreground: #fff8fb;
+  /*
+   * The accent, deepened just enough to carry text. --accent-foreground on --accent measures
+   * 3.09:1 in light mode, so every primary button in the app was under AA — buttons are 14px, so
+   * they owe the full 4.5, not the 3:1 that large text gets.
+   *
+   * A separate token rather than darkening --accent itself: the accent is also used decoratively
+   * where nothing sits on top of it (the active nav pill, focus rings, today's date, progress
+   * dots), and those don't need to shift. This keeps the brand pink where it shows and uses the
+   * deeper one only under text.
+   */
+  --accent-strong: #c93f72;
 
   --surface: rgba(255, 255, 255, 0.55);
   --surface-strong: rgba(255, 255, 255, 0.72);
@@ -128,7 +139,7 @@
   --card-foreground: #3a2e42;
   --popover: oklch(1 0 0);
   --popover-foreground: #3a2e42;
-  --primary: #e8608f;
+  --primary: var(--accent-strong);
   --primary-foreground: #fff8fb;
   --secondary: #f3e8f7;
   --secondary-foreground: #3a2e42;
@@ -160,6 +171,8 @@
   --accent: #f284ab;
   --accent-soft: #b95c82;
   --accent-foreground: #2a1220;
+  /* Dark mode needs no deepening: dark ink on the lighter accent already measures 7.19:1. */
+  --accent-strong: #f284ab;
 
   --surface: rgba(36, 24, 44, 0.55);
   --surface-strong: rgba(36, 24, 44, 0.74);
@@ -206,7 +219,7 @@
   --card-foreground: #ffffff;
   --popover: #241a2c;
   --popover-foreground: #ffffff;
-  --primary: #f284ab;
+  --primary: var(--accent-strong);
   --primary-foreground: #2a1220;
   --secondary: #322a3c;
   --secondary-foreground: #ffffff;

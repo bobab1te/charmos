@@ -155,7 +155,7 @@ function OnboardingPage() {
                   className={cn(
                     'rounded-full border px-4 py-2 text-sm font-medium transition duration-150 ease-out active:scale-95',
                     platforms.includes(p.value)
-                      ? 'border-transparent bg-[var(--accent)] text-[var(--accent-foreground)]'
+                      ? 'border-transparent bg-[var(--accent-strong)] text-[var(--accent-foreground)]'
                       : 'border-[var(--charm-ink-soft)]/30 text-[var(--charm-ink-soft)] hover:bg-[var(--surface-interactive)]',
                   )}
                 >
@@ -181,7 +181,7 @@ function OnboardingPage() {
                   className={cn(
                     'rounded-xl border px-3 py-2.5 text-left transition duration-150 ease-out active:scale-[0.97]',
                     audienceTier === tier.value
-                      ? 'border-transparent bg-[var(--accent)] text-[var(--accent-foreground)]'
+                      ? 'border-transparent bg-[var(--accent-strong)] text-[var(--accent-foreground)]'
                       : 'border-[var(--charm-ink-soft)]/30 hover:bg-[var(--surface-interactive)]',
                   )}
                 >
@@ -253,7 +253,7 @@ function OnboardingPage() {
         )}
 
         {error && (
-          <p className="mt-4 rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--urgency-red)]">{error}</p>
+          <p className="mt-4 rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--error)]">{error}</p>
         )}
 
         <div className="mt-6 flex justify-between gap-2">
@@ -264,7 +264,7 @@ function OnboardingPage() {
             type="button"
             onClick={handleNext}
             disabled={!canAdvance() || submitting}
-            className="gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+            className="gap-1.5 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
           >
             {submitting && <Loader2 className="size-4 animate-spin" />}
             {isLastStep ? 'Finish' : 'Next'}

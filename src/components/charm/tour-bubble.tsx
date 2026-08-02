@@ -193,7 +193,7 @@ export function TourBubble() {
               type="button"
               size="sm"
               onClick={tour.begin}
-              className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+              className="bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
             >
               Show me around
             </Button>
@@ -225,7 +225,7 @@ export function TourBubble() {
                   type="button"
                   size="sm"
                   onClick={tour.next}
-                  className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+                  className="bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
                 >
                   {tour.isLast ? 'Finish' : 'Next'}
                 </Button>

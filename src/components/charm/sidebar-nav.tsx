@@ -94,7 +94,7 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
               activeOptions={{ exact: true }}
               className={cn(
                 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-[var(--surface-interactive)] hover:text-[var(--charm-ink)] active:scale-[0.98]',
-                'data-[status=active]:bg-[var(--accent)] data-[status=active]:text-[var(--accent-foreground)]',
+                'data-[status=active]:bg-[var(--accent-strong)] data-[status=active]:text-[var(--accent-foreground)]',
                 collapsed && 'justify-center px-0',
               )}
             >

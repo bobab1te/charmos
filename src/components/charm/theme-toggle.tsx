@@ -45,7 +45,7 @@ export function ThemeToggle({ onChange }: { onChange?: (theme: Theme) => void })
             className={cn(
               'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition duration-150 ease-out active:scale-95',
               active
-                ? 'bg-[var(--accent)] text-[var(--accent-foreground)] shadow-sm'
+                ? 'bg-[var(--accent-strong)] text-[var(--accent-foreground)] shadow-sm'
                 : 'text-[var(--charm-ink-soft)] hover:text-[var(--charm-ink)]',
             )}
           >

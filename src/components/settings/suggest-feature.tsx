@@ -100,7 +100,7 @@ export function SuggestFeature() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--accent)] px-3.5 py-2 text-xs font-semibold text-[var(--accent-foreground)] transition duration-150 ease-out hover:opacity-90 hover:shadow-md active:scale-95"
+          className="flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--accent-strong)] px-3.5 py-2 text-xs font-semibold text-[var(--accent-foreground)] transition duration-150 ease-out hover:opacity-90 hover:shadow-md active:scale-95"
         >
           Suggest a Feature <ArrowRight className="size-3.5" />
         </button>
@@ -190,7 +190,7 @@ export function SuggestFeature() {
                 {error && (
                   <p
                     role="alert"
-                    className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--urgency-red)]"
+                    className="rounded-lg bg-[var(--urgency-red)]/10 px-3 py-2 text-sm text-[var(--error)]"
                   >
                     {error}
                   </p>
@@ -204,7 +204,7 @@ export function SuggestFeature() {
                     type="button"
                     onClick={handleSubmit}
                     disabled={status === 'saving' || suggestion.trim().length < 3}
-                    className="gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
+                    className="gap-1.5 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
                   >
                     {status === 'saving' && <Loader2 className="size-4 animate-spin" />}
                     Send suggestion

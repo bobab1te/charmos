@@ -35,7 +35,7 @@ function Dashboard() {
           <SlidersHorizontal className="size-3.5" />
           Customize
           {hidden.length > 0 && (
-            <span className="rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-foreground)]">
+            <span className="rounded-full bg-[var(--accent-strong)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-foreground)]">
               {hidden.length}
             </span>
           )}

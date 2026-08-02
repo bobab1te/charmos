@@ -59,7 +59,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 toast.onUndo()
                 dismiss(toast.id)
               }}
-              className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold text-[var(--accent-foreground)] transition duration-150 ease-out hover:opacity-90 active:scale-95"
+              className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent-strong)] px-3 py-1 text-xs font-semibold text-[var(--accent-foreground)] transition duration-150 ease-out hover:opacity-90 active:scale-95"
             >
               <Undo2 className="size-3.5" /> Undo
             </button>

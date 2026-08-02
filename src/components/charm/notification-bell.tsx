@@ -148,8 +148,10 @@ export function NotificationBell() {
             className="relative rounded-full p-1.5 text-[var(--charm-ink-soft)] transition duration-150 ease-out hover:bg-[var(--surface-interactive)] hover:text-[var(--charm-ink)] active:scale-90"
           >
             <Bell className="size-4" />
+            {/* Badge colour deepened from --urgency-red: white on that measured 3.63:1, and at 9px
+                this is well inside the range that owes the full 4.5. */}
             {count > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-[var(--urgency-red)] text-[9px] font-semibold text-white">
+              <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-[#a81d27] text-[9px] font-semibold text-white">
                 {count > 9 ? '9+' : count}
               </span>
             )}
