@@ -26,6 +26,15 @@ const updateProfileInput = z.object({
   niche: z.string().trim().min(1).optional(),
   /** Only ever set (never unset) — the onboarding wizard's final step is the sole caller that passes true. */
   completeOnboarding: z.boolean().optional(),
+  /*
+   * Product tour state. Distinct from completeOnboarding: that gates the /onboarding wizard which
+   * runs before the CRM is reachable, whereas the tour runs inside the CRM and is skippable and
+   * replayable. Kept on this shared write path rather than a second server function so there is
+   * still exactly one place that writes to profiles.
+   */
+  tourStatus: z.enum(['pending', 'active', 'later', 'done']).optional(),
+  /** Null clears it (tour finished), so this is nullable rather than merely optional. */
+  tourStep: z.string().nullable().optional(),
 })
 
 export type UpdateProfileInput = z.infer<typeof updateProfileInput>
@@ -49,6 +58,9 @@ export const updateMyProfile = createServerFn({ method: 'POST' })
     if (data.audienceTier !== undefined) updates.audience_tier = data.audienceTier
     if (data.niche !== undefined) updates.niche = data.niche
     if (data.completeOnboarding) updates.onboarding_completed_at = new Date().toISOString()
+    if (data.tourStatus !== undefined) updates.tour_status = data.tourStatus
+    // `!== undefined` rather than a truthiness check, so an explicit null actually clears the step.
+    if (data.tourStep !== undefined) updates.tour_step = data.tourStep
 
     const { data: profile, error } = await supabase
       .from('profiles')

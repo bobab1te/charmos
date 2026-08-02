@@ -9,6 +9,7 @@ import { ThemeToggle } from '#/components/charm/theme-toggle'
 import { useWidgetVisibility } from '#/lib/use-widget-visibility'
 import { WIDGET_LABELS } from '#/lib/widget-ids'
 import { SuggestFeature } from '#/components/settings/suggest-feature'
+import { ReplayTour } from '#/components/settings/replay-tour'
 import { updateMyProfile } from '#/server/profile'
 import { cn } from '#/lib/utils'
 import { SUPPORTED_CURRENCIES } from '#/lib/currencies'
@@ -199,7 +200,7 @@ function SettingsPage() {
         <ThemeToggle onChange={(theme) => void updateMyProfile({ data: { theme } }).catch(() => {})} />
       </div>
 
-      <div className="charm-glass rounded-2xl p-5">
+      <div className="charm-glass rounded-2xl p-5" data-tour="dashboard-widgets">
         <h2 className="mb-3 font-display text-sm font-semibold text-[var(--charm-ink)]">Dashboard widgets</h2>
         {hidden.length === 0 ? (
           <p className="text-sm text-[var(--charm-ink-soft)]">Every widget is currently visible on the Dashboard.</p>
@@ -222,6 +223,8 @@ function SettingsPage() {
           </ul>
         )}
       </div>
+
+      <ReplayTour />
 
       <SuggestFeature />
     </div>

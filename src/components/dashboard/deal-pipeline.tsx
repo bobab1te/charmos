@@ -434,6 +434,7 @@ export function DealPipeline({
           <Button
             type="button"
             size="sm"
+            data-tour="new-deal"
             onClick={openNewDeal}
             className="gap-1 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
           >

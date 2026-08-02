@@ -26,6 +26,9 @@ export const Route = createFileRoute('/_app/brand-deals')({
         // Deep-link targets — e.g. "View deal"/"View partnership" from a Finances ledger entry.
         openDeal: z.string().optional(),
         openPartnership: z.string().optional(),
+        // Which tab is showing. In the URL rather than component state so the product tour can
+        // land directly on a tab, and so a link to this page can too.
+        tab: z.enum(['pipeline', 'partnerships', 'brands', 'archived']).optional(),
       })
       .parse(search),
   component: BrandDealsPage,
@@ -282,7 +285,8 @@ function PartnershipsGrid({ onOpen }: { onOpen: (id: string) => void }) {
 }
 
 function BrandDealsPage() {
-  const { filter, openDeal, openPartnership: openPartnershipId } = Route.useSearch()
+  const { filter, openDeal, openPartnership: openPartnershipId, tab } = Route.useSearch()
+  const navigate = Route.useNavigate()
   const { deals, partnerships } = useCharmStore()
   const archivedCount = deals.filter((d) => d.archived).length
   const [partnershipModalOpen, setPartnershipModalOpen] = useState(
@@ -324,7 +328,17 @@ function BrandDealsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue={openPartnershipId ? 'partnerships' : 'pipeline'}>
+      {/* Controlled off the URL. `replace` so tab-flipping doesn't fill the back button with
+          steps the user has to click through to leave the page. */}
+      <Tabs
+        value={tab ?? (openPartnershipId ? 'partnerships' : 'pipeline')}
+        onValueChange={(value) =>
+          void navigate({
+            search: (prev) => ({ ...prev, tab: value as 'pipeline' | 'partnerships' | 'brands' | 'archived' }),
+            replace: true,
+          })
+        }
+      >
         <TabsList>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="partnerships">
@@ -347,6 +361,7 @@ function BrandDealsPage() {
             <Button
               type="button"
               size="sm"
+              data-tour="new-partnership"
               onClick={openNewPartnership}
               className="shrink-0 gap-1 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
             >
