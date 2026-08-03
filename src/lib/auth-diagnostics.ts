@@ -64,13 +64,23 @@ function authCookies(): Array<CookieShape> {
     })
 }
 
+/**
+ * ~3.2KB is where @supabase/ssr starts splitting the session across numbered cookies, and being
+ * split is the precondition for losing it. Reporting the headroom makes it obvious whether a
+ * change actually helped rather than merely sounding like it should have.
+ */
+const CHUNK_THRESHOLD_BYTES = 3180
+
 function describe(cookies: Array<CookieShape>) {
   const chunked = cookies.filter((c) => /\.\d+$/.test(c.name))
+  const totalBytes = cookies.reduce((sum, c) => sum + c.bytes, 0)
   return {
     count: cookies.length,
     names: cookies.map((c) => c.name),
-    totalBytes: cookies.reduce((sum, c) => sum + c.bytes, 0),
+    totalBytes,
     chunks: chunked.length,
+    /** Negative means it fits in one cookie and cannot hit the chunk-desync failure at all. */
+    bytesOverChunkThreshold: totalBytes - CHUNK_THRESHOLD_BYTES,
   }
 }
 
