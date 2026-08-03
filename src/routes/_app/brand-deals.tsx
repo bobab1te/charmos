@@ -349,7 +349,7 @@ function BrandDealsPage() {
             Archived{archivedCount > 0 && ` (${archivedCount})`}
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="pipeline" className="mt-4">
+        <TabsContent value="pipeline" className="mt-4" data-tour="pipeline-board">
           <DealPipeline onlyUnpaid={filter === 'unpaid'} initialOpenDealId={openDeal} />
         </TabsContent>
         <TabsContent value="partnerships" className="mt-4 flex flex-col gap-4">
