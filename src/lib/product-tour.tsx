@@ -99,6 +99,32 @@ export function ProductTourProvider({ profile, children }: { profile: Profile; c
   const { missed, clearMissed } = useTourGate(step?.gate ?? null, advance)
 
   /*
+   * Self-healing for steps whose anchor is gone.
+   *
+   * Resuming mid-chapter lands the user on a step that lives inside the New Deal dialog, with the
+   * dialog closed — a bubble pointing at nothing and no way forward. The same happens if they
+   * close the dialog mid-step. When a step declares recoverTo and its anchor has not shown up
+   * after a grace period, rewind to the step that re-opens it.
+   *
+   * This is the one timer in the tour, and it only ever moves backwards. It cannot skip work: no
+   * gate is satisfied by it and the user still performs every action.
+   */
+  useEffect(() => {
+    if (!step?.recoverTo || !step.anchor) return
+    if (document.querySelector(`[data-tour="${step.anchor}"]`)) return
+    const target = TOUR_STEPS.findIndex((s) => s.key === step.recoverTo)
+    if (target === -1) return
+    // Long enough that a step arriving just after a navigation or a dialog animation is never
+    // mistaken for a missing one.
+    const timer = window.setTimeout(() => {
+      if (document.querySelector(`[data-tour="${step.anchor}"]`)) return
+      navigatedFor.current = null
+      goTo(target)
+    }, 1200)
+    return () => window.clearTimeout(timer)
+  }, [step, goTo])
+
+  /*
    * Drive the route from the current step. Guarded on the step key rather than run on every
    * render: navigate() changes router state, which re-renders this provider, which would navigate
    * again — a loop rather than merely wasted work.

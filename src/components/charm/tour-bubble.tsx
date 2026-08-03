@@ -85,23 +85,60 @@ function useAnchorRect(anchor: string | null) {
  * end on a browser that refuses clipboard access.
  */
 function CopyExample({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState<'idle' | 'copied' | 'selected'>('idle')
   const ref = useRef<HTMLPreElement>(null)
 
+  /**
+   * Two mechanisms, because the modern one is not reliable here.
+   *
+   * navigator.clipboard.writeText rejects whenever the document does not have focus — a real
+   * condition, not a theoretical one: it happens with the window backgrounded, with devtools
+   * focused, and under automation. Observed failing silently in exactly this bubble, leaving the
+   * button reading "Copy example" with nothing on the clipboard and the user none the wiser.
+   *
+   * execCommand('copy') is deprecated but has neither the focus requirement nor the permission
+   * prompt, so it covers the cases the modern API drops. Selecting the text is the last resort:
+   * the user can still press Cmd+C, and the label says so.
+   */
   async function copy() {
     try {
       await navigator.clipboard.writeText(text)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 2000)
+      setCopied('copied')
+      window.setTimeout(() => setCopied('idle'), 2000)
+      return
     } catch {
-      const el = ref.current
-      if (!el) return
-      const range = document.createRange()
-      range.selectNodeContents(el)
-      const sel = window.getSelection()
-      sel?.removeAllRanges()
-      sel?.addRange(range)
+      // fall through
     }
+
+    const scratch = document.createElement('textarea')
+    scratch.value = text
+    scratch.setAttribute('readonly', '')
+    scratch.style.position = 'fixed'
+    scratch.style.opacity = '0'
+    document.body.appendChild(scratch)
+    scratch.select()
+    let ok = false
+    try {
+      ok = document.execCommand('copy')
+    } catch {
+      ok = false
+    }
+    document.body.removeChild(scratch)
+
+    if (ok) {
+      setCopied('copied')
+      window.setTimeout(() => setCopied('idle'), 2000)
+      return
+    }
+
+    const el = ref.current
+    if (!el) return
+    const range = document.createRange()
+    range.selectNodeContents(el)
+    const sel = window.getSelection()
+    sel?.removeAllRanges()
+    sel?.addRange(range)
+    setCopied('selected')
   }
 
   return (
@@ -113,8 +150,8 @@ function CopyExample({ text }: { text: string }) {
         {text}
       </pre>
       <Button type="button" size="sm" variant="outline" onClick={copy} className="w-fit gap-1.5">
-        {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-        {copied ? 'Copied' : 'Copy example'}
+        {copied === 'copied' ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+        {copied === 'copied' ? 'Copied' : copied === 'selected' ? 'Selected — press Cmd+C' : 'Copy example'}
       </Button>
     </div>
   )

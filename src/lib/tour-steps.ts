@@ -45,6 +45,15 @@ export type TourStep = {
   copyable?: string
   /** Marks the last step of a chapter, so the bubble can show a small completion beat. */
   chapterEnd?: boolean
+  /**
+   * Step to fall back to when this one's anchor never appears.
+   *
+   * Steps that live inside the New Deal dialog are only reachable while it is open, and a user
+   * who pauses mid-form, reloads, or resumes from Settings arrives with it closed — stranded on a
+   * bubble pointing at nothing, with no way forward. Naming the step that re-opens the dialog
+   * lets the tour heal itself instead.
+   */
+  recoverTo?: string
 }
 
 /**
@@ -89,6 +98,7 @@ export const TOUR_STEPS: Array<TourStep> = [
     title: 'Who is it with?',
     body: "The brand's name. It doesn't have to be real — CharmOS creates the brand record for you when you save.",
     gate: { kind: 'text', anchor: 'deal-brand-name', minLength: 2 },
+    recoverTo: 'deal-open',
     mood: 'calm',
   },
   {
@@ -98,6 +108,7 @@ export const TOUR_STEPS: Array<TourStep> = [
     title: "Now tell CharmOS what you're creating",
     body: 'One line is enough — "2 Instagram Reels", "1 TikTok video". This is what drives your deadlines and shows up on your dashboard.',
     gate: { kind: 'text', anchor: 'deal-deliverable-type', minLength: 3 },
+    recoverTo: 'deal-open',
     mood: 'calm',
   },
   {
@@ -108,6 +119,7 @@ export const TOUR_STEPS: Array<TourStep> = [
     body: "Over here are the brand's own requirements — hooks, talking points, hashtags. It stays with the deal, so you're not digging through email at 2am.",
     gate: { kind: 'click', anchor: 'deal-requirements-tab' },
     nudge: 'Tap Content Requirements to look inside — nothing to fill in unless you want to.',
+    recoverTo: 'deal-open',
     mood: 'calm',
   },
   {
@@ -118,6 +130,7 @@ export const TOUR_STEPS: Array<TourStep> = [
     body: 'Everything else is optional and you can come back to it any time.',
     gate: { kind: 'event', event: 'deal:created' },
     nudge: "Hit save when you're happy — I'll be here.",
+    recoverTo: 'deal-open',
     mood: 'calm',
   },
   {
@@ -156,6 +169,7 @@ export const TOUR_STEPS: Array<TourStep> = [
     title: 'Check its work',
     body: "The fee, deliverables, dates and usage rights are all in the form now — and all editable. Nothing is saved until you say so, so fix anything it misread before you commit.",
     gate: { kind: 'acknowledge' },
+    recoverTo: 'parse-run',
     mood: 'bright',
     chapterEnd: true,
   },
