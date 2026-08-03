@@ -6,6 +6,7 @@ import { DashboardAtmosphere } from '#/components/charm/dashboard-atmosphere'
 import { SidebarNav } from '#/components/charm/sidebar-nav'
 import { TourBubble } from '#/components/charm/tour-bubble'
 import { getAuthState } from '#/lib/auth-guard'
+import { startAuthDiagnostics } from '#/lib/auth-diagnostics'
 import { useThemeContext } from '#/lib/theme-context'
 import { CurrencyProvider } from '#/lib/currency-context'
 import { ProductTourProvider } from '#/lib/product-tour'
@@ -37,6 +38,9 @@ export const Route = createFileRoute('/_app')({
 function AppLayout() {
   const { user, profile } = Route.useRouteContext()
   const { applyProfileTheme } = useThemeContext()
+
+  // Dev-only, and a no-op in production builds. Subscribes once; see auth-diagnostics for why.
+  useEffect(() => startAuthDiagnostics(), [])
   const pathname = useLocation({ select: (location) => location.pathname })
 
   // The profile's saved theme is the source of truth once authenticated — unless this device is set
