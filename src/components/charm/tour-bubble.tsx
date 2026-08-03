@@ -187,7 +187,9 @@ export function TourBubble() {
         {showSpotlight && (
           <motion.div
             key="spotlight"
-            className="pointer-events-none fixed z-40 rounded-2xl"
+            // Above the dialog layer (z-50): several steps run inside the New Deal modal, and a
+            // spotlight underneath it would highlight nothing the user can see.
+            className="pointer-events-none fixed z-[60] rounded-2xl"
             initial={prefersReducedMotion ? false : { opacity: 0 }}
             exit={{ opacity: 0 }}
             /*
@@ -228,7 +230,7 @@ export function TourBubble() {
         aria-live="polite"
         aria-label={heading}
         className={cn(
-          'charm-glass fixed z-50 flex flex-col gap-3 rounded-2xl p-5 shadow-xl',
+          'charm-glass-solid fixed z-[70] flex flex-col gap-3 rounded-2xl p-5 shadow-xl',
           pos.centered && 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
         )}
         style={{
