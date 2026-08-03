@@ -15,6 +15,7 @@ import { Logo } from '#/components/charm/logo'
 import { NotificationBell } from '#/components/charm/notification-bell'
 import { useSidebarCollapsed } from '#/lib/use-sidebar'
 import { getSupabaseBrowserClient } from '#/lib/supabase/browser-client'
+import { invalidateAuthState } from '#/lib/auth-guard'
 import { cn } from '#/lib/utils'
 import type { Profile } from '#/server/profile'
 
@@ -38,6 +39,9 @@ export function SidebarNav({ profile, avatarUrl }: { profile: Profile | null; av
     try {
       await getSupabaseBrowserClient().auth.signOut()
     } finally {
+      // Before navigating: the login route's own guard runs on arrival, and a cached "signed in"
+      // answer would bounce the user straight back to the dashboard they just left.
+      invalidateAuthState()
       navigate({ to: '/login' })
     }
   }

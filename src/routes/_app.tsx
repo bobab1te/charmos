@@ -5,7 +5,7 @@ import type { PageKey } from '#/components/charm/decorative-shapes'
 import { DashboardAtmosphere } from '#/components/charm/dashboard-atmosphere'
 import { SidebarNav } from '#/components/charm/sidebar-nav'
 import { TourBubble } from '#/components/charm/tour-bubble'
-import { getCurrentUserAndProfile } from '#/server/auth'
+import { getAuthState } from '#/lib/auth-guard'
 import { useThemeContext } from '#/lib/theme-context'
 import { CurrencyProvider } from '#/lib/currency-context'
 import { ProductTourProvider } from '#/lib/product-tour'
@@ -23,7 +23,7 @@ function pageKeyForPath(pathname: string): PageKey {
 
 export const Route = createFileRoute('/_app')({
   beforeLoad: async () => {
-    const result = await getCurrentUserAndProfile()
+    const result = await getAuthState()
 
     if (!result.configured) throw redirect({ to: '/setup-required' })
     if (!result.user) throw redirect({ to: '/login' })

@@ -7,14 +7,14 @@ import { Label } from '#/components/ui/label'
 import { Button } from '#/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/components/ui/select'
 import { ThemeToggle } from '#/components/charm/theme-toggle'
-import { getCurrentUserAndProfile } from '#/server/auth'
+import { getAuthState, invalidateAuthState } from '#/lib/auth-guard'
 import { updateMyProfile } from '#/server/profile'
 import { cn } from '#/lib/utils'
 import { SUPPORTED_CURRENCIES } from '#/lib/currencies'
 
 export const Route = createFileRoute('/onboarding')({
   beforeLoad: async () => {
-    const result = await getCurrentUserAndProfile()
+    const result = await getAuthState()
     if (!result.configured) throw redirect({ to: '/setup-required' })
     if (!result.user) throw redirect({ to: '/login' })
     if (result.profile?.onboarding_completed_at) throw redirect({ to: '/dashboard' })
@@ -92,6 +92,9 @@ function OnboardingPage() {
           completeOnboarding: true,
         },
       })
+      // The guard's cached answer still says "no onboarding_completed_at", which would bounce
+      // the user straight back here from the dashboard.
+      invalidateAuthState()
       navigate({ to: '/dashboard' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong saving your profile.')

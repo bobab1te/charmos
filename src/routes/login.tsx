@@ -11,13 +11,13 @@ import { Button } from '#/components/ui/button'
 import { LoginAtmosphere } from '#/components/charm/login-atmosphere'
 import { CharmMascot } from '#/components/charm/charm-mascot'
 import { getSupabaseBrowserClient } from '#/lib/supabase/browser-client'
-import { getCurrentUserAndProfile } from '#/server/auth'
+import { getAuthState } from '#/lib/auth-guard'
 import { CHARM_TIER_2_SPRING } from '#/lib/motion-tiers'
 
 export const Route = createFileRoute('/login')({
   validateSearch: (search: Record<string, unknown>) => z.object({ error: z.string().optional() }).parse(search),
   beforeLoad: async () => {
-    const result = await getCurrentUserAndProfile()
+    const result = await getAuthState()
     if (!result.configured) throw redirect({ to: '/setup-required' })
     if (result.user) throw redirect({ to: '/dashboard' })
   },
