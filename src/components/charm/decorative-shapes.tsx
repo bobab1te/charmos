@@ -186,6 +186,25 @@ function generateDots(
  * the stand-in: a soft light rim rather than an actual frosted-glass blur. */
 const GLASS_EDGE = { stroke: 'white', strokeOpacity: 0.4, strokeWidth: 1 }
 
+/**
+ * The soft white aura every CharmOS sparkle wears — three stacked drop-shadows rather than one,
+ * so the falloff has a bright core and a wide dim halo instead of a single flat blur. Exported so
+ * the login page wears the identical glow rather than an approximation of it.
+ */
+export const SPARKLE_GLOW = 'var(--sparkle-glow)'
+
+/**
+ * The 4-point star, glow included. This is the shape used behind every authenticated page; the
+ * login page imports it so there is one sparkle in the product, not two that drift apart.
+ */
+export function GlimmerSparkle({ size }: { size: number }) {
+  return (
+    <div style={{ width: size, height: size, filter: SPARKLE_GLOW }}>
+      <DiamondShape size={size} color="var(--sparkle-fill)" />
+    </div>
+  )
+}
+
 function DiamondShape({ size, color }: { size: number; color: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
@@ -198,8 +217,8 @@ function DiamondShape({ size, color }: { size: number; color: string }) {
   )
 }
 
-/** Unused within this file since the mesh background went plain-ombre, but still exported —
- * login-decor.tsx uses it for the sign-up page's own cloud/flower decoration. */
+/** Unused within this file since the mesh background went plain-ombre, but kept exported for
+ * decorative use elsewhere. */
 export function CloudShape({ size, color }: { size: number; color: string }) {
   return (
     <svg width={size} height={size * 0.6} viewBox="0 0 160 96" fill="none">
@@ -214,7 +233,7 @@ export function CloudShape({ size, color }: { size: number; color: string }) {
 
 /** Abstract flower: 6 overlapping petal circles + a center circle, each with a faint white edge
  * to suggest a translucent glass petal rather than a flat-filled blob. Unused within this file
- * (see CloudShape comment above) but still exported for login-decor.tsx. */
+ * (see CloudShape comment above) but kept exported. */
 export function FlowerShape({ size, color }: { size: number; color: string }) {
   const cx = size / 2
   const cy = size / 2
@@ -252,14 +271,13 @@ export function DecorativeShapes({ page = 'default' }: { page?: PageKey }) {
           bottom: s.bottom,
           width: s.size,
           height: s.size,
-          filter:
-            'drop-shadow(0 0 7px rgba(255,255,255,1)) drop-shadow(0 0 16px rgba(255,255,255,0.75)) drop-shadow(0 0 28px rgba(255,255,255,0.4))',
+          filter: SPARKLE_GLOW,
         }
 
         if (!shouldAnimate) {
           return (
             <div key={`star-${i}`} className="absolute" style={{ ...style, opacity: 0.8 }}>
-              <DiamondShape size={s.size} color="#ffffff" />
+              <DiamondShape size={s.size} color="var(--sparkle-fill)" />
             </div>
           )
         }
@@ -272,7 +290,7 @@ export function DecorativeShapes({ page = 'default' }: { page?: PageKey }) {
             animate={{ opacity: [0.35, 1, 0.35], scale: [0.8, 1.3, 0.8] }}
             transition={{ duration: s.duration, repeat: Infinity, ease: 'easeInOut', delay: s.delay }}
           >
-            <DiamondShape size={s.size} color="#ffffff" />
+            <DiamondShape size={s.size} color="var(--sparkle-fill)" />
           </motion.div>
         )
       })}

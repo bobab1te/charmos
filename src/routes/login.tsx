@@ -57,19 +57,6 @@ function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(callbackError ?? null)
   const [signUpNotice, setSignUpNotice] = useState<string | null>(null)
-  /*
-   * Drives the chaos-to-order transition. Set the moment auth succeeds, held for the length of
-   * the settle before navigating, so the environment visibly resolves instead of the page simply
-   * disappearing. Purely presentational — no auth decision reads it.
-   */
-  const [settled, setSettled] = useState(false)
-
-  /** Let the environment finish organising before handing over to the dashboard. */
-  async function settleThen(go: () => void) {
-    setSettled(true)
-    await new Promise((r) => window.setTimeout(r, 900))
-    go()
-  }
 
   async function handleEmailSubmit(e: FormEvent) {
     e.preventDefault()
@@ -84,7 +71,7 @@ function LoginPage() {
           setError(authError.message)
           return
         }
-        await settleThen(() => navigate({ to: '/dashboard' }))
+        navigate({ to: '/dashboard' })
       } else {
         const { data, error: authError } = await supabase.auth.signUp({ email, password })
         if (authError) {
@@ -92,7 +79,7 @@ function LoginPage() {
           return
         }
         if (data.session) {
-          await settleThen(() => navigate({ to: '/dashboard' }))
+          navigate({ to: '/dashboard' })
         } else {
           setSignUpNotice('Check your email to confirm your account, then sign in.')
         }
@@ -120,7 +107,7 @@ function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      <LoginAtmosphere settled={settled} />
+      <LoginAtmosphere />
 
       {/*
         charm-glass-solid rather than charm-glass: the card sits over a deliberately busy field,
@@ -133,9 +120,7 @@ function LoginPage() {
         animate={{
           opacity: 1,
           y: 0,
-          // A whisper of lift on success, so the card feels like it is being admitted rather
-          // than dismissed.
-          scale: settled ? 1.015 : 1,
+          scale: 1,
         }}
         transition={prefersReducedMotion ? { duration: 0 } : CHARM_TIER_2_SPRING}
       >
@@ -145,15 +130,13 @@ function LoginPage() {
             the cursor while you are deciding, and turns bright the moment the environment starts
             organising itself.
           */}
-          <CharmMascot size={66} mood={settled ? 'bright' : 'calm'} lookAtCursor={!settled} />
+          <CharmMascot size={66} mood="calm" lookAtCursor />
           <div className="flex flex-col gap-1.5">
             <h1 className="font-display-bold text-[1.75rem] leading-tight font-semibold tracking-tight text-[var(--text-primary)]">
-              {settled ? 'Getting things in order…' : 'Welcome to CharmOS'}
+              Welcome to CharmOS
             </h1>
             <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-              {settled
-                ? 'One moment — sorting your deals, ideas and earnings.'
-                : 'Every brand deal, idea and payment, in one calm place.'}
+              Every brand deal, idea and payment, in one calm place.
             </p>
           </div>
         </div>

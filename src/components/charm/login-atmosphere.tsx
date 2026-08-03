@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'motion/react'
 import { subscribePointer, useFinePointer } from '#/components/charm/charm-mascot'
+import { GlimmerSparkle } from '#/components/charm/decorative-shapes'
 import { useAllowAmbientMotion } from '#/lib/use-ambient-motion'
 import { cn } from '#/lib/utils'
 
 /**
  * The environment behind the auth card: a creator's workload, floating.
  *
- * The point is narrative. Before you sign in these are scattered, tilted, drifting at different
- * depths — "there is a lot going on". On success they straighten, slow, and draw inward toward
- * the flower, which is the product's promise stated visually rather than in a tagline.
+ * Scattered, tilted, drifting at different depths — "there is a lot going on", which is the
+ * feeling the product exists to answer. Deliberately secondary: the auth card is the focal point
+ * and these sit behind and around it, never competing for the eye.
  *
  * Deliberately not the sticker-pill treatment this replaces. Three things do the work: depth
  * (each item has a z-layer that drives its blur, scale, opacity and parallax together), restraint
@@ -64,21 +65,19 @@ const ITEMS: Array<Item> = [
 
 /** Per-layer look. Depth is one decision applied consistently, not four independent knobs. */
 const LAYER = {
-  0: { blur: 0, scale: 1, opacity: 0.96, parallax: 26 },
-  1: { blur: 1.2, scale: 0.92, opacity: 0.8, parallax: 16 },
-  2: { blur: 2.6, scale: 0.84, opacity: 0.6, parallax: 9 },
+  0: { blur: 0, scale: 0.96, opacity: 0.82, parallax: 26 },
+  1: { blur: 1.2, scale: 0.9, opacity: 0.66, parallax: 16 },
+  2: { blur: 2.6, scale: 0.82, opacity: 0.5, parallax: 9 },
 } as const
 
 function WorkloadItem({
   item,
   index,
-  settled,
   narrow,
   pointer,
 }: {
   item: Item
   index: number
-  settled: boolean
   narrow: boolean
   pointer: { x: ReturnType<typeof useMotionValue<number>>; y: ReturnType<typeof useMotionValue<number>> }
 }) {
@@ -89,13 +88,6 @@ function WorkloadItem({
   // Nearer items travel further with the cursor. That difference is the whole parallax effect.
   const px = useTransform(pointer.x, (v) => v * depth.parallax)
   const py = useTransform(pointer.y, (v) => v * depth.parallax * 0.6)
-
-  /*
-   * On settle everything resolves at once: rotation to zero, blur away, opacity up, and the item
-   * pulls toward the centre — the flower's position — so the group visibly gathers rather than
-   * merely tidying in place. Staggered by index so it reads as a sweep, not a snap.
-   */
-  const settleShift = settled ? (item.left ? 34 : -34) : 0
 
   return (
     <motion.div
@@ -109,19 +101,12 @@ function WorkloadItem({
       }}
       initial={reduced ? false : { opacity: 0, scale: 0.9 }}
       animate={{
-        opacity: settled ? Math.min(1, depth.opacity + 0.15) : depth.opacity,
-        scale: hovered && !settled ? depth.scale * 1.04 : depth.scale,
-        rotate: settled ? 0 : item.rotate + (hovered ? (item.rotate > 0 ? -2.5 : 2.5) : 0),
-        filter: `blur(${settled ? 0 : depth.blur}px)`,
-        translateX: settleShift,
+        opacity: depth.opacity,
+        scale: hovered ? depth.scale * 1.04 : depth.scale,
+        rotate: item.rotate + (hovered ? (item.rotate > 0 ? -2.5 : 2.5) : 0),
+        filter: `blur(${depth.blur}px)`,
       }}
-      transition={
-        reduced
-          ? { duration: 0 }
-          : settled
-            ? { type: 'spring', stiffness: 120, damping: 20, delay: index * 0.035 }
-            : { type: 'spring', stiffness: 220, damping: 22 }
-      }
+      transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 220, damping: 22 }}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
       // Touch gets the same acknowledgement as hover, just self-cancelling.
@@ -134,9 +119,9 @@ function WorkloadItem({
       {/* The drift is a separate element so it composes with parallax instead of fighting it for
           the same transform. Stops entirely once settled — calm is the point. */}
       <motion.div
-        animate={reduced || settled ? { y: 0 } : { y: [0, -7, 0, 5, 0] }}
+        animate={reduced ? { y: 0 } : { y: [0, -7, 0, 5, 0] }}
         transition={
-          reduced || settled
+          reduced
             ? { duration: 0.5 }
             : { duration: item.drift, repeat: Infinity, ease: 'easeInOut', delay: index * 0.7 }
         }
@@ -160,7 +145,102 @@ function WorkloadItem({
   )
 }
 
-export function LoginAtmosphere({ settled }: { settled: boolean }) {
+
+/**
+ * The sparkle field.
+ *
+ * Same 4-point star and the same layered white glow as every authenticated page — imported, not
+ * reimplemented. Eleven of them, placed by hand around the card's edges so they frame the
+ * composition rather than sit on top of the form.
+ *
+ * Proximity is computed entirely in normalised space against the shared pointer motion values:
+ * each sparkle knows where it is as a fraction of the viewport, so "how close is the cursor" is
+ * arithmetic on two numbers. No getBoundingClientRect, no listener per star, and no React render
+ * on pointer move — motion writes the transform directly. That keeps the whole field to one
+ * rAF-batched listener no matter how many sparkles there are.
+ */
+type Spark = { x: number; y: number; size: number; delay: number; duration: number; desktopOnly?: boolean }
+
+const SPARKS: Array<Spark> = [
+  { x: 0.13, y: 0.16, size: 18, delay: 0, duration: 3.2 },
+  { x: 0.86, y: 0.12, size: 14, delay: 0.9, duration: 2.8 },
+  { x: 0.08, y: 0.44, size: 13, delay: 1.6, duration: 3.6, desktopOnly: true },
+  { x: 0.92, y: 0.38, size: 17, delay: 0.4, duration: 3 },
+  { x: 0.2, y: 0.72, size: 15, delay: 2.1, duration: 3.3 },
+  { x: 0.8, y: 0.68, size: 12, delay: 1.2, duration: 2.9, desktopOnly: true },
+  { x: 0.5, y: 0.06, size: 12, delay: 0.7, duration: 3.4 },
+  { x: 0.46, y: 0.95, size: 14, delay: 1.9, duration: 3.1 },
+  { x: 0.3, y: 0.3, size: 10, delay: 2.6, duration: 2.7, desktopOnly: true },
+  { x: 0.7, y: 0.86, size: 11, delay: 0.2, duration: 3.5, desktopOnly: true },
+  { x: 0.04, y: 0.88, size: 13, delay: 1.4, duration: 3 },
+]
+
+function Sparkle({
+  spark,
+  pointer,
+  reactive,
+}: {
+  spark: Spark
+  pointer: { x: ReturnType<typeof useMotionValue<number>>; y: ReturnType<typeof useMotionValue<number>> }
+  reactive: boolean
+}) {
+  const reduced = useReducedMotion()
+
+  // Pointer values are normalised to [-1, 1] from the centre; convert this sparkle's [0,1]
+  // position into the same space once so the comparison below is a plain subtraction.
+  const nx = spark.x * 2 - 1
+  const ny = spark.y * 2 - 1
+
+  /** 1 when the cursor is on top of the sparkle, easing to 0 at the edge of its radius. */
+  const RADIUS = 0.34
+  const near = useTransform([pointer.x, pointer.y], ([px, py]: Array<number>) => {
+    const d = Math.hypot(px - nx, py - ny)
+    return Math.max(0, 1 - d / RADIUS)
+  })
+
+  // Drifts a little toward the cursor and brightens as it approaches — the sparkle noticing you,
+  // not chasing you.
+  const tx = useTransform([pointer.x, near], ([px, n]: Array<number>) => (px - nx) * 14 * n)
+  const ty = useTransform([pointer.y, near], ([py, n]: Array<number>) => (py - ny) * 14 * n)
+  const proximityScale = useTransform(near, [0, 1], [1, 1.45])
+  /*
+   * Brightness rather than opacity for the proximity boost. Opacity here would multiply with the
+   * twinkle animation on the child, so a value starting at 0 makes every sparkle invisible until
+   * the cursor reaches it — the opposite of an ambient field. Brightness composes cleanly and, on
+   * a white star, reads as the sparkle catching the light.
+   */
+  const proximityBrightness = useTransform(near, [0, 1], [1, 1.9])
+  const brightnessFilter = useTransform(proximityBrightness, (v) => `brightness(${v})`)
+
+  return (
+    <motion.div
+      className="absolute"
+      style={{
+        left: `${spark.x * 100}%`,
+        top: `${spark.y * 100}%`,
+        x: reactive ? tx : 0,
+        y: reactive ? ty : 0,
+        scale: reactive ? proximityScale : 1,
+        filter: reactive ? brightnessFilter : undefined,
+        marginLeft: -spark.size / 2,
+        marginTop: -spark.size / 2,
+      }}
+    >
+      <motion.div
+        animate={reduced ? { opacity: 0.5 } : { opacity: [0.28, 0.72, 0.28], scale: [0.9, 1.06, 0.9] }}
+        transition={
+          reduced
+            ? { duration: 0 }
+            : { duration: spark.duration, repeat: Infinity, ease: 'easeInOut', delay: spark.delay }
+        }
+      >
+        <GlimmerSparkle size={spark.size} />
+      </motion.div>
+    </motion.div>
+  )
+}
+
+export function LoginAtmosphere() {
   const reduced = useReducedMotion()
   const fine = useFinePointer()
   const allowAmbient = useAllowAmbientMotion()
@@ -205,8 +285,8 @@ export function LoginAtmosphere({ settled }: { settled: boolean }) {
           background: 'radial-gradient(circle, color-mix(in oklab, var(--accent) 45%, transparent), transparent 70%)',
           filter: 'blur(90px)',
         }}
-        animate={{ opacity: settled ? 0.1 : 0.42, scale: settled ? 1.1 : 1 }}
-        transition={{ duration: settled ? 1.1 : 0.8, ease: 'easeOut' }}
+        animate={{ opacity: 0.42 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
       />
       <motion.div
         className="absolute -right-[12%] bottom-[-15%] size-[50vw] rounded-full"
@@ -215,12 +295,18 @@ export function LoginAtmosphere({ settled }: { settled: boolean }) {
             'radial-gradient(circle, color-mix(in oklab, var(--charm-lavender-deep) 50%, transparent), transparent 70%)',
           filter: 'blur(100px)',
         }}
-        animate={{ opacity: settled ? 0.08 : 0.34, scale: settled ? 1.1 : 1 }}
-        transition={{ duration: settled ? 1.1 : 0.8, ease: 'easeOut' }}
+        animate={{ opacity: 0.34 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
       />
 
+      {SPARKS.map((spark, i) => (
+        <div key={`spark-${i}`} className={cn(spark.desktopOnly && 'hidden lg:block')}>
+          <Sparkle spark={spark} pointer={{ x, y }} reactive={active} />
+        </div>
+      ))}
+
       {ITEMS.map((item, i) => (
-        <WorkloadItem key={item.label} item={item} index={i} settled={settled} narrow={narrow} pointer={{ x, y }} />
+        <WorkloadItem key={item.label} item={item} index={i} narrow={narrow} pointer={{ x, y }} />
       ))}
     </div>
   )

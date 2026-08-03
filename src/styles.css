@@ -102,6 +102,15 @@
    */
   --text-on-pastel: #2a1220;
 
+  /*
+   * Sparkles. A white star with a white halo is the right answer on the dark ombre and no answer
+   * at all on cream — it simply disappears. Light mode gets a soft pink core with an accent-tinted
+   * halo, which reads as the same object catching warmer light rather than as a different one.
+   */
+  --sparkle-fill: #f7b3cb;
+  --sparkle-glow: drop-shadow(0 0 6px rgba(232, 96, 143, 0.75)) drop-shadow(0 0 14px rgba(232, 96, 143, 0.45))
+    drop-shadow(0 0 26px rgba(232, 96, 143, 0.22));
+
   /* Surfaces. `interactive` is the one hover/pressed states use — the fix for `bg-white/50`. */
   --surface-elevated: rgba(255, 255, 255, 0.82);
   --surface-interactive: rgba(255, 255, 255, 0.5);
