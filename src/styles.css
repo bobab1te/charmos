@@ -103,13 +103,20 @@
   --text-on-pastel: #2a1220;
 
   /*
-   * Sparkles. A white star with a white halo is the right answer on the dark ombre and no answer
-   * at all on cream — it simply disappears. Light mode gets a soft pink core with an accent-tinted
-   * halo, which reads as the same object catching warmer light rather than as a different one.
+   * Sparkles are white in both themes — the original CRM treatment, restored. They are subtler on
+   * a light background than a tinted star would be, and that is the intent: on cream they read as
+   * a faint gleam in the surface rather than as pink confetti sitting on top of it.
    */
-  --sparkle-fill: #f7b3cb;
-  --sparkle-glow: drop-shadow(0 0 6px rgba(232, 96, 143, 0.75)) drop-shadow(0 0 14px rgba(232, 96, 143, 0.45))
-    drop-shadow(0 0 26px rgba(232, 96, 143, 0.22));
+  --sparkle-fill: #ffffff;
+  --sparkle-glow: drop-shadow(0 0 7px rgba(255, 255, 255, 1)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.75))
+    drop-shadow(0 0 28px rgba(255, 255, 255, 0.4));
+
+  /*
+   * Constellations join a few stars in dark mode only. On the light background a faint white line
+   * has nothing to sit against and just reads as a smudge, so light resolves to transparent and
+   * the lines are simply absent rather than special-cased in the components.
+   */
+  --constellation-line: transparent;
 
   /* Surfaces. `interactive` is the one hover/pressed states use — the fix for `bg-white/50`. */
   --surface-elevated: rgba(255, 255, 255, 0.82);
@@ -195,6 +202,9 @@
   --text-secondary: #d3c2da;
   --text-muted: #b3a2bb;
   --text-on-accent: #2a1220;
+
+  /* Sparkle fill and glow are inherited from :root — white in both themes. */
+  --constellation-line: rgba(255, 255, 255, 0.2);
 
   /*
    * The heart of the reported bug. In dark mode an interactive surface has to get LIGHTER to read

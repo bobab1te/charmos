@@ -26,6 +26,13 @@ interface GlimmerStar {
 
 interface PageConfig {
   stars: Array<GlimmerStar>
+  /**
+   * Pairs of star indices to join with a faint line. Dark mode only — the stroke token resolves
+   * to transparent in light, where a pale line has nothing to sit against and just reads as a
+   * smudge. Kept to two or three per page: a constellation is suggestive because it is partial,
+   * and joining everything would turn the backdrop into a mesh.
+   */
+  constellations?: Array<[number, number]>
   /** Tiny plain pulsing dots — cheap ambient texture, count only (positions still generated, unlike the stars above). */
   dotCount: number
   animate: boolean
@@ -49,6 +56,7 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { top: '66%', right: '3%', size: 18, delay: 0.6, duration: 2.9 },
       { bottom: '4%', left: '46%', size: 14, delay: 2.1, duration: 3.1 },
     ],
+    constellations: [[0, 6], [3, 7]],
     dotCount: 18,
     animate: true,
   },
@@ -68,6 +76,7 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { bottom: '6%', right: '18%', size: 18, delay: 0.3, duration: 2.8 },
       { top: '18%', right: '3%', size: 14, delay: 2.2, duration: 3.2 },
     ],
+    constellations: [[0, 1]],
     dotCount: 14,
     animate: true,
   },
@@ -87,6 +96,7 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { top: '26%', right: '20%', size: 14, delay: 2, duration: 3.2 },
       { bottom: '46%', right: '5%', size: 18, delay: 0.8, duration: 3 },
     ],
+    constellations: [[0, 1]],
     dotCount: 14,
     animate: true,
   },
@@ -99,6 +109,7 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { top: '8%', left: '8%', size: 14, delay: 0.3, duration: 3 },
       { bottom: '10%', left: '30%', size: 14, delay: 0.8, duration: 3 },
     ],
+    constellations: [[0, 1]],
     dotCount: 5,
     animate: false,
   },
@@ -115,6 +126,7 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { bottom: '4%', right: '30%', size: 16, delay: 1.6, duration: 3.2 },
       { top: '46%', right: '20%', size: 14, delay: 2.1, duration: 2.9 },
     ],
+    constellations: [[0, 1]],
     dotCount: 11,
     animate: true,
   },
@@ -131,6 +143,7 @@ const PAGE_CONFIGS: Record<PageKey, PageConfig> = {
       { bottom: '4%', right: '32%', size: 16, delay: 1.7, duration: 2.9 },
       { top: '34%', right: '22%', size: 14, delay: 2.2, duration: 3.3 },
     ],
+    constellations: [[0, 1]],
     dotCount: 11,
     animate: true,
   },
@@ -254,6 +267,25 @@ export function FlowerShape({ size, color }: { size: number; color: string }) {
   )
 }
 
+/**
+ * A star's centre as a percentage of the container, whichever edge it was anchored from.
+ *
+ * Stars are hand-placed with whatever pair of edges read most naturally at authoring time
+ * (`top`/`right`, `bottom`/`left`, …), so joining two of them means normalising to one origin
+ * first. `right: 12%` is the same point as `left: 88%`; the size offset is ignored because it is
+ * a handful of pixels against a percentage and the line reads as touching either way.
+ */
+function starPoint(s: GlimmerStar): { x: number; y: number } | null {
+  const num = (v?: string) => (v && v.endsWith('%') ? parseFloat(v) : null)
+  const l = num(s.left)
+  const r = num(s.right)
+  const t = num(s.top)
+  const b = num(s.bottom)
+  const x = l ?? (r === null ? null : 100 - r)
+  const y = t ?? (b === null ? null : 100 - b)
+  return x === null || y === null ? null : { x, y }
+}
+
 export function DecorativeShapes({ page = 'default' }: { page?: PageKey }) {
   const prefersReducedMotion = useReducedMotion()
   const allowAmbientMotion = useAllowAmbientMotion()
@@ -263,6 +295,32 @@ export function DecorativeShapes({ page = 'default' }: { page?: PageKey }) {
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      {/*
+        Constellation lines, behind the stars so each line runs under the glow rather than across
+        it. The stroke token is transparent in light mode, so this renders to nothing there
+        without the component needing to know which theme is active.
+      */}
+      {config.constellations && config.constellations.length > 0 && (
+        <svg className="absolute inset-0 size-full" preserveAspectRatio="none">
+          {config.constellations.map(([a, b], i) => {
+            const p1 = config.stars[a] && starPoint(config.stars[a])
+            const p2 = config.stars[b] && starPoint(config.stars[b])
+            if (!p1 || !p2) return null
+            return (
+              <line
+                key={`line-${i}`}
+                x1={`${p1.x}%`}
+                y1={`${p1.y}%`}
+                x2={`${p2.x}%`}
+                y2={`${p2.y}%`}
+                stroke="var(--constellation-line)"
+                strokeWidth={1}
+              />
+            )
+          })}
+        </svg>
+      )}
+
       {config.stars.map((s, i) => {
         const style: CSSProperties = {
           top: s.top,

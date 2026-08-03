@@ -175,6 +175,20 @@ const SPARKS: Array<Spark> = [
   { x: 0.04, y: 0.88, size: 13, delay: 1.4, duration: 3 },
 ]
 
+/**
+ * Which sparkles to join, by index into SPARKS. Three lines only: a constellation reads as one
+ * because it is partial, and joining more would turn the backdrop into a net. All three sit out
+ * near the edges, well clear of the card.
+ *
+ * Dark mode only, via the stroke token — it resolves to transparent in light, so nothing here is
+ * theme-aware in the component itself.
+ */
+const CONSTELLATIONS: Array<[number, number]> = [
+  [0, 6],
+  [3, 5],
+  [4, 10],
+]
+
 function Sparkle({
   spark,
   pointer,
@@ -298,6 +312,29 @@ export function LoginAtmosphere() {
         animate={{ opacity: 0.34 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
       />
+
+      {/* Behind the sparkles, so each line passes under the glow rather than over it. */}
+      <svg className="absolute inset-0 size-full" preserveAspectRatio="none">
+        {CONSTELLATIONS.map(([a, b], i) => {
+          const p1 = SPARKS[a]
+          const p2 = SPARKS[b]
+          if (!p1 || !p2) return null
+          // A line is only drawn when both ends are actually on screen — otherwise it would
+          // trail off to a sparkle that mobile has hidden.
+          if (narrow && (p1.desktopOnly || p2.desktopOnly)) return null
+          return (
+            <line
+              key={`c-${i}`}
+              x1={`${p1.x * 100}%`}
+              y1={`${p1.y * 100}%`}
+              x2={`${p2.x * 100}%`}
+              y2={`${p2.y * 100}%`}
+              stroke="var(--constellation-line)"
+              strokeWidth={1}
+            />
+          )
+        })}
+      </svg>
 
       {SPARKS.map((spark, i) => (
         <div key={`spark-${i}`} className={cn(spark.desktopOnly && 'hidden lg:block')}>
