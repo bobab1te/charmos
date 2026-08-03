@@ -111,12 +111,6 @@
   --sparkle-glow: drop-shadow(0 0 7px rgba(255, 255, 255, 1)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.75))
     drop-shadow(0 0 28px rgba(255, 255, 255, 0.4));
 
-  /*
-   * Constellations join a few stars in dark mode only. On the light background a faint white line
-   * has nothing to sit against and just reads as a smudge, so light resolves to transparent and
-   * the lines are simply absent rather than special-cased in the components.
-   */
-  --constellation-line: transparent;
 
   /* Surfaces. `interactive` is the one hover/pressed states use — the fix for `bg-white/50`. */
   --surface-elevated: rgba(255, 255, 255, 0.82);
@@ -202,9 +196,6 @@
   --text-secondary: #d3c2da;
   --text-muted: #b3a2bb;
   --text-on-accent: #2a1220;
-
-  /* Sparkle fill and glow are inherited from :root — white in both themes. */
-  --constellation-line: rgba(255, 255, 255, 0.2);
 
   /*
    * The heart of the reported bug. In dark mode an interactive surface has to get LIGHTER to read
