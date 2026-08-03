@@ -18,8 +18,37 @@ import { getSupabaseBrowserClient, isSupabaseConfigured } from '#/lib/supabase/b
  * A SIGNED_OUT that nobody asked for, printed next to "there were 2 chunks a moment ago and 1
  * now", would settle it.
  *
- * Never logs cookie *values* — only names and byte lengths. The values are bearer tokens.
+ * Never records cookie *values* — only names and byte lengths. The values are bearer tokens.
+ *
+ * Findings are written to localStorage as well as the console, because the console is wiped
+ * whenever the tab is replaced — which is exactly what happens when a dropped session bounces you
+ * to the login page. Four drops so far have left no trace for that reason. localStorage survives,
+ * so the record is still there afterwards.
  */
+
+const LOG_KEY = 'charmos.authlog'
+const MAX_ENTRIES = 40
+
+type LogEntry = { at: string; event: string; hasSession: boolean; before: unknown; after: unknown; lost: boolean }
+
+function append(entry: LogEntry) {
+  try {
+    const existing = JSON.parse(window.localStorage.getItem(LOG_KEY) ?? '[]') as Array<LogEntry>
+    // Newest first and capped, so this can never grow without bound on a long-lived profile.
+    window.localStorage.setItem(LOG_KEY, JSON.stringify([entry, ...existing].slice(0, MAX_ENTRIES)))
+  } catch {
+    // Storage full or blocked — diagnostics must never break the app they are watching.
+  }
+}
+
+/** Read the recorded auth history. Call from the console: `__charmAuthLog()`. */
+export function readAuthLog(): Array<LogEntry> {
+  try {
+    return JSON.parse(window.localStorage.getItem(LOG_KEY) ?? '[]') as Array<LogEntry>
+  } catch {
+    return []
+  }
+}
 
 type CookieShape = { name: string; bytes: number }
 
@@ -54,6 +83,10 @@ export function startAuthDiagnostics() {
 
   let previous = describe(authCookies())
 
+  // Exposed so the history can be read back from the console after a drop, without needing the
+  // devtools to have been open when it happened.
+  ;(window as unknown as { __charmAuthLog?: () => Array<LogEntry> }).__charmAuthLog = readAuthLog
+
   getSupabaseBrowserClient().auth.onAuthStateChange((event, session) => {
     const current = describe(authCookies())
     const lost = previous.count > 0 && current.count === 0
@@ -67,8 +100,18 @@ export function startAuthDiagnostics() {
       expiresAt: session?.expires_at ?? null,
       cookiesBefore: previous,
       cookiesAfter: current,
-      ...(lost ? { note: 'cookie jar emptied — capture this alongside the Supabase auth log' } : {}),
+      ...(lost ? { note: 'cookie jar emptied — run __charmAuthLog() for the full history' } : {}),
     })
+
+    append({
+      at: new Date().toISOString(),
+      event,
+      hasSession: Boolean(session),
+      before: previous,
+      after: current,
+      lost,
+    })
+
     previous = current
   })
 }
