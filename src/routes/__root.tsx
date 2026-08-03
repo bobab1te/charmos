@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import {
   HeadContent,
   Scripts,
@@ -17,6 +18,7 @@ import { CharmStoreProvider } from '../lib/charm-store'
 import { ThemeProvider } from '../lib/theme-context'
 import { ToastProvider } from '../lib/toast-context'
 import { CharmMomentProvider } from '../lib/charm-moments'
+import { startAuthDiagnostics } from '../lib/auth-diagnostics'
 
 import appCss from '../styles.css?url'
 
@@ -70,6 +72,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  /*
+   * Mounted at the root rather than inside the authenticated layout. A dropped session redirects
+   * to /login, where that layout never renders — so the reader was unavailable at exactly the
+   * moment it was wanted. Dev-only; a no-op in production builds.
+   */
+  useEffect(() => startAuthDiagnostics(), [])
+
   return (
     <html lang="en">
       <head>
