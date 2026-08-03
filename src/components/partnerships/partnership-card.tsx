@@ -6,6 +6,7 @@ import { BrandAvatar } from '#/components/deals/brand-avatar'
 import { Button } from '#/components/ui/button'
 import { useCharmStore } from '#/lib/charm-store'
 import { useCurrency } from '#/lib/currency-context'
+import { useThemeContext } from '#/lib/theme-context'
 import {
   computeCurrentRetainerCycleWindow,
   countDeliverablesInWindow,
@@ -18,8 +19,17 @@ import { cn } from '#/lib/utils'
 import { glassBackground, resolveTextColor } from '#/lib/widget-colors'
 import type { Partnership } from '#/lib/types'
 
-/** Partnerships default to white (not the deterministic per-item palette color deals/ideas use) — still overridable via the same picker. */
-const DEFAULT_PARTNERSHIP_COLOR = '#ffffff'
+/**
+ * Partnerships default to a plain neutral rather than the deterministic per-item palette color
+ * deals and ideas use — they are a small, stable set the user reads as one group, not a wall of
+ * cards that needs colour to tell apart. Still overridable via the same picker.
+ *
+ * Theme-aware, unlike the previous flat '#ffffff'. A fixed white default meant that in dark mode
+ * these were the only white slabs in the interface, carrying dark text against an otherwise dark
+ * UI — readable in isolation, but visually detached from everything around them.
+ */
+const DEFAULT_PARTNERSHIP_COLOR_LIGHT = '#ffffff'
+const DEFAULT_PARTNERSHIP_COLOR_DARK = '#2f2440'
 
 const STATUS_STYLES: Record<Partnership['status'], string> = {
   active: 'bg-[var(--urgency-green)]/15 text-[var(--success)]',
@@ -48,14 +58,18 @@ export function PartnershipCard({
     updatePartnershipColor,
   } = useCharmStore()
   const { displayCurrency, convert } = useCurrency()
+  const { theme } = useThemeContext()
   const currency = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: partnership.currency,
     maximumFractionDigits: 0,
   })
-  const color = partnership.color ?? DEFAULT_PARTNERSHIP_COLOR
+  const color =
+    partnership.color ?? (theme === 'dark' ? DEFAULT_PARTNERSHIP_COLOR_DARK : DEFAULT_PARTNERSHIP_COLOR_LIGHT)
   const textColor = resolveTextColor(color)
-  const softTextColor = textColor === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(26,18,32,0.65)'
+  // Matches the deal cards: the old 0.75/0.65 measured under AA on real painted cards, and this
+  // is the cadence and payment detail, which is content rather than decoration.
+  const softTextColor = textColor === '#ffffff' ? 'rgba(255,255,255,0.88)' : 'rgba(26,18,32,0.88)'
 
   const periodWindow = getCurrentPeriodWindow(partnership.deliverableCadence)
   const completed = countDeliverablesInWindow(partnershipDeliverables, partnership.id, periodWindow)
