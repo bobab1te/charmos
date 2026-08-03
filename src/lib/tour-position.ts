@@ -20,7 +20,16 @@ export const EDGE = 12
  */
 export const ESTIMATED_BUBBLE_HEIGHT = 260
 
-export type Rect = { top: number; left: number; width: number; height: number }
+export type Rect = {
+  top: number
+  left: number
+  width: number
+  height: number
+  /** The target's own corner radius, so the highlight follows its shape rather than boxing it. */
+  radius: string
+  /** Bounds of the dialog the target sits inside, when it does. The bubble steers clear of it. */
+  dialog: { top: number; left: number; width: number; height: number } | null
+}
 export type Viewport = { width: number; height: number }
 
 export type BubblePlacement = { top: number; left: number; centered: boolean; side: 'below' | 'above' | 'center' }
@@ -28,7 +37,17 @@ export type BubblePlacement = { top: number; left: number; centered: boolean; si
 export function sameRect(a: Rect | null, b: Rect | null): boolean {
   if (a === b) return true
   if (!a || !b) return false
-  return a.top === b.top && a.left === b.left && a.width === b.width && a.height === b.height
+  return (
+    a.top === b.top &&
+    a.left === b.left &&
+    a.width === b.width &&
+    a.height === b.height &&
+    a.radius === b.radius &&
+    a.dialog?.top === b.dialog?.top &&
+    a.dialog?.left === b.dialog?.left &&
+    a.dialog?.width === b.dialog?.width &&
+    a.dialog?.height === b.dialog?.height
+  )
 }
 
 /**
@@ -38,6 +57,38 @@ export function sameRect(a: Rect | null, b: Rect | null): boolean {
  */
 export function bubblePlacement(rect: Rect | null, viewport: Viewport): BubblePlacement {
   if (!rect) return { top: 0, left: 0, centered: true, side: 'center' }
+
+  /*
+   * When the target is inside a dialog, sit beside the dialog rather than next to the target.
+   *
+   * The bubble is a real element and takes its own clicks, so placing it over a form means the
+   * user cannot reach the fields underneath — observed on the Content Requirements step, where
+   * the bubble covered the panel it had just asked the user to look at. Docking to whichever
+   * side of the dialog has more room keeps the whole form reachable.
+   */
+  if (rect.dialog) {
+    const d = rect.dialog
+    const roomLeft = d.left
+    const roomRight = viewport.width - (d.left + d.width)
+    const top = Math.max(EDGE, Math.min(viewport.height - ESTIMATED_BUBBLE_HEIGHT - EDGE, d.top))
+
+    if (Math.max(roomLeft, roomRight) >= BUBBLE_WIDTH + GAP * 2) {
+      const left =
+        roomRight >= roomLeft ? d.left + d.width + GAP : Math.max(EDGE, d.left - BUBBLE_WIDTH - GAP)
+      return { top, left, centered: false, side: 'below' }
+    }
+
+    // Narrow viewport: no room either side, so tuck under the dialog and let the page scroll
+    // rather than overlapping the form.
+    const below = d.top + d.height + GAP
+    const fitsBelow = below + ESTIMATED_BUBBLE_HEIGHT <= viewport.height - EDGE
+    return {
+      top: fitsBelow ? below : Math.max(EDGE, d.top - GAP - ESTIMATED_BUBBLE_HEIGHT),
+      left: Math.max(EDGE, Math.min(viewport.width - BUBBLE_WIDTH - EDGE, d.left + d.width / 2 - BUBBLE_WIDTH / 2)),
+      centered: false,
+      side: fitsBelow ? 'below' : 'above',
+    }
+  }
 
   const below = rect.top + rect.height + GAP
   const fitsBelow = below + ESTIMATED_BUBBLE_HEIGHT <= viewport.height - EDGE

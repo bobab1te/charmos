@@ -7,6 +7,7 @@ import {
   bubblePlacement,
   sameRect,
 } from './tour-position'
+import type { Rect } from './tour-position'
 import { TOUR_STEPS, stepIndexOf } from './tour-steps'
 
 /**
@@ -19,8 +20,8 @@ import { TOUR_STEPS, stepIndexOf } from './tour-steps'
 
 const desktop = { width: 1280, height: 800 }
 
-function rect(over: Partial<{ top: number; left: number; width: number; height: number }> = {}) {
-  return { top: 100, left: 500, width: 160, height: 40, ...over }
+function rect(over: Partial<Rect> = {}): Rect {
+  return { top: 100, left: 500, width: 160, height: 40, radius: '8px', dialog: null, ...over }
 }
 
 describe('bubblePlacement', () => {

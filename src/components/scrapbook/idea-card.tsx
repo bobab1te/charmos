@@ -69,6 +69,7 @@ export function DraggableIdeaCard({ idea, onOpen, compact, rotateClass }: Dragga
   return (
     <div
       ref={setNodeRef}
+      data-idea-card=""
       {...listeners}
       {...attributes}
       onClick={() => onOpen(idea.id)}

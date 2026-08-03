@@ -131,7 +131,7 @@ export function ScrapbookCalendar({
           <span key={d}>{d}</span>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div data-tour="calendar-grid" className="grid grid-cols-7 gap-1">
         {days.map((day) => (
           <CalendarDay
             key={day.toISOString()}

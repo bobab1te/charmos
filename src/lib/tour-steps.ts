@@ -45,6 +45,12 @@ export type TourStep = {
   copyable?: string
   /** Marks the last step of a chapter, so the bubble can show a small completion beat. */
   chapterEnd?: boolean
+  /**
+   * Shows the mascot travelling from this step's anchor to `dragHintTo`, demonstrating a drag.
+   * Only for the step that asks for one — a sentence cannot easily convey both what moves and
+   * where it lands.
+   */
+  dragHintTo?: string
   /** The finale. The bubble drops its progress row and shows a completion treatment instead. */
   finale?: boolean
   /**
@@ -94,22 +100,15 @@ export const TOUR_STEPS: Array<TourStep> = [
     mood: 'calm',
   },
   {
-    key: 'deal-brand',
+    key: 'deal-details',
     to: '/brand-deals',
     anchor: 'deal-brand-name',
-    title: 'Who is it with?',
-    body: "The brand's name. It doesn't have to be real — CharmOS creates the brand record for you when you save.",
-    gate: { kind: 'text', anchor: 'deal-brand-name', minLength: 2 },
-    recoverTo: 'deal-open',
-    mood: 'calm',
-  },
-  {
-    key: 'deal-deliverable',
-    to: '/brand-deals',
-    anchor: 'deal-deliverable-type',
-    title: "Now tell CharmOS what you're creating",
-    body: 'One line is enough — "2 Instagram Reels", "1 TikTok video". This is what drives your deadlines and shows up on your dashboard.',
+    title: 'Who is it with, and what are you making?',
+    body: 'Brand name first — it does not have to be real. Then the deliverable just below: "2 Instagram Reels", "1 TikTok video". That line drives your deadlines and your dashboard.',
+    // Gated on the deliverable, which is the second of the two fields — so filling in only the
+    // brand name leaves the step waiting rather than advancing half-done.
     gate: { kind: 'text', anchor: 'deal-deliverable-type', minLength: 3 },
+    nudge: 'Both fields are in the Brand section — the name, then the deliverable underneath.',
     recoverTo: 'deal-open',
     mood: 'calm',
   },
@@ -194,6 +193,7 @@ export const TOUR_STEPS: Array<TourStep> = [
     title: 'Now give it a place on your calendar',
     body: 'Drag your idea from the bank onto any date. It becomes a scheduled post, and shows up on your dashboard next to your deal deadlines.',
     gate: { kind: 'event', event: 'idea:scheduled' },
+    dragHintTo: '[data-tour="calendar-grid"]',
     nudge: 'Almost! Drop it onto a day cell in the calendar on the left.',
     mood: 'calm',
     chapterEnd: true,
@@ -201,20 +201,11 @@ export const TOUR_STEPS: Array<TourStep> = [
 
   // ---------- Chapter 4: make it yours, then finish ----------
   {
-    key: 'settings-customize',
-    to: '/settings',
-    anchor: 'dashboard-widgets',
-    title: 'Make it yours',
-    body: "Hide any dashboard widget you never look at and bring it back from here. Your theme, currency and profile live on this page too.",
-    gate: { kind: 'acknowledge' },
-    mood: 'calm',
-  },
-  {
     key: 'complete',
     to: '/settings',
     anchor: 'replay-tour',
     title: "Congrats! You're all ready to manage your content like a pro ✨",
-    body: 'You can always find this tutorial again in Settings.',
+    body: 'This is Settings — hide any dashboard widget you never look at, change your theme or currency, and find this tutorial again any time right here.',
     // Anchored on the replay control itself, so the sentence above is pointing at the thing it
     // describes rather than asking the user to take it on trust.
     gate: { kind: 'acknowledge' },

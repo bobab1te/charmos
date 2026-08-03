@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Check, Copy, X } from 'lucide-react'
 import { CharmMascot } from '#/components/charm/charm-mascot'
+import { TourDragHint } from '#/components/charm/tour-drag-hint'
 import { Button } from '#/components/ui/button'
 import { CHARM_TIER_2_SPRING } from '#/lib/motion-tiers'
 import { useProductTour } from '#/lib/product-tour'
@@ -62,7 +63,18 @@ function useAnchorRect(anchor: string | null) {
       }
 
       const r = el.getBoundingClientRect()
-      const next = { top: r.top, left: r.left, width: r.width, height: r.height }
+      // The dialog the target lives in, if any — the bubble uses this to dock clear of the form
+      // rather than sitting on top of it. The tour's own bubble is a dialog too, hence the :not().
+      const owner = el.closest<HTMLElement>('[role="dialog"]:not([data-tour-bubble])')
+      const d = owner?.getBoundingClientRect()
+      const next: Rect = {
+        top: r.top,
+        left: r.left,
+        width: r.width,
+        height: r.height,
+        radius: window.getComputedStyle(el).borderRadius || '12px',
+        dialog: d ? { top: d.top, left: d.left, width: d.width, height: d.height } : null,
+      }
       if (!sameRect(rectRef.current, next)) {
         rectRef.current = next
         setRect(next)
@@ -220,13 +232,17 @@ export function TourBubble() {
         rather than gates — nothing here should stop someone clicking the very button being
         pointed at, and letting the page stay live also means no focus trap to get wrong.
       */}
+      {tour.step?.dragHintTo && tour.step.anchor && (
+        <TourDragHint fromAnchor={tour.step.anchor} toSelector={tour.step.dragHintTo} />
+      )}
+
       <AnimatePresence>
         {showSpotlight && (
           <motion.div
             key="spotlight"
             // Above the dialog layer (z-50): several steps run inside the New Deal modal, and a
             // spotlight underneath it would highlight nothing the user can see.
-            className="pointer-events-none fixed z-[60] rounded-2xl"
+            className="pointer-events-none fixed z-[60]"
             initial={prefersReducedMotion ? false : { opacity: 0 }}
             exit={{ opacity: 0 }}
             /*
@@ -246,10 +262,14 @@ export function TourBubble() {
                 : { boxShadow: { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }, opacity: { duration: 0.18 } }
             }
             style={{
-              top: rect.top - 6,
-              left: rect.left - 6,
-              width: rect.width + 12,
-              height: rect.height + 12,
+              // 3px rather than 6, and the target's own corner radius rather than a fixed one —
+              // a 2xl ring around a small pill tab reads as a box floating around it instead of
+              // a highlight on it.
+              top: rect.top - 3,
+              left: rect.left - 3,
+              width: rect.width + 6,
+              height: rect.height + 6,
+              borderRadius: rect.radius,
               // One element does both jobs: the ring around the anchor and the dimming of
               // everything else, via a spread-out shadow. No second full-screen element, and
               // no SVG mask that would need re-rendering on every rect change. The dim is kept
@@ -332,12 +352,18 @@ export function TourBubble() {
           </div>
         ) : tour.step?.finale ? (
           /*
-             The completion beat. Progress dots and "continue later" are both meaningless once
-             there is nothing left to do, so they go — what remains is the message and one way
-             out. Kept deliberately quiet: no confetti, just the mascot's bright face and a
-             single button.
+             The completion beat. Keeps the progress row — dropping it made the last step sit
+             outside the count, so the tutorial read as "9 of 10" and then an uncounted extra
+             screen. "Continue later" goes, since there is nothing left to continue.
           */
-          <div className="flex items-center justify-end">
+          <>
+            <div className="flex items-center justify-between gap-2">
+              <ProgressDots index={tour.stepIndex} count={tour.stepCount} />
+              <span className="text-xs text-[var(--charm-ink-soft)]">
+                {tour.stepIndex + 1} of {tour.stepCount}
+              </span>
+            </div>
+            <div className="flex items-center justify-end">
             <Button
               type="button"
               size="sm"
@@ -346,7 +372,8 @@ export function TourBubble() {
             >
               Finish
             </Button>
-          </div>
+            </div>
+          </>
         ) : (
           <>
             <div className="flex items-center justify-between gap-2">
