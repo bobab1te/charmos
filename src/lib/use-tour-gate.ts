@@ -59,11 +59,25 @@ export function useTourGate(gate: TourGate | null, onSatisfied: () => void) {
     if (gate.kind === 'text') {
       const anchor = gate.anchor
       const min = gate.minLength ?? 1
+      /*
+       * A text gate wants the user to type something, so it has to ignore whatever was already
+       * in the field when the step began. Without this, replaying the tour with a half-filled
+       * deal form open satisfies "type the brand's name" and "say what you're creating" the
+       * instant they appear, and the walkthrough silently skips to the middle of the chapter —
+       * observed jumping straight to step 4 of 12 on replay.
+       *
+       * Captured lazily: on the first check rather than at subscribe time, because the field
+       * often does not exist yet when the step becomes current.
+       */
+      let initial: string | null = null
       const check = () => {
         const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
           `[data-tour="${anchor}"]`,
         )
-        if (el && el.value.trim().length >= min) satisfy()
+        if (!el) return
+        const value = el.value.trim()
+        if (initial === null) initial = value
+        if (value !== initial && value.length >= min) satisfy()
       }
       // 'input' covers typing; paste and autofill both raise it too. The interval is a safety net
       // for values set programmatically (the parser filling the form), which fires no input event.
