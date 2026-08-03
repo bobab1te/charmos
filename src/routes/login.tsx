@@ -2,15 +2,17 @@ import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { z } from 'zod'
+import { motion, useReducedMotion } from 'motion/react'
 import { Loader2 } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { Button } from '#/components/ui/button'
-import { LoginDecor } from '#/components/charm/login-decor'
-import { Logo } from '#/components/charm/logo'
+import { LoginAtmosphere } from '#/components/charm/login-atmosphere'
+import { CharmMascot } from '#/components/charm/charm-mascot'
 import { getSupabaseBrowserClient } from '#/lib/supabase/browser-client'
 import { getCurrentUserAndProfile } from '#/server/auth'
+import { CHARM_TIER_2_SPRING } from '#/lib/motion-tiers'
 
 export const Route = createFileRoute('/login')({
   validateSearch: (search: Record<string, unknown>) => z.object({ error: z.string().optional() }).parse(search),
@@ -47,6 +49,7 @@ function GoogleIcon() {
 
 function LoginPage() {
   const navigate = useNavigate()
+  const prefersReducedMotion = useReducedMotion()
   const { error: callbackError } = Route.useSearch()
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in')
   const [email, setEmail] = useState('')
@@ -54,6 +57,19 @@ function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(callbackError ?? null)
   const [signUpNotice, setSignUpNotice] = useState<string | null>(null)
+  /*
+   * Drives the chaos-to-order transition. Set the moment auth succeeds, held for the length of
+   * the settle before navigating, so the environment visibly resolves instead of the page simply
+   * disappearing. Purely presentational — no auth decision reads it.
+   */
+  const [settled, setSettled] = useState(false)
+
+  /** Let the environment finish organising before handing over to the dashboard. */
+  async function settleThen(go: () => void) {
+    setSettled(true)
+    await new Promise((r) => window.setTimeout(r, 900))
+    go()
+  }
 
   async function handleEmailSubmit(e: FormEvent) {
     e.preventDefault()
@@ -68,7 +84,7 @@ function LoginPage() {
           setError(authError.message)
           return
         }
-        navigate({ to: '/dashboard' })
+        await settleThen(() => navigate({ to: '/dashboard' }))
       } else {
         const { data, error: authError } = await supabase.auth.signUp({ email, password })
         if (authError) {
@@ -76,7 +92,7 @@ function LoginPage() {
           return
         }
         if (data.session) {
-          navigate({ to: '/dashboard' })
+          await settleThen(() => navigate({ to: '/dashboard' }))
         } else {
           setSignUpNotice('Check your email to confirm your account, then sign in.')
         }
@@ -104,12 +120,42 @@ function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      <LoginDecor />
-      <div className="charm-glass relative z-10 w-full max-w-md rounded-3xl p-8">
-        <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <Logo className="size-14" />
-          <h1 className="font-display-bold text-2xl font-semibold text-[var(--charm-ink)]">Welcome to CharmOS</h1>
-          <p className="text-sm text-[var(--charm-ink-soft)]">Your brand deals, ideas, and earnings — all synced.</p>
+      <LoginAtmosphere settled={settled} />
+
+      {/*
+        charm-glass-solid rather than charm-glass: the card sits over a deliberately busy field,
+        and the translucent dashboard treatment would let workload chips read straight through the
+        form. Near-opaque keeps the focal point unambiguous while still catching the light.
+      */}
+      <motion.div
+        className="charm-glass-solid relative z-10 w-full max-w-[26rem] rounded-[1.75rem] p-8 sm:p-9"
+        initial={prefersReducedMotion ? false : { opacity: 0, y: 16, scale: 0.98 }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          // A whisper of lift on success, so the card feels like it is being admitted rather
+          // than dismissed.
+          scale: settled ? 1.015 : 1,
+        }}
+        transition={prefersReducedMotion ? { duration: 0 } : CHARM_TIER_2_SPRING}
+      >
+        <div className="mb-7 flex flex-col items-center gap-3 text-center">
+          {/*
+            The same mascot component as the dashboard and onboarding, not a second one. It tracks
+            the cursor while you are deciding, and turns bright the moment the environment starts
+            organising itself.
+          */}
+          <CharmMascot size={66} mood={settled ? 'bright' : 'calm'} lookAtCursor={!settled} />
+          <div className="flex flex-col gap-1.5">
+            <h1 className="font-display-bold text-[1.75rem] leading-tight font-semibold tracking-tight text-[var(--text-primary)]">
+              {settled ? 'Getting things in order…' : 'Welcome to CharmOS'}
+            </h1>
+            <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
+              {settled
+                ? 'One moment — sorting your deals, ideas and earnings.'
+                : 'Every brand deal, idea and payment, in one calm place.'}
+            </p>
+          </div>
         </div>
 
         <Tabs
@@ -180,7 +226,7 @@ function LoginPage() {
         <Button type="button" variant="outline" onClick={handleGoogle} className="w-full gap-2">
           <GoogleIcon /> Continue with Google
         </Button>
-      </div>
+      </motion.div>
     </div>
   )
 }
