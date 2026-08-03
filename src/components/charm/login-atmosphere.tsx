@@ -153,6 +153,10 @@ function WorkloadItem({
  * reimplemented. Eleven of them, placed by hand around the card's edges so they frame the
  * composition rather than sit on top of the form.
  *
+ * Sizes span 14–30px on the same distribution the authenticated pages use — weighted toward
+ * 18–20 with a few large anchors and a few small ones. An even spread reads as a pattern; the
+ * uneven one reads as a sky, and it is what makes the field feel placed rather than generated.
+ *
  * Proximity is computed entirely in normalised space against the shared pointer motion values:
  * each sparkle knows where it is as a fraction of the viewport, so "how close is the cursor" is
  * arithmetic on two numbers. No getBoundingClientRect, no listener per star, and no React render
@@ -162,17 +166,17 @@ function WorkloadItem({
 type Spark = { x: number; y: number; size: number; delay: number; duration: number; desktopOnly?: boolean }
 
 const SPARKS: Array<Spark> = [
-  { x: 0.13, y: 0.16, size: 18, delay: 0, duration: 3.2 },
-  { x: 0.86, y: 0.12, size: 14, delay: 0.9, duration: 2.8 },
-  { x: 0.08, y: 0.44, size: 13, delay: 1.6, duration: 3.6, desktopOnly: true },
-  { x: 0.92, y: 0.38, size: 17, delay: 0.4, duration: 3 },
-  { x: 0.2, y: 0.72, size: 15, delay: 2.1, duration: 3.3 },
-  { x: 0.8, y: 0.68, size: 12, delay: 1.2, duration: 2.9, desktopOnly: true },
-  { x: 0.5, y: 0.06, size: 12, delay: 0.7, duration: 3.4 },
-  { x: 0.46, y: 0.95, size: 14, delay: 1.9, duration: 3.1 },
-  { x: 0.3, y: 0.3, size: 10, delay: 2.6, duration: 2.7, desktopOnly: true },
-  { x: 0.7, y: 0.86, size: 11, delay: 0.2, duration: 3.5, desktopOnly: true },
-  { x: 0.04, y: 0.88, size: 13, delay: 1.4, duration: 3 },
+  { x: 0.13, y: 0.16, size: 26, delay: 0, duration: 3.2 },
+  { x: 0.86, y: 0.12, size: 20, delay: 0.9, duration: 2.8 },
+  { x: 0.08, y: 0.44, size: 18, delay: 1.6, duration: 3.6, desktopOnly: true },
+  { x: 0.93, y: 0.38, size: 24, delay: 0.4, duration: 3 },
+  { x: 0.19, y: 0.73, size: 22, delay: 2.1, duration: 3.3 },
+  { x: 0.81, y: 0.68, size: 16, delay: 1.2, duration: 2.9, desktopOnly: true },
+  { x: 0.5, y: 0.05, size: 18, delay: 0.7, duration: 3.4 },
+  { x: 0.46, y: 0.95, size: 20, delay: 1.9, duration: 3.1 },
+  { x: 0.31, y: 0.29, size: 14, delay: 2.6, duration: 2.7, desktopOnly: true },
+  { x: 0.71, y: 0.87, size: 18, delay: 0.2, duration: 3.5, desktopOnly: true },
+  { x: 0.04, y: 0.88, size: 30, delay: 1.4, duration: 3 },
 ]
 
 function Sparkle({
