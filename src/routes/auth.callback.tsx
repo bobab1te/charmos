@@ -31,17 +31,18 @@ export const Route = createFileRoute('/auth/callback')({
            * Drop Google's provider tokens before the session is persisted.
            *
            * An OAuth exchange returns provider_token and provider_refresh_token alongside our own
-           * pair. They are Google's credentials for calling Google's APIs — CharmOS never does, so
-           * they are dead weight, and they are the difference between a session that fits in one
-           * cookie and one that does not. @supabase/ssr splits anything over ~3.2KB across
-           * `…auth-token.0`, `.1`, … and deletes the entire set if a chunk is ever missing when it
-           * reads them back, reporting a signed-out user. Amanda's session was observed already
-           * chunked, which is the precondition for that failure.
+           * pair. They are Google's credentials for calling Google's APIs — CharmOS never calls
+           * one, so this stores third-party credentials we have no use for. That alone justifies
+           * removing them.
+           *
+           * What it does NOT do is stop the session cookie chunking, which is why it was originally
+           * written. Measured on a real session: ~3550 bytes of JSON, of which the access token is
+           * 1363 and the serialized user object about 1730 — both structural. The provider tokens
+           * are roughly 400, against the ~1175 that would have to go to fit under @supabase/ssr's
+           * ~3.2KB single-cookie limit. The session chunks with or without them.
            *
            * setSession with just the two tokens rebuilds the stored session without the provider
-           * fields — it costs one extra call, once per sign-in, and only on the OAuth path.
-           *
-           * Storing fewer third-party credentials than necessary is also just good practice.
+           * fields — one extra call, once per sign-in, only on the OAuth path.
            */
           if (exchanged.session) {
             await supabase.auth.setSession({

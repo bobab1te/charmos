@@ -9,10 +9,18 @@ import { getSupabaseBrowserClient, isSupabaseConfigured } from '#/lib/supabase/b
  * which tolerates the overlap that theory depends on — so the cause is still open, and the next
  * occurrence is worth capturing properly instead of reasoning about in the abstract.
  *
- * The leading remaining candidate is chunked-cookie desync. @supabase/ssr splits a session over
- * roughly 3.2KB across `…auth-token.0`, `.1`, … and, if any chunk is missing when it reads them
- * back, deletes the whole set and reports a signed-out user. A Google OAuth session carries
- * provider tokens and is easily large enough to chunk, which makes this app a candidate.
+ * Chunked-cookie desync was the leading candidate and has since weakened. The session is indeed
+ * chunked — but at 4745 bytes over two cookies, each half sits around 2.4KB, comfortably inside
+ * Chrome's 4096-byte per-cookie limit, so there is no evident mechanism for the browser to drop one.
+ * Shrinking under the ~3.2KB single-cookie line was investigated and abandoned: the access token
+ * (1363 bytes) and the serialized user object (~1730) are structural, leaving nothing near the
+ * ~1175 that would have to go.
+ *
+ * The theory that now fits best is a refresh that fails at the network layer — laptop asleep, wifi
+ * dropped — never reaching Supabase, which is exactly why its logs show zero errors and zero
+ * warnings across all four drops. A server that rejected a token would have said so. So the
+ * connectivity and visibility of the tab are recorded alongside each event: a SIGNED_OUT that
+ * arrives with `online: false` or a tab that was hidden would settle it in one observation.
  *
  * So this records what the cookie jar looked like immediately before and after each auth event.
  * A SIGNED_OUT that nobody asked for, printed next to "there were 2 chunks a moment ago and 1
@@ -29,7 +37,18 @@ import { getSupabaseBrowserClient, isSupabaseConfigured } from '#/lib/supabase/b
 const LOG_KEY = 'charmos.authlog'
 const MAX_ENTRIES = 40
 
-type LogEntry = { at: string; event: string; hasSession: boolean; before: unknown; after: unknown; lost: boolean }
+type LogEntry = {
+  at: string
+  event: string
+  hasSession: boolean
+  before: unknown
+  after: unknown
+  lost: boolean
+  /** navigator.onLine at the moment of the event — false alongside a drop implicates the network. */
+  online: boolean
+  /** 'hidden' means the tab was backgrounded, the state a sleeping laptop leaves it in. */
+  visibility: string
+}
 
 function append(entry: LogEntry) {
   try {
@@ -186,6 +205,8 @@ export function startAuthDiagnostics() {
       before: previous,
       after: current,
       lost,
+      online: navigator.onLine,
+      visibility: document.visibilityState,
     })
 
     previous = current
