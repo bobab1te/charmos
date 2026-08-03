@@ -330,6 +330,23 @@ export function TourBubble() {
               Show me around
             </Button>
           </div>
+        ) : tour.step?.finale ? (
+          /*
+             The completion beat. Progress dots and "continue later" are both meaningless once
+             there is nothing left to do, so they go — what remains is the message and one way
+             out. Kept deliberately quiet: no confetti, just the mascot's bright face and a
+             single button.
+          */
+          <div className="flex items-center justify-end">
+            <Button
+              type="button"
+              size="sm"
+              onClick={tour.acknowledge}
+              className="bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
+            >
+              Finish
+            </Button>
+          </div>
         ) : (
           <>
             <div className="flex items-center justify-between gap-2">

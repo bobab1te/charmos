@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Eye, Loader2, Palette } from 'lucide-react'
+import { Eye, Loader2, Palette, Settings as SettingsIcon } from 'lucide-react'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { Button } from '#/components/ui/button'
@@ -81,7 +81,9 @@ function SettingsPage() {
   return (
     <div className="relative z-10 mx-auto flex max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="mt-2 font-display-bold text-3xl font-semibold text-[var(--charm-ink)]">Settings</h1>
+        <h1 className="mt-2 flex items-center gap-2 font-display-bold text-3xl font-semibold text-[var(--charm-ink)]">
+          <SettingsIcon className="size-7" /> Settings
+        </h1>
         <p className="text-sm text-[var(--charm-ink-soft)]">Your profile, appearance, and dashboard preferences.</p>
       </div>
 

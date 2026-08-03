@@ -13,7 +13,7 @@ export function ReplayTour() {
   const paused = status === 'later'
 
   return (
-    <div className="charm-glass flex items-center justify-between gap-4 rounded-2xl p-5">
+    <div data-tour="replay-tour" className="charm-glass flex items-center justify-between gap-4 rounded-2xl p-5">
       <div className="flex-1">
         <h2 className="font-display text-sm font-semibold text-[var(--charm-ink)]">Product tour</h2>
         <p className="text-sm text-[var(--charm-ink-soft)]">

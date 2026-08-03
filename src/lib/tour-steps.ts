@@ -45,6 +45,8 @@ export type TourStep = {
   copyable?: string
   /** Marks the last step of a chapter, so the bubble can show a small completion beat. */
   chapterEnd?: boolean
+  /** The finale. The bubble drops its progress row and shows a completion treatment instead. */
+  finale?: boolean
   /**
    * Step to fall back to when this one's anchor never appears.
    *
@@ -189,12 +191,35 @@ export const TOUR_STEPS: Array<TourStep> = [
     key: 'idea-drag',
     to: '/scrapbook',
     anchor: 'unscheduled-list',
-    title: "Now give it a place on your calendar",
-    body: 'Drag your idea from the bank onto any date. That is the whole system, really — a deal on your board, an idea on your calendar. I will be in Settings if you ever want a refresher.',
+    title: 'Now give it a place on your calendar',
+    body: 'Drag your idea from the bank onto any date. It becomes a scheduled post, and shows up on your dashboard next to your deal deadlines.',
     gate: { kind: 'event', event: 'idea:scheduled' },
     nudge: 'Almost! Drop it onto a day cell in the calendar on the left.',
-    mood: 'bright',
+    mood: 'calm',
     chapterEnd: true,
+  },
+
+  // ---------- Chapter 4: make it yours, then finish ----------
+  {
+    key: 'settings-customize',
+    to: '/settings',
+    anchor: 'dashboard-widgets',
+    title: 'Make it yours',
+    body: "Hide any dashboard widget you never look at and bring it back from here. Your theme, currency and profile live on this page too.",
+    gate: { kind: 'acknowledge' },
+    mood: 'calm',
+  },
+  {
+    key: 'complete',
+    to: '/settings',
+    anchor: 'replay-tour',
+    title: "Congrats! You're all ready to manage your content like a pro ✨",
+    body: 'You can always find this tutorial again in Settings.',
+    // Anchored on the replay control itself, so the sentence above is pointing at the thing it
+    // describes rather than asking the user to take it on trust.
+    gate: { kind: 'acknowledge' },
+    mood: 'bright',
+    finale: true,
   },
 ]
 

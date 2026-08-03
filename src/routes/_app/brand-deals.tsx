@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
-import { ArchiveRestore, Pencil, Plus, Trash2, X, Check } from 'lucide-react'
+import { ArchiveRestore, Handshake, Pencil, Plus, Trash2, X, Check } from 'lucide-react'
 import { SparkleAccent } from '#/components/charm/sparkle-accent'
 import { Input } from '#/components/ui/input'
 import { Button } from '#/components/ui/button'
@@ -321,7 +321,9 @@ function BrandDealsPage() {
   return (
     <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="mt-2 font-display-bold text-3xl font-semibold text-[var(--charm-ink)]">Brand Deals</h1>
+        <h1 className="mt-2 flex items-center gap-2 font-display-bold text-3xl font-semibold text-[var(--charm-ink)]">
+          <Handshake className="size-7" /> Brand Deals
+        </h1>
         <p className="text-sm text-[var(--charm-ink-soft)]">
           Paste a brand email or DM to auto-fill a deal, or add one manually. Brands are created automatically when
           you save a deal.

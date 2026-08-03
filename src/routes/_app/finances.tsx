@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { format } from 'date-fns'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Wallet } from 'lucide-react'
 import { EarningsChart } from '#/components/dashboard/earnings-chart'
 import { FinanceInsights } from '#/components/dashboard/finance-insights'
 import { useCharmStore } from '#/lib/charm-store'
@@ -22,7 +22,9 @@ function FinancesPage() {
   return (
     <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="mt-2 font-display-bold text-3xl font-semibold text-[var(--charm-ink)]">Finances</h1>
+        <h1 className="mt-2 flex items-center gap-2 font-display-bold text-3xl font-semibold text-[var(--charm-ink)]">
+          <Wallet className="size-7" /> Finances
+        </h1>
         <p className="text-sm text-[var(--charm-ink-soft)]">Revenue trend and every ledger entry, in one place.</p>
       </div>
 
