@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { X } from 'lucide-react'
+import { Check, Copy, X } from 'lucide-react'
 import { CharmMascot } from '#/components/charm/charm-mascot'
 import { Button } from '#/components/ui/button'
 import { CHARM_TIER_2_SPRING } from '#/lib/motion-tiers'
@@ -8,6 +8,18 @@ import { useProductTour } from '#/lib/product-tour'
 import { BUBBLE_WIDTH, bubblePlacement, sameRect } from '#/lib/tour-position'
 import type { Rect } from '#/lib/tour-position'
 import { cn } from '#/lib/utils'
+
+/**
+ * The spotlight, as box-shadows: "dim everything else" + "ring the anchor" + "bloom around the
+ * ring". The bloom is what breathes while a step waits on the user — that pulse is what carries
+ * "this is the thing to touch" without an instructional box. The dim is deliberately light; this
+ * is still the real CRM, not a tutorial mode.
+ */
+const PULSE_FRAMES = [
+  '0 0 0 9999px rgba(24, 16, 28, 0.38), 0 0 0 2px var(--accent), 0 0 0 4px color-mix(in oklab, var(--accent) 30%, transparent)',
+  '0 0 0 9999px rgba(24, 16, 28, 0.38), 0 0 0 2px var(--accent), 0 0 0 11px color-mix(in oklab, var(--accent) 0%, transparent)',
+  '0 0 0 9999px rgba(24, 16, 28, 0.38), 0 0 0 2px var(--accent), 0 0 0 4px color-mix(in oklab, var(--accent) 30%, transparent)',
+]
 
 /**
  * Track the anchor element's viewport rect for as long as the step is current.
@@ -62,6 +74,50 @@ function useAnchorRect(anchor: string | null) {
   }, [anchor])
 
   return rect
+}
+
+/**
+ * The example brand email, with a copy button.
+ *
+ * Shown inline rather than auto-filling the parser: the point of the step is that the user
+ * experiences the parse themselves, and a box that fills itself in teaches nothing. Falls back to
+ * selecting the text if the clipboard API is unavailable or denied, so the step is never a dead
+ * end on a browser that refuses clipboard access.
+ */
+function CopyExample({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+  const ref = useRef<HTMLPreElement>(null)
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      const el = ref.current
+      if (!el) return
+      const range = document.createRange()
+      range.selectNodeContents(el)
+      const sel = window.getSelection()
+      sel?.removeAllRanges()
+      sel?.addRange(range)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <pre
+        ref={ref}
+        className="max-h-28 overflow-y-auto whitespace-pre-wrap rounded-xl bg-[var(--surface-nested)] p-2.5 font-sans text-[11px] leading-relaxed text-[var(--charm-ink-soft)]"
+      >
+        {text}
+      </pre>
+      <Button type="button" size="sm" variant="outline" onClick={copy} className="w-fit gap-1.5">
+        {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+        {copied ? 'Copied' : 'Copy example'}
+      </Button>
+    </div>
+  )
 }
 
 function ProgressDots({ index, count }: { index: number; count: number }) {
@@ -133,9 +189,23 @@ export function TourBubble() {
             key="spotlight"
             className="pointer-events-none fixed z-40 rounded-2xl"
             initial={prefersReducedMotion ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.18, ease: 'easeOut' }}
+            /*
+             * A soft breathing glow while the step waits on the user, static once it doesn't.
+             * The pulse is what carries "this is the thing to touch" without an instructional
+             * box; it stops the moment the gate is satisfied so it never competes with the next
+             * step's own highlight. Reduced motion gets the ring without the movement.
+             */
+            animate={
+              prefersReducedMotion || !tour.awaitingAction
+                ? { opacity: 1 }
+                : { opacity: 1, boxShadow: PULSE_FRAMES }
+            }
+            transition={
+              prefersReducedMotion || !tour.awaitingAction
+                ? { duration: 0.18, ease: 'easeOut' }
+                : { boxShadow: { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }, opacity: { duration: 0.18 } }
+            }
             style={{
               top: rect.top - 6,
               left: rect.left - 6,
@@ -143,8 +213,9 @@ export function TourBubble() {
               height: rect.height + 12,
               // One element does both jobs: the ring around the anchor and the dimming of
               // everything else, via a spread-out shadow. No second full-screen element, and
-              // no SVG mask that would need re-rendering on every rect change.
-              boxShadow: '0 0 0 9999px rgba(24, 16, 28, 0.45), 0 0 0 2px var(--accent)',
+              // no SVG mask that would need re-rendering on every rect change. The dim is kept
+              // deliberately light — this is the real CRM, not a tutorial mode.
+              boxShadow: PULSE_FRAMES[0],
             }}
           />
         )}
@@ -152,6 +223,7 @@ export function TourBubble() {
 
       <motion.div
         key="bubble"
+        data-tour-bubble=""
         role="dialog"
         aria-live="polite"
         aria-label={heading}
@@ -183,6 +255,27 @@ export function TourBubble() {
             <p className="mt-1 text-sm leading-relaxed text-[var(--charm-ink-soft)]">{body}</p>
           </div>
         </div>
+
+        {tour.step?.copyable && <CopyExample text={tour.step.copyable} />}
+
+        {/*
+          The gentle redirect. Appears only once the user has actually interacted with something
+          else, so it never pre-emptively scolds someone who is simply reading. Phrased as a
+          pointer, never as an error.
+        */}
+        <AnimatePresence>
+          {tour.showNudge && tour.step?.nudge && (
+            <motion.p
+              key="nudge"
+              initial={prefersReducedMotion ? false : { opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="rounded-xl bg-[var(--surface-nested)] px-3 py-2 text-xs leading-relaxed text-[var(--charm-ink)]"
+            >
+              {tour.step.nudge}
+            </motion.p>
+          )}
+        </AnimatePresence>
 
         {tour.phase === 'welcome' ? (
           <div className="flex items-center justify-end gap-2">
@@ -216,19 +309,35 @@ export function TourBubble() {
                 Continue later
               </button>
               <div className="flex items-center gap-2">
-                {!tour.isFirst && (
+                {tour.stepIndex > 0 && (
                   <Button type="button" variant="ghost" size="sm" onClick={tour.back}>
                     Back
                   </Button>
                 )}
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={tour.next}
-                  className="bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
-                >
-                  {tour.isLast ? 'Finish' : 'Next'}
-                </Button>
+                {/*
+                  No advance button while a step is waiting on a real action — the whole point is
+                  that the user does the thing rather than clicking past a description of it. A
+                  quiet "waiting" line replaces it, so the bubble still looks alive rather than
+                  merely missing its button.
+                */}
+                {tour.awaitingAction ? (
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--charm-ink-soft)]">
+                    <span className="relative flex size-1.5">
+                      <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--accent)] opacity-60" />
+                      <span className="relative inline-flex size-1.5 rounded-full bg-[var(--accent)]" />
+                    </span>
+                    Your turn
+                  </span>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={tour.acknowledge}
+                    className="bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
+                  >
+                    {tour.stepIndex === tour.stepCount - 1 ? 'Finish' : 'Got it'}
+                  </Button>
+                )}
               </div>
             </div>
           </>

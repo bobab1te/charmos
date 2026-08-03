@@ -2,23 +2,29 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useNavigate } from '@tanstack/react-router'
 import { TOUR_STEPS, stepIndexOf } from '#/lib/tour-steps'
 import type { TourStep } from '#/lib/tour-steps'
+import { useTourGate } from '#/lib/use-tour-gate'
 import { updateMyProfile } from '#/server/profile'
 import type { Profile } from '#/server/profile'
 
 /**
- * Product tour state machine.
+ * The interactive walkthrough's state machine.
  *
  * Four statuses, persisted on the profile:
  *   pending — never started. The bubble offers the tour rather than launching into it.
  *   active  — in progress; `step` is the current step key.
- *   later   — dismissed with "Continue later". Nothing shows, but the step is kept so
- *             resuming from Settings picks up where they stopped instead of restarting.
+ *   later   — dismissed with "Continue later". Nothing shows, but the step is kept so resuming
+ *             from Settings picks up exactly where they stopped.
  *   done    — completed or skipped outright.
  *
- * Local state is the source of truth for the session and updates immediately; the profile write
- * is fire-and-forget behind it. A tour that stutters while waiting on a round trip per click is
- * worse than one that occasionally forgets a step across a reload, and the failure mode of a lost
- * write is simply seeing a step again.
+ * Advancement is driven entirely by the current step's gate (see use-tour-gate). There is no
+ * Next button on an actionable step and no timer anywhere: the user completes the real action in
+ * the real CRM, the gate notices, and the tour moves on. Only explanatory steps — the payoff
+ * beats, the retainer aside — carry an acknowledge button, because there is genuinely nothing to
+ * do on those.
+ *
+ * Local state drives the UI and the profile write trails behind it unawaited. A walkthrough that
+ * stalls waiting on a round trip per step is worse than one that occasionally repeats a step
+ * after a reload, which is the entire cost of a dropped write.
  */
 
 type TourPhase = 'hidden' | 'welcome' | 'step'
@@ -29,18 +35,18 @@ type TourContextValue = {
   step: TourStep | null
   stepIndex: number
   stepCount: number
-  isFirst: boolean
-  isLast: boolean
+  /** True while waiting on the user to do something — the bubble hides its advance button. */
+  awaitingAction: boolean
+  /** The user just interacted with something unrelated; show the step's nudge. */
+  showNudge: boolean
+  dismissNudge: () => void
   begin: () => void
-  next: () => void
+  /** Only valid on acknowledge steps. */
+  acknowledge: () => void
   back: () => void
-  /** "Continue later" — resumable from Settings. */
   pause: () => void
-  /** Skip / finish outright. */
   dismiss: () => void
-  /** Replay from the start, from Settings. */
   restart: () => void
-  /** Pick up a paused tour at the step it stopped on. */
   resume: () => void
 }
 
@@ -53,8 +59,7 @@ export function useProductTour() {
 }
 
 function persist(tourStatus: Profile['tour_status'], tourStep: string | null) {
-  // Deliberately unawaited. Nothing in the UI depends on the write landing, and a failed write
-  // only costs the user a repeated step next session.
+  // Deliberately unawaited — nothing in the UI depends on the write landing.
   void updateMyProfile({ data: { tourStatus, tourStep } }).catch(() => {})
 }
 
@@ -67,10 +72,40 @@ export function ProductTourProvider({ profile, children }: { profile: Profile; c
   const step = status === 'active' ? (TOUR_STEPS[stepIndex] ?? null) : null
   const phase: TourPhase = status === 'pending' ? 'welcome' : status === 'active' ? 'step' : 'hidden'
 
+  const goTo = useCallback((index: number) => {
+    const clamped = Math.max(0, Math.min(TOUR_STEPS.length - 1, index))
+    setStepIndex(clamped)
+    persist('active', TOUR_STEPS[clamped].key)
+  }, [])
+
+  const finish = useCallback(() => {
+    setStatus('done')
+    // Cleared deliberately: 'done' plus a leftover step key is a state the resume path could
+    // misread as somewhere to return to.
+    persist('done', null)
+  }, [])
+
+  const advance = useCallback(() => {
+    setStepIndex((i) => {
+      if (i >= TOUR_STEPS.length - 1) {
+        finish()
+        return i
+      }
+      persist('active', TOUR_STEPS[i + 1].key)
+      return i + 1
+    })
+  }, [finish])
+
+  const { missed, clearMissed } = useTourGate(step?.gate ?? null, advance)
+
   /*
    * Drive the route from the current step. Guarded on the step key rather than run on every
-   * render: navigate() would otherwise fire on each re-render, and — because navigating changes
-   * the router state that re-renders this provider — that is a loop, not just wasted work.
+   * render: navigate() changes router state, which re-renders this provider, which would navigate
+   * again — a loop rather than merely wasted work.
+   *
+   * A step whose route matches where the user already is does not navigate at all, which matters
+   * because several consecutive steps sit on the same page inside an open modal — re-navigating
+   * would tear that modal down mid-walkthrough.
    */
   const navigatedFor = useRef<string | null>(null)
   useEffect(() => {
@@ -80,14 +115,9 @@ export function ProductTourProvider({ profile, children }: { profile: Profile; c
     }
     if (navigatedFor.current === step.key) return
     navigatedFor.current = step.key
+    if (window.location.pathname === step.to && !step.search) return
     void navigate({ to: step.to, search: step.search ?? {}, replace: true })
   }, [step, navigate])
-
-  const goTo = useCallback((index: number) => {
-    const clamped = Math.max(0, Math.min(TOUR_STEPS.length - 1, index))
-    setStepIndex(clamped)
-    persist('active', TOUR_STEPS[clamped].key)
-  }, [])
 
   const begin = useCallback(() => {
     setStatus('active')
@@ -95,17 +125,10 @@ export function ProductTourProvider({ profile, children }: { profile: Profile; c
     persist('active', TOUR_STEPS[0].key)
   }, [])
 
-  const finish = useCallback(() => {
-    setStatus('done')
-    // The step is cleared on purpose: 'done' plus a leftover step key would be a state the
-    // resume path could misread as somewhere to return to.
-    persist('done', null)
-  }, [])
-
-  const next = useCallback(() => {
-    if (stepIndex >= TOUR_STEPS.length - 1) finish()
-    else goTo(stepIndex + 1)
-  }, [stepIndex, goTo, finish])
+  const acknowledge = useCallback(() => {
+    if (step?.gate.kind !== 'acknowledge') return
+    advance()
+  }, [step, advance])
 
   const back = useCallback(() => goTo(stepIndex - 1), [stepIndex, goTo])
 
@@ -118,8 +141,6 @@ export function ProductTourProvider({ profile, children }: { profile: Profile; c
     setStatus('active')
     setStepIndex(0)
     persist('active', TOUR_STEPS[0].key)
-    // Cleared so the navigation effect re-runs for step 0. Without this, replaying from Settings
-    // while step 0 happens to be the last step seen would show the bubble but never navigate.
     navigatedFor.current = null
   }, [])
 
@@ -136,17 +157,18 @@ export function ProductTourProvider({ profile, children }: { profile: Profile; c
       step,
       stepIndex,
       stepCount: TOUR_STEPS.length,
-      isFirst: stepIndex === 0,
-      isLast: stepIndex === TOUR_STEPS.length - 1,
+      awaitingAction: step !== null && step.gate.kind !== 'acknowledge',
+      showNudge: missed && Boolean(step?.nudge),
+      dismissNudge: clearMissed,
       begin,
-      next,
+      acknowledge,
       back,
       pause,
       dismiss: finish,
       restart,
       resume,
     }),
-    [phase, status, step, stepIndex, begin, next, back, pause, finish, restart, resume],
+    [phase, status, step, stepIndex, missed, clearMissed, begin, acknowledge, back, pause, finish, restart, resume],
   )
 
   return <TourContext.Provider value={value}>{children}</TourContext.Provider>

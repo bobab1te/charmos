@@ -16,6 +16,7 @@ import { dealToFormValues, emptyDealForm, formValuesMissingFields, parsedDealToF
 import { clearDraft, readDraft, writeDraft } from '#/lib/form-draft'
 import { useToast } from '#/lib/toast-context'
 import { parseDealText } from '#/server/parse-deal'
+import { emitTourEvent } from '#/lib/tour-events'
 import type { DealFormValues } from '#/lib/types'
 
 interface DealModalProps {
@@ -121,6 +122,9 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
         setValues(formValues)
         setMissingFields(formValuesMissingFields(formValues))
         setShowForm(true)
+        // Only on a successful parse — the walkthrough step is waiting for the AI to have
+        // actually produced fields, not merely for the request to have been sent.
+        emitTourEvent('parse:succeeded')
       } else {
         setParseError(result.error)
       }
@@ -188,10 +192,10 @@ export function DealModal({ open, onOpenChange, dealId }: DealModalProps) {
             }}
           >
             <TabsList>
-              <TabsTrigger value="parse">
+              <TabsTrigger value="parse" data-tour="deal-parse-tab">
                 <Sparkles className="mr-1.5 size-3.5" /> Paste &amp; Parse
               </TabsTrigger>
-              <TabsTrigger value="manual">Manual entry</TabsTrigger>
+              <TabsTrigger value="manual" data-tour="deal-manual-tab">Manual entry</TabsTrigger>
             </TabsList>
             <TabsContent value="parse">
               <DealParseInput

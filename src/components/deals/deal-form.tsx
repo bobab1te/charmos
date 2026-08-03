@@ -120,10 +120,10 @@ export function DealForm({
       }}
       className="flex flex-col gap-4"
     >
-      <Tabs defaultValue="details">
+      <Tabs defaultValue="details" data-tour="deal-form-body">
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="content">Content Requirements</TabsTrigger>
+          <TabsTrigger value="content" data-tour="deal-requirements-tab">Content Requirements</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details" className="mt-4 flex flex-col gap-4">
@@ -137,6 +137,7 @@ export function DealForm({
                   value={values.brandName}
                   onChange={(e) => set('brandName', e.target.value)}
                   placeholder="Glow Skincare Co."
+                  data-tour="deal-brand-name"
                   required
                 />
                 <datalist id={brandListId}>
@@ -206,6 +207,7 @@ export function DealForm({
                     value={d.type}
                     onChange={(e) => setDeliverable(i, { type: e.target.value })}
                     placeholder="1 TikTok video"
+                    data-tour="deal-deliverable-type"
                     aria-label="Deliverable type"
                   />
                   <Input
@@ -492,6 +494,7 @@ export function DealForm({
         )}
         <Button
           type="submit"
+          data-tour="deal-submit"
           disabled={submitting || deleting}
           className="gap-1.5 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
         >

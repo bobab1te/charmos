@@ -341,7 +341,7 @@ function BrandDealsPage() {
       >
         <TabsList>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-          <TabsTrigger value="partnerships">
+          <TabsTrigger value="partnerships" data-tour="partnerships-tab">
             Long-Term Partnerships{partnerships.length > 0 && ` (${partnerships.length})`}
           </TabsTrigger>
           <TabsTrigger value="brands">Brands</TabsTrigger>

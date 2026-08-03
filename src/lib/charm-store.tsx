@@ -13,6 +13,7 @@ import {
 } from './supabase/mappers'
 import { splitList } from './deal-form-utils'
 import { dateOnlyToISOString } from './date-only'
+import { emitTourEvent } from './tour-events'
 import {
   computeAllRetainerCycleWindows,
   computeCurrentRetainerCycleWindow,
@@ -303,6 +304,10 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       setIdeas((prev) =>
         prev.map((idea) => (idea.id === ideaId ? { ...idea, scheduledDate: date, status: nextStatus ?? idea.status } : idea)),
       )
+      // The drag-and-drop step's gate. Fires only for an actual drop onto a date — dropping back
+      // into the unscheduled list goes through unassignIdeaDate instead, so a user who picks the
+      // card up and puts it down again correctly does not satisfy the step.
+      emitTourEvent('idea:scheduled', ideaId)
       if (!userId) return
       getSupabaseBrowserClient()
         .from('ideas')
@@ -336,6 +341,10 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
         series: idea.series,
       }
       setIdeas((prev) => [newIdea, ...prev])
+      // Emitted on the optimistic insert rather than after the round trip, matching where the
+      // idea becomes real to the user — the card is on screen and draggable at this point, which
+      // is exactly what the next walkthrough step asks them to do with it.
+      emitTourEvent('idea:created', newIdea.id)
 
       if (!userId) return
       getSupabaseBrowserClient()
@@ -613,6 +622,11 @@ export function CharmStoreProvider({ children }: { children: ReactNode }) {
       const created = dealFromRow(data)
       setDeals((prev) => [created, ...prev])
       await syncDealLedgerEntry(created.id, brandId, trimmedName, dealPayload)
+      // Emitted only on a genuine insert, not on the update branch above — the walkthrough's
+      // "save your first deal" step is waiting for a deal to come into existence. Editing an
+      // existing one is not that. See tour-events for why the store emits rather than the tour
+      // inferring this from the DOM.
+      emitTourEvent('deal:created', created.id)
       return created.id
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- syncDealLedgerEntry is defined

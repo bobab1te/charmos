@@ -33,6 +33,7 @@ function UnscheduledList({
   return (
     <div
       ref={setNodeRef}
+      data-tour="unscheduled-list"
       className={cn(
         'flex min-h-[200px] flex-col gap-2.5 rounded-2xl border border-dashed p-3 transition-colors duration-150 ease-out',
         isOver ? 'border-[var(--accent)] bg-[var(--accent)]/5' : 'border-transparent',
@@ -133,6 +134,7 @@ function ScrapbookPage() {
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}
             onBlur={commitDraft}
+            data-tour="idea-input"
             placeholder="Quick concept..."
             className="w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm outline-none placeholder:text-[var(--charm-ink-soft)]"
           />

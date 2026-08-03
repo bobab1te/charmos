@@ -145,6 +145,7 @@ export function DealParseInput({
       )}
 
       <Textarea
+        data-tour="deal-parse-input"
         value={rawText}
         onChange={(e) => onRawTextChange(e.target.value)}
         placeholder="Paste the brand's email, DM, or brief here..."
@@ -161,6 +162,7 @@ export function DealParseInput({
         </Button>
         <Button
           type="button"
+          data-tour="deal-parse-submit"
           onClick={handleParseClick}
           disabled={!canParse}
           className="gap-1.5 bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
