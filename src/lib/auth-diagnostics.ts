@@ -50,6 +50,70 @@ export function readAuthLog(): Array<LogEntry> {
   }
 }
 
+/**
+ * Where the session's bytes actually go. Call from the console: `__charmAuthSize()`.
+ *
+ * Knowing the cookie is 4.7KB says it chunks; it doesn't say why. This decodes the access token's
+ * payload and reports the byte cost of each top-level claim, so the bloat can be attributed to a
+ * specific claim rather than guessed at. `provider` answers the other open question — whether a
+ * given session came from Google at all, which decides if stripping provider tokens was ever
+ * relevant to it.
+ *
+ * Reports sizes and claim *names*, plus the values of the two small enum-ish fields that identify
+ * the sign-in method. Never returns the token, and never the contents of user metadata.
+ */
+export function readAuthSize() {
+  const cookies = authCookies()
+  const jar = describe(cookies)
+
+  let session: { access_token?: string; refresh_token?: string } | null = null
+  try {
+    // The chunks concatenate in name order into one JSON blob; @supabase/ssr also prefixes newer
+    // sessions with `base64-`, which has to come off before it parses.
+    const raw = cookies
+      .filter((c) => c.name.includes('auth-token'))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((c) => {
+        const match = document.cookie.match(new RegExp(`(?:^|; )${c.name}=([^;]*)`))
+        return match ? decodeURIComponent(match[1]) : ''
+      })
+      .join('')
+    const body = raw.startsWith('base64-') ? atob(raw.slice(7)) : raw
+    session = JSON.parse(body) as { access_token?: string; refresh_token?: string }
+  } catch {
+    return { jar, note: 'could not parse the session cookie — it may be a format this reader does not know' }
+  }
+
+  const token = session?.access_token
+  if (!token) return { jar, note: 'no access token found in the cookie' }
+
+  let claims: Record<string, unknown> = {}
+  try {
+    claims = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as Record<string, unknown>
+  } catch {
+    return { jar, note: 'could not decode the access token payload' }
+  }
+
+  // Sorted biggest-first: the point of this is to name the one claim worth attacking.
+  const byClaim = Object.entries(claims)
+    .map(([key, value]) => ({ claim: key, bytes: JSON.stringify(value).length }))
+    .sort((a, b) => b.bytes - a.bytes)
+
+  const appMetadata = (claims.app_metadata ?? {}) as { provider?: string; providers?: Array<string> }
+
+  return {
+    jar,
+    accessTokenBytes: token.length,
+    refreshTokenBytes: session.refresh_token?.length ?? 0,
+    /** Which sign-in produced this session — decides whether the provider-token strip applies. */
+    provider: appMetadata.provider ?? null,
+    providers: appMetadata.providers ?? null,
+    /** True means the provider tokens are still being persisted despite the callback stripping them. */
+    stillHasProviderTokens: 'provider_token' in (session as object) || 'provider_refresh_token' in (session as object),
+    byClaim,
+  }
+}
+
 type CookieShape = { name: string; bytes: number }
 
 function authCookies(): Array<CookieShape> {
@@ -84,20 +148,22 @@ function describe(cookies: Array<CookieShape>) {
   }
 }
 
-let started = false
-
 export function startAuthDiagnostics() {
-  if (started || !import.meta.env.DEV || !isSupabaseConfigured) return
+  if (!import.meta.env.DEV || !isSupabaseConfigured) return
   if (typeof window === 'undefined') return
-  started = true
 
   let previous = describe(authCookies())
 
   // Exposed so the history can be read back from the console after a drop, without needing the
   // devtools to have been open when it happened.
-  ;(window as unknown as { __charmAuthLog?: () => Array<LogEntry> }).__charmAuthLog = readAuthLog
+  const bridge = window as unknown as {
+    __charmAuthLog?: () => Array<LogEntry>
+    __charmAuthSize?: () => unknown
+  }
+  bridge.__charmAuthLog = readAuthLog
+  bridge.__charmAuthSize = readAuthSize
 
-  getSupabaseBrowserClient().auth.onAuthStateChange((event, session) => {
+  const { data } = getSupabaseBrowserClient().auth.onAuthStateChange((event, session) => {
     const current = describe(authCookies())
     const lost = previous.count > 0 && current.count === 0
 
@@ -124,4 +190,12 @@ export function startAuthDiagnostics() {
 
     previous = current
   })
+
+  /*
+   * Returned so the caller's effect can unsubscribe. Without it, every hot reload re-evaluated this
+   * module, registered a second listener, and left the first one alive — which is why the log
+   * recorded each SIGNED_IN twice with an identical timestamp. A module-level `started` guard could
+   * not prevent that, since the reload reset the guard along with everything else.
+   */
+  return () => data.subscription.unsubscribe()
 }
