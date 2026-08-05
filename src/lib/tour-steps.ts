@@ -30,8 +30,13 @@ export type TourStep = {
   /** Route this step lives on. The engine navigates here when the step becomes current. */
   to: string
   search?: Record<string, string>
-  /** `data-tour` value to spotlight. Omitted for steps with nothing to point at. */
-  anchor?: string
+  /**
+   * The `data-tour` targets this step's instruction walks through, in the order the user meets
+   * them. The engine spotlights whichever one is currently live (see tour-anchors), so a step that
+   * says "open this, then fill that" moves its own highlight along instead of pointing at the
+   * opener the whole way through. A single-element step is just a chain of one.
+   */
+  anchors?: Array<string>
   title: string
   body: string
   gate: TourGate
@@ -90,7 +95,9 @@ export const TOUR_STEPS: Array<TourStep> = [
     key: 'deal-open',
     to: '/brand-deals',
     search: { tab: 'pipeline' },
-    anchor: 'new-deal',
+    // Follows the sentence: the button, then the tab inside the dialog it opens, then the first
+    // field of the form that tab reveals.
+    anchors: ['new-deal', 'deal-manual-tab', 'deal-brand-name'],
     title: "Let's create your first partnership",
     body: "A normal brand deal first — the one-off kind. Open New Deal, then pick Manual entry so we can fill it in together.",
     // Gated on the manual form appearing rather than on the two clicks separately. A step whose
@@ -102,7 +109,9 @@ export const TOUR_STEPS: Array<TourStep> = [
   {
     key: 'deal-details',
     to: '/brand-deals',
-    anchor: 'deal-brand-name',
+    // Two fields, in the order the body names them — the highlight steps down to the deliverable
+    // once the brand name holds something, which is also what the gate is waiting on.
+    anchors: ['deal-brand-name', 'deal-deliverable-type'],
     title: 'Who is it with, and what are you making?',
     body: 'Brand name first — it does not have to be real. Then the deliverable just below: "2 Instagram Reels", "1 TikTok video". That line drives your deadlines and your dashboard.',
     // Gated on the deliverable, which is the second of the two fields — so filling in only the
@@ -115,7 +124,7 @@ export const TOUR_STEPS: Array<TourStep> = [
   {
     key: 'deal-requirements',
     to: '/brand-deals',
-    anchor: 'deal-requirements-tab',
+    anchors: ['deal-requirements-tab'],
     title: 'And what the brand needs',
     body: "Over here are the brand's own requirements — hooks, talking points, hashtags. It stays with the deal, so you're not digging through email at 2am.",
     gate: { kind: 'click', anchor: 'deal-requirements-tab' },
@@ -126,7 +135,7 @@ export const TOUR_STEPS: Array<TourStep> = [
   {
     key: 'deal-save',
     to: '/brand-deals',
-    anchor: 'deal-submit',
+    anchors: ['deal-submit'],
     title: "You're ready. Let's save it.",
     body: 'Everything else is optional and you can come back to it any time.',
     gate: { kind: 'event', event: 'deal:created' },
@@ -138,7 +147,7 @@ export const TOUR_STEPS: Array<TourStep> = [
     key: 'deal-payoff',
     to: '/brand-deals',
     search: { tab: 'pipeline' },
-    anchor: 'pipeline-board',
+    anchors: ['pipeline-board'],
     title: 'There it is',
     body: "On your board, sorted into a stage, counting toward your dashboard totals and deadlines. Drag it between columns as the work moves. And if a brand ever books you ongoing, retainers live under Long-Term Partnerships — same idea, recurring.",
     // The retainer aside rides along here rather than taking its own step: it is genuinely a
@@ -153,7 +162,9 @@ export const TOUR_STEPS: Array<TourStep> = [
     key: 'parse-run',
     to: '/brand-deals',
     search: { tab: 'pipeline' },
-    anchor: 'new-deal',
+    // The whole motion: open the dialog, fill the paste box, then press Parse. The Parse button is
+    // disabled until the box holds something, so the chain only reaches it once it can be pressed.
+    anchors: ['new-deal', 'deal-parse-input', 'deal-parse-submit'],
     title: 'No brand email handy? Try this one.',
     body: 'Most deals arrive as an email. Open a new deal, copy this into the paste box, and hit Parse with AI. It takes a few seconds.',
     // One step for open → paste → parse: they are a single motion, and splitting them made the
@@ -166,7 +177,7 @@ export const TOUR_STEPS: Array<TourStep> = [
   {
     key: 'parse-review',
     to: '/brand-deals',
-    anchor: 'deal-form-body',
+    anchors: ['deal-form-body'],
     title: 'Check its work',
     body: "The fee, deliverables, dates and usage rights are all in the form now — and all editable. Nothing is saved until you say so, so fix anything it misread before you commit.",
     gate: { kind: 'acknowledge' },
@@ -179,7 +190,9 @@ export const TOUR_STEPS: Array<TourStep> = [
   {
     key: 'idea-create',
     to: '/scrapbook',
-    anchor: 'add-idea',
+    // The button, then the field it reveals — so the spotlight lands on the box being typed into
+    // rather than staying on the button that is now beside the point.
+    anchors: ['add-idea', 'idea-input'],
     title: "Let's save an idea before it disappears",
     body: 'The Scrapbook is for concepts with nowhere to go yet. Add one — try "GRWM for a summer campaign" — and press Enter.',
     gate: { kind: 'event', event: 'idea:created' },
@@ -189,7 +202,7 @@ export const TOUR_STEPS: Array<TourStep> = [
   {
     key: 'idea-drag',
     to: '/scrapbook',
-    anchor: 'unscheduled-list',
+    anchors: ['unscheduled-list'],
     title: 'Now give it a place on your calendar',
     body: 'Drag your idea from the bank onto any date. It becomes a scheduled post, and shows up on your dashboard next to your deal deadlines.',
     gate: { kind: 'event', event: 'idea:scheduled' },
@@ -203,9 +216,9 @@ export const TOUR_STEPS: Array<TourStep> = [
   {
     key: 'complete',
     to: '/settings',
-    anchor: 'replay-tour',
+    anchors: ['replay-tour'],
     title: "Congrats! You're all ready to manage your content like a pro ✨",
-    body: 'This is Settings — hide any dashboard widget you never look at, change your theme or currency, and find this tutorial again any time right here.',
+    body: 'Hide any dashboard widget you never look at, or change your theme and currency. You can always find this tutorial again in Settings.',
     // Anchored on the replay control itself, so the sentence above is pointing at the thing it
     // describes rather than asking the user to take it on trust.
     gate: { kind: 'acknowledge' },

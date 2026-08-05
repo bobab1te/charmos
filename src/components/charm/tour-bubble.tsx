@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { Check, Copy, X } from 'lucide-react'
+import { ArrowRight, Check, Copy, X } from 'lucide-react'
 import { CharmMascot } from '#/components/charm/charm-mascot'
 import { TourDragHint } from '#/components/charm/tour-drag-hint'
 import { Button } from '#/components/ui/button'
 import { CHARM_TIER_2_SPRING } from '#/lib/motion-tiers'
 import { useProductTour } from '#/lib/product-tour'
+import { resolveAnchorInDom } from '#/lib/tour-anchors'
 import { BUBBLE_WIDTH, bubblePlacement, sameRect } from '#/lib/tour-position'
 import type { Rect } from '#/lib/tour-position'
 import { cn } from '#/lib/utils'
@@ -31,13 +32,13 @@ const PULSE_FRAMES = [
  * one getBoundingClientRect() per frame is cheap. State is only set when the rect actually
  * changes, so a stationary anchor costs a measurement per frame and no React work at all.
  */
-function useAnchorRect(anchor: string | null) {
+function useAnchorRect(anchors: Array<string> | null) {
   const [rect, setRect] = useState<Rect | null>(null)
   const rectRef = useRef<Rect | null>(null)
   const scrolledFor = useRef<string | null>(null)
 
   useEffect(() => {
-    if (!anchor) {
+    if (!anchors || anchors.length === 0) {
       rectRef.current = null
       setRect(null)
       return
@@ -46,7 +47,11 @@ function useAnchorRect(anchor: string | null) {
     let frame = 0
     const measure = () => {
       frame = requestAnimationFrame(measure)
-      const el = document.querySelector<HTMLElement>(`[data-tour="${anchor}"]`)
+      // Re-resolved every frame rather than fixed when the step began: a step's target changes as
+      // the user works through it — the dialog opens, the tab reveals a field, the field fills and
+      // hands over to the submit button — and the spotlight has to follow them, not the step.
+      const name = resolveAnchorInDom(anchors)
+      const el = name ? document.querySelector<HTMLElement>(`[data-tour="${name}"]`) : null
       if (!el) {
         if (rectRef.current !== null) {
           rectRef.current = null
@@ -55,25 +60,48 @@ function useAnchorRect(anchor: string | null) {
         return
       }
 
-      // Bring the anchor into view once per step — not on every frame, which would fight the
-      // user the moment they tried to scroll away and look around.
-      if (scrolledFor.current !== anchor) {
-        scrolledFor.current = anchor
+      // Bring each new target into view once — not on every frame, which would fight the user the
+      // moment they tried to scroll away and look around. Keyed on the resolved element rather
+      // than the step, so moving along the chain scrolls to the new target too.
+      if (scrolledFor.current !== name) {
+        scrolledFor.current = name
         el.scrollIntoView({ block: 'center', behavior: 'smooth' })
       }
 
       const r = el.getBoundingClientRect()
-      // The dialog the target lives in, if any — the bubble uses this to dock clear of the form
-      // rather than sitting on top of it. The tour's own bubble is a dialog too, hence the :not().
-      const owner = el.closest<HTMLElement>('[role="dialog"]:not([data-tour-bubble])')
+      /*
+       * The region the bubble must stay off: the dialog the target lives in, or a panel that has
+       * opted in with data-tour-keep-clear. The tour's own bubble is a dialog too, hence the
+       * :not(). Falling back to the opt-in attribute is what stops the bubble landing on top of
+       * space the step is about to fill — the Add idea input appears directly below its button.
+       */
+      const owner =
+        el.closest<HTMLElement>('[role="dialog"]:not([data-tour-bubble])') ??
+        el.closest<HTMLElement>('[data-tour-keep-clear]')
       const d = owner?.getBoundingClientRect()
+      /*
+       * Rounded before it is compared or stored.
+       *
+       * getBoundingClientRect returns sub-pixel values that wobble in the last decimal as the page
+       * settles, so an exact comparison reported a change on almost every frame — a re-render per
+       * frame, indefinitely. That starved the bubble's own entrance animation, which was measured
+       * parked at opacity 0.886 and scale 0.997 instead of reaching 1. Whole pixels are all the
+       * spotlight needs, and they make a stationary target genuinely stationary.
+       */
       const next: Rect = {
-        top: r.top,
-        left: r.left,
-        width: r.width,
-        height: r.height,
+        top: Math.round(r.top),
+        left: Math.round(r.left),
+        width: Math.round(r.width),
+        height: Math.round(r.height),
         radius: window.getComputedStyle(el).borderRadius || '12px',
-        dialog: d ? { top: d.top, left: d.left, width: d.width, height: d.height } : null,
+        keepClear: d
+          ? {
+              top: Math.round(d.top),
+              left: Math.round(d.left),
+              width: Math.round(d.width),
+              height: Math.round(d.height),
+            }
+          : null,
       }
       if (!sameRect(rectRef.current, next)) {
         rectRef.current = next
@@ -83,7 +111,7 @@ function useAnchorRect(anchor: string | null) {
 
     frame = requestAnimationFrame(measure)
     return () => cancelAnimationFrame(frame)
-  }, [anchor])
+  }, [anchors])
 
   return rect
 }
@@ -188,8 +216,8 @@ function ProgressDots({ index, count }: { index: number; count: number }) {
 export function TourBubble() {
   const tour = useProductTour()
   const prefersReducedMotion = useReducedMotion()
-  const anchor = tour.phase === 'step' ? (tour.step?.anchor ?? null) : null
-  const rect = useAnchorRect(anchor)
+  const anchors = tour.phase === 'step' ? (tour.step?.anchors ?? null) : null
+  const rect = useAnchorRect(anchors)
 
   // Escape pauses rather than dismisses. Escape is a reflex, and losing the whole tour to a
   // reflex is a worse outcome than pausing something that can be resumed.
@@ -232,8 +260,30 @@ export function TourBubble() {
         rather than gates — nothing here should stop someone clicking the very button being
         pointed at, and letting the page stay live also means no focus trap to get wrong.
       */}
-      {tour.step?.dragHintTo && tour.step.anchor && (
-        <TourDragHint fromAnchor={tour.step.anchor} toSelector={tour.step.dragHintTo} />
+      {tour.step?.dragHintTo && tour.step.anchors?.[0] && (
+        <TourDragHint fromAnchor={tour.step.anchors[0]} toSelector={tour.step.dragHintTo} />
+      )}
+
+      {/*
+        The target lifted out of the dim rather than merely spared from it. backdrop-filter reaches
+        the real page underneath, so the highlighted control genuinely brightens instead of getting
+        a tint laid over it — which is the difference between "everything is disabled except this
+        hole" and "this one thing is live". Sits under the ring so the outline still draws on top.
+      */}
+      {showSpotlight && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed z-[59]"
+          style={{
+            top: rect.top - 3,
+            left: rect.left - 3,
+            width: rect.width + 6,
+            height: rect.height + 6,
+            borderRadius: rect.radius,
+            backdropFilter: 'brightness(1.09) saturate(1.06)',
+            WebkitBackdropFilter: 'brightness(1.09) saturate(1.06)',
+          }}
+        />
       )}
 
       <AnimatePresence>
@@ -296,7 +346,14 @@ export function TourBubble() {
         }}
         initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={prefersReducedMotion ? { duration: 0 } : CHARM_TIER_2_SPRING}
+        // Opacity on a tween rather than the spring: a spring interrupted by a re-render settles
+        // wherever its velocity left it, and a bubble stuck at 0.89 opacity is a bubble the page
+        // shows through. Scale can spring freely — landing at 0.997 is invisible.
+        transition={
+          prefersReducedMotion
+            ? { duration: 0 }
+            : { scale: CHARM_TIER_2_SPRING, opacity: { duration: 0.18, ease: 'easeOut' } }
+        }
       >
         <button
           type="button"
@@ -350,30 +407,6 @@ export function TourBubble() {
               Show me around
             </Button>
           </div>
-        ) : tour.step?.finale ? (
-          /*
-             The completion beat. Keeps the progress row — dropping it made the last step sit
-             outside the count, so the tutorial read as "9 of 10" and then an uncounted extra
-             screen. "Continue later" goes, since there is nothing left to continue.
-          */
-          <>
-            <div className="flex items-center justify-between gap-2">
-              <ProgressDots index={tour.stepIndex} count={tour.stepCount} />
-              <span className="text-xs text-[var(--charm-ink-soft)]">
-                {tour.stepIndex + 1} of {tour.stepCount}
-              </span>
-            </div>
-            <div className="flex items-center justify-end">
-            <Button
-              type="button"
-              size="sm"
-              onClick={tour.acknowledge}
-              className="bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
-            >
-              Finish
-            </Button>
-            </div>
-          </>
         ) : (
           <>
             <div className="flex items-center justify-between gap-2">
@@ -384,26 +417,33 @@ export function TourBubble() {
             </div>
 
             <div className="flex items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={tour.pause}
-                className="rounded-full px-1 text-xs font-medium text-[var(--charm-ink-soft)] underline-offset-2 transition duration-150 ease-out hover:text-[var(--charm-ink)] hover:underline"
-              >
-                Continue later
-              </button>
+              {/* Nothing left to continue later once the tour is over. */}
+              {tour.step?.finale ? (
+                <span />
+              ) : (
+                <button
+                  type="button"
+                  onClick={tour.pause}
+                  className="rounded-full px-1 text-xs font-medium text-[var(--charm-ink-soft)] underline-offset-2 transition duration-150 ease-out hover:text-[var(--charm-ink)] hover:underline"
+                >
+                  Continue later
+                </button>
+              )}
               <div className="flex items-center gap-2">
-                {tour.stepIndex > 0 && (
+                {tour.stepIndex > 0 && !tour.step?.finale && (
                   <Button type="button" variant="ghost" size="sm" onClick={tour.back}>
                     Back
                   </Button>
                 )}
+
                 {/*
-                  No advance button while a step is waiting on a real action — the whole point is
-                  that the user does the thing rather than clicking past a description of it. A
-                  quiet "waiting" line replaces it, so the bubble still looks alive rather than
-                  merely missing its button.
+                  The "your turn" pulse, alongside the button rather than instead of it. Doing the
+                  real action is still the intended path and the pulse says so, but a walkthrough
+                  that physically cannot be advanced is a walkthrough someone can get trapped in —
+                  and users who already know the product should not have to perform every step to
+                  get out. Both routes call the same next(), so neither can desync the state.
                 */}
-                {tour.awaitingAction ? (
+                {tour.awaitingAction && (
                   <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--charm-ink-soft)]">
                     <span className="relative flex size-1.5">
                       <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--accent)] opacity-60" />
@@ -411,16 +451,28 @@ export function TourBubble() {
                     </span>
                     Your turn
                   </span>
-                ) : (
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={tour.acknowledge}
-                    className="bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90"
-                  >
-                    {tour.stepIndex === tour.stepCount - 1 ? 'Finish' : 'Got it'}
-                  </Button>
                 )}
+
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={tour.next}
+                  // Quieter while the step is waiting on a real action, so it reads as the way past
+                  // rather than the way forward — the highlighted control in the page is the CTA.
+                  variant={tour.awaitingAction ? 'outline' : 'default'}
+                  className={cn(
+                    'gap-1',
+                    !tour.awaitingAction &&
+                      'bg-[var(--accent-strong)] text-[var(--accent-foreground)] hover:opacity-90',
+                  )}
+                >
+                  {tour.step?.finale
+                    ? 'Finish'
+                    : tour.awaitingAction
+                      ? 'Continue'
+                      : 'Got it'}
+                  {tour.awaitingAction && <ArrowRight className="size-3.5" />}
+                </Button>
               </div>
             </div>
           </>

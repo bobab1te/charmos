@@ -21,7 +21,7 @@ import { TOUR_STEPS, stepIndexOf } from './tour-steps'
 const desktop = { width: 1280, height: 800 }
 
 function rect(over: Partial<Rect> = {}): Rect {
-  return { top: 100, left: 500, width: 160, height: 40, radius: '8px', dialog: null, ...over }
+  return { top: 100, left: 500, width: 160, height: 40, radius: '8px', keepClear: null, ...over }
 }
 
 describe('bubblePlacement', () => {
@@ -73,6 +73,37 @@ describe('bubblePlacement', () => {
   it('stays on screen when the anchor fills a short viewport', () => {
     const p = bubblePlacement(rect({ top: 20, height: 400 }), { width: 1280, height: 500 })
     expect(p.top).toBeGreaterThanOrEqual(EDGE)
+  })
+})
+
+describe('bubblePlacement with a protected region', () => {
+  // The New Deal dialog on a 1226px-wide window: 157px clear either side, and tall enough that
+  // there is no room above or below it either.
+  const dialog = { top: 217, left: 157, width: 912, height: 540 }
+  const narrow = { width: 1226, height: 980 }
+
+  it('docks beside the region rather than landing on its controls', () => {
+    const p = bubblePlacement(rect({ top: 363, left: 390, keepClear: dialog }), narrow)
+    // Anything at or above the dialog's top would cover the tab row, which is what it used to do.
+    expect(p.top).toBeGreaterThanOrEqual(dialog.top)
+    expect(p.left).toBeGreaterThan(dialog.left + dialog.width / 2)
+  })
+
+  it('stays inside the viewport when it hangs over the region edge', () => {
+    const p = bubblePlacement(rect({ keepClear: dialog }), narrow)
+    expect(p.left).toBeGreaterThanOrEqual(EDGE)
+    expect(p.left + BUBBLE_WIDTH).toBeLessThanOrEqual(narrow.width - EDGE)
+  })
+
+  it('sits fully clear when the window is wide enough to allow it', () => {
+    const p = bubblePlacement(rect({ keepClear: dialog }), { width: 1920, height: 1000 })
+    expect(p.left).toBeGreaterThanOrEqual(dialog.left + dialog.width)
+  })
+
+  it('goes under a region that spans the whole width, never on top of it', () => {
+    const full = { top: 40, left: 0, width: 1226, height: 300 }
+    const p = bubblePlacement(rect({ keepClear: full }), narrow)
+    expect(p.top).toBeGreaterThanOrEqual(full.top + full.height)
   })
 })
 

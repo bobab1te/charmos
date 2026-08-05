@@ -114,7 +114,12 @@ function ScrapbookPage() {
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
       <ScrapbookCalendar ideas={ideas} onOpenIdea={setOpenIdeaId} />
 
-      <div className="charm-glass flex flex-col gap-3 rounded-2xl p-5">
+      {/*
+        Kept clear of the tour bubble: the Add idea step points at the button in this panel's
+        header, and the input it reveals appears directly underneath — exactly where a bubble
+        placed below its target would land. Marking the panel makes the bubble dock beside it.
+      */}
+      <div data-tour-keep-clear="" className="charm-glass flex flex-col gap-3 rounded-2xl p-5">
         <div className="flex items-center justify-between gap-2">
           <h2 className="font-display text-base font-semibold text-[var(--charm-ink)]">Idea bank</h2>
           <button
