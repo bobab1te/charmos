@@ -17,8 +17,12 @@ export const EDGE = 12
  * one position, reading the height, then moving it, which is a visible second paint at every step.
  * Generous on purpose — overestimating flips the bubble above the anchor slightly earlier than
  * strictly needed, which is harmless, whereas underestimating puts its footer off-screen.
+ *
+ * 320 rather than the original 260 because the tallest bubble in the walkthrough — the finale,
+ * whose heading wraps to three lines — measures 304 in practice. The old value was an
+ * underestimate for the one step where being unable to reach the button ends the tour.
  */
-export const ESTIMATED_BUBBLE_HEIGHT = 260
+export const ESTIMATED_BUBBLE_HEIGHT = 320
 /**
  * How much clear space beside a protected region is enough to dock there, accepting that the
  * bubble will hang over that region's outer edge.

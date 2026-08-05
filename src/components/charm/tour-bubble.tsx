@@ -60,15 +60,27 @@ function useAnchorRect(anchors: Array<string> | null) {
         return
       }
 
-      // Bring each new target into view once — not on every frame, which would fight the user the
-      // moment they tried to scroll away and look around. Keyed on the resolved element rather
-      // than the step, so moving along the chain scrolls to the new target too.
+      const r = el.getBoundingClientRect()
+
+      /*
+       * Bring each new target into view once, and only when it actually needs it.
+       *
+       * Once per target, not per frame, or it would fight the user the moment they scrolled away
+       * to look around. Keyed on the resolved element rather than the step, so moving along the
+       * chain scrolls to the new target too.
+       *
+       * The visibility test matters as much as the throttle. Centring unconditionally meant a step
+       * anchored on something already perfectly readable still yanked the page — worst on the
+       * pipeline board, which is taller than the viewport, so "centre it" scrolled hundreds of
+       * pixels and moved the bubble out from under the cursor mid-click. A target with a usable
+       * amount of itself on screen is left exactly where it is.
+       */
       if (scrolledFor.current !== name) {
         scrolledFor.current = name
-        el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        const onScreen = Math.max(0, Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0))
+        const enough = Math.min(r.height, window.innerHeight * 0.5)
+        if (onScreen < enough) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
       }
-
-      const r = el.getBoundingClientRect()
       /*
        * The region the bubble must stay off: the dialog the target lives in, or a panel that has
        * opted in with data-tour-keep-clear. The tour's own bubble is a dialog too, hence the

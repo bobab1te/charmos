@@ -49,15 +49,35 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onInteractOutside,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  /*
+   * The product tour's bubble is not "outside" in the sense this dismissal means.
+   *
+   * It renders in a portal beside the dialog, so Radix counts a click on it as an outside
+   * interaction and closes the dialog on pointer-down — before the click has landed. On the
+   * walkthrough's parse-review step that made "Got it" close the form and leave the tour on the
+   * same step, so it took two clicks to move on and the parsed deal was thrown away in between.
+   * Callers keep their own onInteractOutside; this only ever adds an exemption.
+   */
+  const handleInteractOutside = (event: Parameters<NonNullable<typeof onInteractOutside>>[0]) => {
+    const target = event.target as HTMLElement | null
+    if (target?.closest('[data-tour-bubble]')) {
+      event.preventDefault()
+      return
+    }
+    onInteractOutside?.(event)
+  }
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        onInteractOutside={handleInteractOutside}
         className={cn(
           "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
           className

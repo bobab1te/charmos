@@ -118,17 +118,34 @@ export function ProductTourProvider({ profile, children }: { profile: Profile; c
    * once stepIndex moves the recorded value no longer matches.
    */
   const advancedFrom = useRef<number | null>(null)
-  const next = useCallback(() => {
-    if (advancedFrom.current === stepIndex) return
-    advancedFrom.current = stepIndex
-    if (stepIndex >= TOUR_STEPS.length - 1) {
-      finish()
-      return
-    }
-    setStepIndex(stepIndex + 1)
-  }, [stepIndex, finish])
+  /**
+   * The step the user landed on by pressing Continue rather than by doing the action.
+   *
+   * Recovery reads this and leaves that step alone. Without it the two features fought: pressing
+   * Continue on the AI-parsing step moved to "Check its work", whose form does not exist unless a
+   * parse just happened, so recovery rewound them a step and the button looked broken. Someone who
+   * asks to skip has said the missing prerequisite does not matter to them.
+   */
+  const skippedInto = useRef<string | null>(null)
 
-  const { missed, clearMissed } = useTourGate(step?.gate ?? null, next)
+  const advance = useCallback(
+    (manual: boolean) => {
+      if (advancedFrom.current === stepIndex) return
+      advancedFrom.current = stepIndex
+      if (stepIndex >= TOUR_STEPS.length - 1) {
+        finish()
+        return
+      }
+      if (manual) skippedInto.current = TOUR_STEPS[stepIndex + 1].key
+      setStepIndex(stepIndex + 1)
+    },
+    [stepIndex, finish],
+  )
+
+  const next = useCallback(() => advance(true), [advance])
+  const advanceFromGate = useCallback(() => advance(false), [advance])
+
+  const { missed, clearMissed } = useTourGate(step?.gate ?? null, advanceFromGate)
 
   /** Which step we last routed for, so re-renders don't re-navigate. Cleared when we want a retry. */
   const navigatedFor = useRef<string | null>(null)
@@ -173,8 +190,9 @@ export function ProductTourProvider({ profile, children }: { profile: Profile; c
       }
 
       // On the right page, but the dialog holding the target is closed. Rewind to the step that
-      // opens it, so the instruction the user sees is one they can actually follow.
-      if (!step.recoverTo) return
+      // opens it, so the instruction the user sees is one they can actually follow — unless the
+      // user chose this step with Continue, in which case rewinding is overruling them.
+      if (!step.recoverTo || skippedInto.current === step.key) return
       const target = TOUR_STEPS.findIndex((s) => s.key === step.recoverTo)
       if (target === -1) return
       navigatedFor.current = null
